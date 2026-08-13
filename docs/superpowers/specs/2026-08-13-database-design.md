@@ -204,11 +204,16 @@ Unique constraints สร้าง index สำหรับ email, machine code,
 
 ## Authorization Helpers
 
-สร้าง function `public.is_active_admin()` ที่:
+สร้าง schema `private` ซึ่งไม่ถูกเปิดผ่าน Data API และสร้าง functions:
+
+- `private.is_active_admin()` ตรวจว่า caller เป็น Admin ที่เปิดใช้งาน
+- `private.is_super_admin()` ตรวจว่า caller มี role เป็น `super_admin` และเปิดใช้งาน
+
+ทั้งสอง function:
 
 - คืนค่า boolean
 - ตรวจ `auth.uid()` กับ `admin_profiles.auth_user_id`
-- ต้องพบ `is_active = true`
+- ต้องพบ `is_active = true` และตรวจ role เพิ่มสำหรับ `is_super_admin()`
 - เป็น `security definer`
 - กำหนด `search_path` แบบคงที่
 - revoke execute จาก `public` แล้ว grant เฉพาะ `authenticated`
@@ -233,7 +238,6 @@ Function นี้ช่วยลด policy ที่ซ้ำกันและ
 Active Admin อ่านและจัดการ:
 
 - `customer_profiles`
-- `admin_profiles`
 - `machines`
 - `bookings`
 - `app_credentials`
@@ -241,6 +245,8 @@ Active Admin อ่านและจัดการ:
 - `notifications`
 
 Active Admin อ่าน `audit_logs` ได้ แต่ไม่มี update/delete policy สำหรับ audit logs การ insert audit log จะทำผ่าน Server workflow ที่กำหนดใน Phase หลัง
+
+Active Admin อ่าน `admin_profiles` ได้ แต่เฉพาะ `super_admin` เท่านั้นที่ insert/update/delete Admin profile เพื่อป้องกัน Admin ปกติยกระดับสิทธิ์ตนเองหรือผู้อื่น
 
 แม้ Admin อ่าน `app_credentials` ได้ UI ใน Phase หลังต้องไม่แสดง `password_encrypted` โดยตรง
 
