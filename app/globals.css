@@ -1,8 +1,28 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #f3f6fa;
+  --foreground: #0b1324;
+}
+
+.font-display {
+  font-family: var(--font-chakra-petch), var(--font-anuphan), sans-serif;
+}
+
+::selection {
+  background: #bfdbfe;
+  color: #0b1324;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 
 * {

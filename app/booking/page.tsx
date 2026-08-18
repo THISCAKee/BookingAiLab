@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { PublicBookingBoard } from "@/components/booking/public-booking-board";
+import { PublicBookingNav } from "@/components/booking/public-booking-nav";
 import { getPublicBookingOptions, type PublicBookingOptions } from "@/lib/booking/actions";
 import { getSelectableBookingDates } from "@/lib/booking/schedule";
 
@@ -13,16 +13,24 @@ export default async function BookingPage() {
     : { date: dates[0].value, slots: [] };
 
   return (
-    <main className="min-h-screen bg-[#f4f6f8] text-slate-950">
-      <div className="mx-auto max-w-7xl px-5 py-7 sm:px-8 sm:py-10">
-        <nav className="flex flex-wrap items-center justify-between gap-4">
-          <Link href="/" className="text-sm font-bold tracking-[0.2em]">BOOKING<span className="text-amber-500">AI</span>LAB</Link>
-          <div className="flex items-center gap-5 text-sm font-semibold text-slate-500"><Link href="/my-bookings" className="hover:text-slate-950">จัดการการจอง</Link><Link href="/admin" className="hover:text-slate-950">ผู้ดูแลระบบ</Link></div>
-        </nav>
+    <main className="min-h-screen bg-[#f3f6fa] text-[#0b1324]">
+      <div className="mx-auto max-w-[1440px] px-4 py-5 sm:px-7 sm:py-7 lg:px-10">
+        <PublicBookingNav />
 
-        <header className="mt-12 grid gap-6 border-b border-slate-200 pb-9 lg:grid-cols-[1fr_auto] lg:items-end">
-          <div><p className="text-xs font-bold uppercase tracking-[0.28em] text-amber-600">AI LAB / SCHEDULE BOARD</p><h1 className="mt-4 max-w-4xl text-4xl font-semibold tracking-[-0.04em] sm:text-6xl">จองเครื่องคอม<br className="hidden sm:block" />ให้ตรงกับเวลาของคุณ</h1></div>
-          <p className="max-w-md text-sm leading-7 text-slate-600">ไม่ต้องเข้าสู่ระบบ กรอกรหัสนิสิตหรืออีเมล Google @msu.ac.th ที่มีอยู่ในระบบ แล้วเลือกหนึ่งใน 6 เครื่องได้ในหน้าเดียว</p>
+        <header className="mt-10 grid gap-6 border-b border-slate-200/80 pb-8 lg:grid-cols-[1fr_440px] lg:items-end">
+          <div>
+            <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-[0.18em] text-[#2563eb]">
+              <span className="h-px w-8 bg-[#2563eb]" aria-hidden="true" />
+              MSU AI LAB · WORKSTATION BOOKING
+            </div>
+            <h1 className="font-display mt-4 max-w-4xl text-[2.65rem] font-semibold leading-[1.08] tracking-[-0.045em] sm:text-6xl">
+              จองเครื่องใน AI Lab
+              <span className="ml-3 whitespace-nowrap text-[#2563eb]">6 เครื่อง</span>
+            </h1>
+          </div>
+          <p className="max-w-xl text-sm leading-7 text-slate-600 sm:text-base">
+            กรอกรหัสนิสิต เลือกวันและรอบเวลา จากนั้นเลือกเครื่องที่มีสถานะว่าง ระบบจะแสดงรหัสจัดการหลังยืนยันการจอง
+          </p>
         </header>
 
         <PublicBookingBoard dates={dates} initialOptions={options} initialMessage={initial.ok ? undefined : initial.message} />
