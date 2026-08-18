@@ -12,15 +12,20 @@ export default async function AdminDashboardPage() {
   const machines = await listMachineDashboard(supabase);
 
   return (
-    <main className="min-h-screen bg-[#f4f6f8] text-slate-950">
-      <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-12">
+    <main className="min-h-screen bg-[#f3f6fa] text-[#0b1324]">
+      <div className="mx-auto max-w-[1440px] px-4 py-5 sm:px-7 sm:py-7 lg:px-10">
         <AdminNav />
 
-        <section className="mt-16 max-w-3xl">
-          <p className="text-xs font-bold uppercase tracking-[0.28em] text-amber-600">Operations / live room view</p>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-6xl">ห้องคอมกำลังเป็นอย่างไร</h1>
-          <p className="mt-5 max-w-2xl text-base leading-8 text-slate-600">ดูว่าเครื่องไหนเชื่อมต่ออยู่และกำลัง Login ใน TimeLockApp โดยไม่ต้องไล่เช็กทีละเครื่อง</p>
-        </section>
+        <header className="mt-9 grid gap-6 border-b border-slate-200/80 pb-8 lg:grid-cols-[1fr_430px] lg:items-end">
+          <div>
+            <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-[0.18em] text-[#2563eb]">
+              <span className="h-px w-8 bg-[#2563eb]" aria-hidden="true" />
+              LIVE ROOM MONITOR
+            </div>
+            <h1 className="font-display mt-4 max-w-4xl text-[2.65rem] font-semibold leading-[1.08] tracking-[-0.045em] sm:text-6xl">สถานะห้องคอม<br className="hidden sm:block" />แบบเรียลไทม์</h1>
+          </div>
+          <p className="max-w-xl text-sm leading-7 text-slate-600 sm:text-base">ดูการเชื่อมต่อ TimeLockApp ผู้ที่กำลัง Login และรายการจองปัจจุบันของเครื่องทั้ง 6 ในหน้าเดียว</p>
+        </header>
 
         <MachineDashboard machines={machines} />
       </div>
