@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { MachineDashboard } from "@/components/admin/machine-dashboard";
+import { LogoutButton } from "@/components/auth/logout-button";
 import { requireUniversityUser } from "@/lib/auth/profile";
 import { listMachineDashboard } from "@/lib/machines/queries";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -23,9 +24,10 @@ export default async function AdminDashboardPage() {
       <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-12">
         <nav className="flex items-center justify-between">
           <Link href="/" className="text-sm font-bold tracking-[0.2em] text-slate-950">BOOKING<span className="text-amber-500">AI</span>LAB</Link>
-          <div className="flex gap-4 text-sm font-semibold text-slate-500">
+          <div className="flex items-center gap-4 text-sm font-semibold text-slate-500">
             <Link href="/admin/settings" className="hover:text-slate-950">ตั้งค่า</Link>
             <Link href="/" className="hover:text-slate-950">หน้าหลัก</Link>
+            <LogoutButton />
           </div>
         </nav>
 

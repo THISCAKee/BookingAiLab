@@ -4,6 +4,7 @@ import { ensureCustomerProfile, requireUniversityUser } from "@/lib/auth/profile
 import { listMyBookings } from "@/lib/booking/queries";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { BookingStatus } from "@/components/booking/booking-status";
+import { LogoutButton } from "@/components/auth/logout-button";
 
 const bangkokDateTime = new Intl.DateTimeFormat("th-TH", {
   timeZone: "Asia/Bangkok",
@@ -30,9 +31,12 @@ export default async function MyBookingsPage() {
           <Link href="/" className="text-sm font-bold tracking-[0.2em] text-slate-950">
             BOOKING<span className="text-amber-500">AI</span>LAB
           </Link>
-          <Link href="/booking" className="text-sm font-semibold text-slate-500 hover:text-slate-950">
-            จองเครื่องเพิ่ม
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/booking" className="text-sm font-semibold text-slate-500 hover:text-slate-950">
+              จองเครื่องเพิ่ม
+            </Link>
+            <LogoutButton />
+          </div>
         </nav>
 
         <section className="mt-16">

@@ -4,6 +4,7 @@ import { ensureCustomerProfile, requireUniversityUser } from "@/lib/auth/profile
 import { listAvailableMachines } from "@/lib/booking/queries";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { MachineCard } from "@/components/booking/machine-card";
+import { LogoutButton } from "@/components/auth/logout-button";
 
 export default async function BookingPage() {
   const supabase = await createSupabaseServerClient();
@@ -24,9 +25,10 @@ export default async function BookingPage() {
           <Link href="/" className="text-sm font-bold tracking-[0.2em] text-slate-950">
             BOOKING<span className="text-amber-500">AI</span>LAB
           </Link>
-          <div className="flex gap-4 text-sm font-semibold text-slate-500">
+          <div className="flex items-center gap-4 text-sm font-semibold text-slate-500">
             <Link href="/my-bookings" className="hover:text-slate-950">การจองของฉัน</Link>
             <Link href="/" className="hover:text-slate-950">หน้าหลัก</Link>
+            <LogoutButton />
           </div>
         </nav>
 

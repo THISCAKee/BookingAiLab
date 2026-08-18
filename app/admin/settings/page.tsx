@@ -4,6 +4,7 @@ import { requireUniversityUser } from "@/lib/auth/profile";
 import { getBookingSettings } from "@/lib/booking/settings";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { BookingSettingsForm } from "@/components/admin/booking-settings-form";
+import { LogoutButton } from "@/components/auth/logout-button";
 
 export default async function AdminSettingsPage() {
   const supabase = await createSupabaseServerClient();
@@ -25,10 +26,11 @@ export default async function AdminSettingsPage() {
       <div className="mx-auto max-w-4xl px-5 py-8 sm:px-8 sm:py-12">
         <nav className="flex items-center justify-between">
           <Link href="/" className="text-sm font-bold tracking-[0.2em] text-slate-950">BOOKING<span className="text-amber-500">AI</span>LAB</Link>
-          <div className="flex gap-4 text-sm font-semibold text-slate-500">
+          <div className="flex items-center gap-4 text-sm font-semibold text-slate-500">
             <Link href="/admin/dashboard" className="hover:text-slate-950">Dashboard</Link>
             <Link href="/booking" className="hover:text-slate-950">Booking</Link>
             <Link href="/" className="hover:text-slate-950">หน้าหลัก</Link>
+            <LogoutButton />
           </div>
         </nav>
 
