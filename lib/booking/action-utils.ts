@@ -14,8 +14,12 @@ const bookingErrorMessages: Record<string, string> = {
   MACHINE_UNAVAILABLE: "เครื่องนี้ไม่ว่างแล้ว กรุณาเลือกเครื่องอื่น",
   BOOKING_ALREADY_ACTIVE: "คุณยังมีการจองที่ไม่สิ้นสุดอยู่ ไม่สามารถจองซ้ำได้",
   BOOKING_CONFLICT: "มีผู้จองเครื่องนี้พร้อมกัน กรุณาเลือกเครื่องอื่น",
+  BOOKING_REQUEST_NOT_ALLOWED: "ตรวจสอบรหัสนิสิตหรืออีเมล วัน เวลา และเครื่องที่เลือกอีกครั้ง",
+  BOOKING_DATE_NOT_ALLOWED: "เลือกจองได้เฉพาะวันนี้หรือพรุ่งนี้",
+  BOOKING_ACCESS_DENIED: "ไม่พบรายการจองหรือรหัสจัดการไม่ถูกต้อง",
   BOOKING_NOT_FOUND: "ไม่พบรายการจองนี้",
   BOOKING_CANCELLATION_NOT_ALLOWED: "รายการนี้ไม่สามารถยกเลิกได้แล้ว",
+  ADMIN_REQUIRED: "บัญชีนี้ไม่มีสิทธิ์ผู้ดูแลระบบ",
 };
 
 export function normalizeDisplayName(user: ActionUser) {
@@ -38,6 +42,42 @@ export function validateMachineId(input: unknown) {
   }
 
   return input.trim();
+}
+
+export function validateScheduledBookingInput(input: {
+  identity: unknown;
+  machineId: unknown;
+  startAt: unknown;
+}) {
+  const identity = typeof input.identity === "string" ? input.identity.trim() : "";
+  const machineId = validateMachineId(input.machineId);
+  const startAt = typeof input.startAt === "string" ? input.startAt.trim() : "";
+  const parsedStart = new Date(startAt);
+
+  if (
+    !identity ||
+    !machineId ||
+    !startAt ||
+    Number.isNaN(parsedStart.getTime()) ||
+    !(/^\d+$/.test(identity) || /^[^@\s]+@msu\.ac\.th$/i.test(identity))
+  ) {
+    return null;
+  }
+
+  return { identity, machineId, startAt: parsedStart.toISOString() };
+}
+
+export function normalizeManagementCredentials(
+  bookingNumberInput: unknown,
+  manageCodeInput: unknown,
+) {
+  const bookingNumber =
+    typeof bookingNumberInput === "string" ? bookingNumberInput.trim().toUpperCase() : "";
+  const manageCode =
+    typeof manageCodeInput === "string" ? manageCodeInput.trim().toUpperCase() : "";
+
+  if (!bookingNumber || !manageCode) return null;
+  return { bookingNumber, manageCode };
 }
 
 export function getBookingErrorMessage(error: unknown) {

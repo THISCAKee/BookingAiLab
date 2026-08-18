@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { signOutUser } from "@/lib/auth/logout";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
-export function LogoutButton() {
+export function LogoutButton({ redirectTo = "/login" }: { redirectTo?: string }) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -23,7 +23,7 @@ export function LogoutButton() {
       return;
     }
 
-    router.replace("/login");
+    router.replace(redirectTo);
     router.refresh();
   }
 

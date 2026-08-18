@@ -1,8 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { isAllowedUniversityEmail } from "@/lib/auth/domain";
-
-const protectedPrefixes = ["/booking", "/my-bookings", "/admin"];
+const protectedPrefixes = ["/admin/dashboard", "/admin/bookings", "/admin/settings", "/admin/machines"];
 
 function isProtectedPath(pathname: string) {
   return protectedPrefixes.some(
@@ -38,17 +36,9 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (user && !isAllowedUniversityEmail(user.email)) {
-    await supabase.auth.signOut();
-    const unauthorizedUrl = request.nextUrl.clone();
-    unauthorizedUrl.pathname = "/auth/unauthorized";
-    unauthorizedUrl.search = "";
-    return NextResponse.redirect(unauthorizedUrl);
-  }
-
   if (isProtectedPath(request.nextUrl.pathname) && !user) {
     const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/login";
+    loginUrl.pathname = "/admin";
     loginUrl.search = "";
     return NextResponse.redirect(loginUrl);
   }

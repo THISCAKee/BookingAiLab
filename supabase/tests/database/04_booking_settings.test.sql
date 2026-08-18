@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(12);
+select plan(11);
 
 select has_table(
   'public',
@@ -43,6 +43,8 @@ select is(
   'default timezone is Bangkok'
 );
 
+update public.admin_profiles set is_active = false;
+
 insert into auth.users (
   id, instance_id, aud, role, email, encrypted_password,
   email_confirmed_at, created_at, updated_at,
@@ -54,18 +56,10 @@ insert into auth.users (
     'authenticated', 'authenticated', 'settings.admin@msu.ac.th', '',
     now(), now(), now(),
     '{"provider":"google","providers":["google"]}', '{}'
-  ),
-  (
-    '12000000-0000-0000-0000-000000000002',
-    '00000000-0000-0000-0000-000000000000',
-    'authenticated', 'authenticated', 'settings.super@msu.ac.th', '',
-    now(), now(), now(),
-    '{"provider":"google","providers":["google"]}', '{}'
   );
 
-insert into public.admin_profiles (auth_user_id, role, is_active) values
-  ('12000000-0000-0000-0000-000000000001', 'admin', true),
-  ('12000000-0000-0000-0000-000000000002', 'super_admin', true);
+insert into public.admin_profiles (auth_user_id, is_active) values
+  ('12000000-0000-0000-0000-000000000001', true);
 
 set local role authenticated;
 select set_config(
@@ -81,22 +75,12 @@ select results_eq(
 );
 select lives_ok(
   $$update public.booking_settings set duration_minutes = 120$$,
-  'ordinary admin update does not pass RLS'
+  'the active admin can update booking settings'
 );
 select is(
   (select duration_minutes from public.booking_settings limit 1),
-  180,
-  'ordinary admin cannot change booking settings'
-);
-
-select set_config(
-  'request.jwt.claim.sub',
-  '12000000-0000-0000-0000-000000000002',
-  true
-);
-select lives_ok(
-  $$update public.booking_settings set duration_minutes = 120$$,
-  'super admin can update booking settings'
+  120,
+  'the settings update is persisted'
 );
 
 do $$

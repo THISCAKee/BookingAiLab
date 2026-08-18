@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { isAllowedUniversityEmail } from "@/lib/auth/domain";
+import { requireActiveAdmin } from "@/lib/auth/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { validateBookingSettings } from "@/lib/booking/settings";
 
@@ -20,23 +20,7 @@ export async function updateBookingSettingsAction(
 ): Promise<SettingsFormState> {
   try {
     const supabase = await createSupabaseServerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user || !isAllowedUniversityEmail(user.email)) {
-      return { ok: false, message: "กรุณาเข้าสู่ระบบด้วยอีเมลมหาวิทยาลัย" };
-    }
-
-    const { data: profile } = await supabase
-      .from("admin_profiles")
-      .select("role, is_active")
-      .eq("auth_user_id", user.id)
-      .maybeSingle();
-
-    if (!profile?.is_active || profile.role !== "super_admin") {
-      return { ok: false, message: "เฉพาะ Super Admin เท่านั้นที่แก้ไข Settings ได้" };
-    }
+    await requireActiveAdmin(supabase);
 
     const validation = validateBookingSettings({
       serviceWeekdays: formData

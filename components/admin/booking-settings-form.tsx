@@ -81,9 +81,7 @@ export function BookingSettingsForm({
         </label>
       </fieldset>
 
-      {!canEdit ? (
-        <p className="rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-600">คุณมีสิทธิ์ดู Settings แต่เฉพาะ Super Admin เท่านั้นที่แก้ไขได้</p>
-      ) : (
+      {!canEdit ? null : (
         <button type="submit" disabled={isPending} className="rounded-xl bg-slate-950 px-5 py-3 font-semibold text-white transition hover:bg-amber-500 hover:text-slate-950 focus:outline-none focus:ring-4 focus:ring-amber-200 disabled:cursor-wait disabled:opacity-60">
           {isPending ? "กำลังบันทึก..." : "บันทึก Settings"}
         </button>

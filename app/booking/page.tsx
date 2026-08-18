@@ -1,57 +1,31 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { ensureCustomerProfile, requireUniversityUser } from "@/lib/auth/profile";
-import { listAvailableMachines } from "@/lib/booking/queries";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { MachineCard } from "@/components/booking/machine-card";
-import { LogoutButton } from "@/components/auth/logout-button";
+import { PublicBookingBoard } from "@/components/booking/public-booking-board";
+import { getPublicBookingOptions, type PublicBookingOptions } from "@/lib/booking/actions";
+import { getSelectableBookingDates } from "@/lib/booking/schedule";
+
+export const dynamic = "force-dynamic";
 
 export default async function BookingPage() {
-  const supabase = await createSupabaseServerClient();
-  let machines;
-
-  try {
-    const user = await requireUniversityUser(supabase);
-    await ensureCustomerProfile(supabase, user);
-    machines = await listAvailableMachines(supabase);
-  } catch {
-    redirect("/login");
-  }
+  const dates = getSelectableBookingDates();
+  const initial = await getPublicBookingOptions(dates[0].value);
+  const options: PublicBookingOptions = initial.ok
+    ? initial.data
+    : { date: dates[0].value, slots: [] };
 
   return (
     <main className="min-h-screen bg-[#f4f6f8] text-slate-950">
-      <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-12">
-        <nav className="flex items-center justify-between">
-          <Link href="/" className="text-sm font-bold tracking-[0.2em] text-slate-950">
-            BOOKING<span className="text-amber-500">AI</span>LAB
-          </Link>
-          <div className="flex items-center gap-4 text-sm font-semibold text-slate-500">
-            <Link href="/my-bookings" className="hover:text-slate-950">การจองของฉัน</Link>
-            <Link href="/" className="hover:text-slate-950">หน้าหลัก</Link>
-            <LogoutButton />
-          </div>
+      <div className="mx-auto max-w-7xl px-5 py-7 sm:px-8 sm:py-10">
+        <nav className="flex flex-wrap items-center justify-between gap-4">
+          <Link href="/" className="text-sm font-bold tracking-[0.2em]">BOOKING<span className="text-amber-500">AI</span>LAB</Link>
+          <div className="flex items-center gap-5 text-sm font-semibold text-slate-500"><Link href="/my-bookings" className="hover:text-slate-950">จัดการการจอง</Link><Link href="/admin" className="hover:text-slate-950">ผู้ดูแลระบบ</Link></div>
         </nav>
 
-        <section className="mt-16 max-w-3xl">
-          <p className="text-xs font-bold uppercase tracking-[0.28em] text-amber-600">Live availability</p>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950 sm:text-6xl">
-            เลือกเครื่องที่พร้อมใช้งาน
-          </h1>
-          <p className="mt-5 max-w-xl text-base leading-8 text-slate-600">
-            กดจองแล้วเริ่มใช้งานได้ทันที รอบละ 3 ชั่วโมง ระบบจะเลือกเวลาเริ่มจากเวลาปัจจุบันให้โดยอัตโนมัติ
-          </p>
-        </section>
+        <header className="mt-12 grid gap-6 border-b border-slate-200 pb-9 lg:grid-cols-[1fr_auto] lg:items-end">
+          <div><p className="text-xs font-bold uppercase tracking-[0.28em] text-amber-600">AI LAB / SCHEDULE BOARD</p><h1 className="mt-4 max-w-4xl text-4xl font-semibold tracking-[-0.04em] sm:text-6xl">จองเครื่องคอม<br className="hidden sm:block" />ให้ตรงกับเวลาของคุณ</h1></div>
+          <p className="max-w-md text-sm leading-7 text-slate-600">ไม่ต้องเข้าสู่ระบบ กรอกรหัสนิสิตหรืออีเมล Google @msu.ac.th ที่มีอยู่ในระบบ แล้วเลือกหนึ่งใน 6 เครื่องได้ในหน้าเดียว</p>
+        </header>
 
-        <section className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3" aria-label="เครื่องที่ว่าง">
-          {machines.length > 0 ? (
-            machines.map((machine) => <MachineCard key={machine.id} machine={machine} />)
-          ) : (
-            <div className="col-span-full rounded-[1.75rem] border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
-              <p className="text-lg font-semibold text-slate-800">ยังไม่มีเครื่องว่างในขณะนี้</p>
-              <p className="mt-2 text-sm text-slate-500">ลองกลับมาตรวจสอบอีกครั้งเมื่อมีเครื่องพร้อมใช้งาน</p>
-            </div>
-          )}
-        </section>
+        <PublicBookingBoard dates={dates} initialOptions={options} initialMessage={initial.ok ? undefined : initial.message} />
       </div>
     </main>
   );

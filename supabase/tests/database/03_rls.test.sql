@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(15);
+select plan(14);
 
 select has_schema('private', 'private schema exists');
 select has_function(
@@ -9,11 +9,11 @@ select has_function(
   array[]::text[],
   'active admin helper exists'
 );
-select has_function(
+select hasnt_function(
   'private',
   'is_super_admin',
   array[]::text[],
-  'super admin helper exists'
+  'role-based super admin helper was removed'
 );
 select is(
   (select relrowsecurity from pg_class where oid = 'public.customer_profiles'::regclass),
@@ -30,6 +30,8 @@ select is(
   true,
   'app_credentials has RLS enabled'
 );
+
+update public.admin_profiles set is_active = false;
 
 insert into auth.users (
   id,
@@ -83,16 +85,6 @@ insert into auth.users (
     '',
     now(), now(), now(),
     '{"provider":"google","providers":["google"]}', '{}'
-  ),
-  (
-    '11000000-0000-0000-0000-000000000005',
-    '00000000-0000-0000-0000-000000000000',
-    'authenticated',
-    'authenticated',
-    'super.admin@msu.ac.th',
-    '',
-    now(), now(), now(),
-    '{"provider":"google","providers":["google"]}', '{}'
   );
 
 insert into public.customer_profiles (
@@ -114,10 +106,9 @@ insert into public.customer_profiles (
     'Customer Two'
   );
 
-insert into public.admin_profiles (auth_user_id, role, is_active) values
-  ('11000000-0000-0000-0000-000000000003', 'admin', true),
-  ('11000000-0000-0000-0000-000000000004', 'admin', false),
-  ('11000000-0000-0000-0000-000000000005', 'super_admin', true);
+insert into public.admin_profiles (auth_user_id, is_active) values
+  ('11000000-0000-0000-0000-000000000003', true),
+  ('11000000-0000-0000-0000-000000000004', false);
 
 insert into public.machines (
   id,
@@ -244,8 +235,8 @@ select results_eq(
 );
 select throws_ok(
   $$
-    insert into public.admin_profiles (auth_user_id, role)
-    values ('11000000-0000-0000-0000-000000000002', 'admin')
+    insert into public.admin_profiles (auth_user_id)
+    values ('11000000-0000-0000-0000-000000000002')
   $$,
   '42501',
   null,
@@ -261,19 +252,6 @@ select results_eq(
   $$select count(*)::bigint from public.customer_profiles$$,
   array[0::bigint],
   'inactive admin receives no admin visibility'
-);
-
-select set_config(
-  'request.jwt.claim.sub',
-  '11000000-0000-0000-0000-000000000005',
-  true
-);
-select lives_ok(
-  $$
-    insert into public.admin_profiles (auth_user_id, role)
-    values ('11000000-0000-0000-0000-000000000002', 'admin')
-  $$,
-  'super admin can grant admin access'
 );
 
 do $$
