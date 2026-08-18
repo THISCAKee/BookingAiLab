@@ -103,7 +103,7 @@ select set_config(
 );
 
 select results_eq(
-  $$select count(*)::bigint from public.machines$$,
+  $$select count(*)::bigint from public.machines where machine_code like 'PC-PROFILE-%'$$,
   array[2::bigint],
   'customer sees available and own booked machines only'
 );

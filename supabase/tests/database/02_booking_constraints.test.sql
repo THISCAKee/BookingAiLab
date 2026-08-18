@@ -70,15 +70,15 @@ insert into public.machines (
 ) values
   (
     '30000000-0000-0000-0000-000000000001',
-    'PC-001',
-    'PC 001',
+    'PC-CONSTRAINT-001',
+    'Constraint PC 001',
     'hash-001',
     'available'
   ),
   (
     '30000000-0000-0000-0000-000000000002',
-    'PC-002',
-    'PC 002',
+    'PC-CONSTRAINT-002',
+    'Constraint PC 002',
     'hash-002',
     'available'
   );

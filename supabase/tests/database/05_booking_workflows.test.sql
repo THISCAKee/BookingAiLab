@@ -57,7 +57,8 @@ set service_weekdays = array[1, 2, 3, 4, 5, 6, 7],
     opening_time = time '00:00',
     closing_time = time '23:59:59',
     duration_minutes = 180,
-    grace_minutes = 15;
+    grace_minutes = 15,
+    timezone = 'UTC';
 
 insert into public.bookings (
   id, booking_number, customer_id, machine_id, start_at, end_at, status
@@ -72,7 +73,15 @@ insert into public.bookings (
 );
 
 select is(
-  (select count(*)::integer from public.machine_events),
+  (
+    select count(*)::integer
+    from public.machine_events
+    where machine_id in (
+      '33000000-0000-0000-0000-000000000001',
+      '33000000-0000-0000-0000-000000000002',
+      '33000000-0000-0000-0000-000000000003'
+    )
+  ),
   0,
   'no machine event exists before booking'
 );

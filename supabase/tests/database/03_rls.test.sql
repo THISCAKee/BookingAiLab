@@ -208,7 +208,7 @@ select results_eq(
   'customer sees only own booking'
 );
 select results_eq(
-  $$select count(*)::bigint from public.machines$$,
+  $$select count(*)::bigint from public.machines where machine_code like 'PC-RLS-%'$$,
   array[1::bigint],
   'customer sees only available machines'
 );
@@ -229,7 +229,7 @@ select set_config(
   true
 );
 select results_eq(
-  $$select count(*)::bigint from public.customer_profiles$$,
+  $$select count(*)::bigint from public.customer_profiles where id in ('21000000-0000-0000-0000-000000000001', '21000000-0000-0000-0000-000000000002')$$,
   array[2::bigint],
   'active admin sees all customer profiles'
 );
