@@ -26,6 +26,7 @@ export default async function AdminSettingsPage() {
         <nav className="flex items-center justify-between">
           <Link href="/" className="text-sm font-bold tracking-[0.2em] text-slate-950">BOOKING<span className="text-amber-500">AI</span>LAB</Link>
           <div className="flex gap-4 text-sm font-semibold text-slate-500">
+            <Link href="/admin/dashboard" className="hover:text-slate-950">Dashboard</Link>
             <Link href="/booking" className="hover:text-slate-950">Booking</Link>
             <Link href="/" className="hover:text-slate-950">หน้าหลัก</Link>
           </div>

@@ -27,16 +27,40 @@ POST /api/machines/register
 POST /api/machines/heartbeat
 ```
 
+ใช้สำหรับรายงานสถานะปัจจุบันของ TimeLockApp ทุก 15–30 วินาที โดยส่ง Device Token ผ่าน
+`x-device-token` header เท่านั้น ระบบจะถือว่าเครื่องยัง Online เมื่อได้รับ heartbeat ล่าสุดไม่เกิน
+45 วินาที และจะแสดงเป็น Offline/Stale หลังจากนั้น
+
 Request:
 
 ```json
 {
   "machineCode": "PC-001",
+  "username": "student01",
+  "sessionStatus": "logged_in",
   "appVersion": "1.0.0",
   "osVersion": "Windows",
   "reportedAt": "2026-08-20T09:55:00+07:00"
 }
 ```
+
+`sessionStatus` รองรับ `logged_in`, `logged_out` และ `idle` เมื่อเป็น `logged_out` ให้ส่ง
+`username` เป็นค่าว่างหรือ `null` ได้
+
+Response สำเร็จ:
+
+```json
+{
+  "ok": true,
+  "machine": {
+    "machineId": "machine-id",
+    "machineCode": "PC-001",
+    "receivedAt": "2026-08-20T02:55:00.000Z"
+  }
+}
+```
+
+ข้อผิดพลาดหลัก: `INVALID_HEARTBEAT`, `MACHINE_TOKEN_INVALID`, `USERNAME_REQUIRED`
 
 ### ดึง Event ของเครื่อง
 
