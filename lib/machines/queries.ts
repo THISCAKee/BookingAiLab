@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { deriveMachineConnectionStatus, type MachineSessionStatus } from "@/lib/machines/presence";
+import { deriveMachineConnectionStatus, deriveTimelockStatus, type MachineSessionStatus, type TimelockOperationalStatus } from "@/lib/machines/presence";
 
 export type MachineDashboardRow = {
   id: string;
@@ -8,6 +8,7 @@ export type MachineDashboardRow = {
   location: string | null;
   machineStatus: string;
   connectionStatus: "online" | "stale";
+  operationalStatus: TimelockOperationalStatus;
   sessionStatus: MachineSessionStatus;
   username: string | null;
   lastSeenAt: string | null;
@@ -51,6 +52,7 @@ export async function listMachineDashboard(
     const currentPresence = presenceByMachine.get(machine.id);
     const booking = bookingByMachine.get(machine.id);
 
+    const sessionStatus = (currentPresence?.session_status ?? "logged_out") as MachineSessionStatus;
     return {
       id: machine.id,
       machineCode: machine.machine_code,
@@ -58,7 +60,8 @@ export async function listMachineDashboard(
       location: machine.location,
       machineStatus: machine.status,
       connectionStatus: deriveMachineConnectionStatus(currentPresence?.last_seen_at, now),
-      sessionStatus: (currentPresence?.session_status ?? "logged_out") as MachineSessionStatus,
+      operationalStatus: deriveTimelockStatus(currentPresence?.last_seen_at, sessionStatus, now),
+      sessionStatus,
       username: currentPresence?.username ?? null,
       lastSeenAt: currentPresence?.last_seen_at ?? null,
       reportedAt: currentPresence?.reported_at ?? null,
@@ -74,4 +77,26 @@ export async function listMachineDashboard(
         : null,
     } satisfies MachineDashboardRow;
   });
+}
+
+export type TimelockSyncHealth = {
+  lastSuccessAt: string | null;
+  lastError: string | null;
+  syncedRowCount: number;
+  pendingOutboxCount: number;
+};
+
+export async function getTimelockSyncHealth(supabase: SupabaseClient): Promise<TimelockSyncHealth | null> {
+  const { data, error } = await supabase
+    .from("timelock_sync_state")
+    .select("last_success_at, last_error, synced_row_count, pending_outbox_count")
+    .eq("singleton", true)
+    .maybeSingle();
+  if (error || !data) return null;
+  return {
+    lastSuccessAt: data.last_success_at,
+    lastError: data.last_error,
+    syncedRowCount: data.synced_row_count,
+    pendingOutboxCount: data.pending_outbox_count,
+  };
 }

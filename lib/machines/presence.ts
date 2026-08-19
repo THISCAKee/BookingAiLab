@@ -2,6 +2,7 @@ export const HEARTBEAT_STALE_AFTER_SECONDS = 45;
 
 export type MachineSessionStatus = "logged_in" | "logged_out" | "idle";
 export type MachineConnectionStatus = "online" | "stale";
+export type TimelockOperationalStatus = "offline" | "online" | "active";
 
 export type MachineHeartbeatInput = {
   machineCode: unknown;
@@ -69,4 +70,13 @@ export function deriveMachineConnectionStatus(
 
   const ageSeconds = (now.getTime() - lastSeen.getTime()) / 1000;
   return ageSeconds <= HEARTBEAT_STALE_AFTER_SECONDS ? "online" : "stale";
+}
+
+export function deriveTimelockStatus(
+  lastSeenAt: string | null | undefined,
+  sessionStatus: MachineSessionStatus,
+  now = new Date(),
+): TimelockOperationalStatus {
+  if (deriveMachineConnectionStatus(lastSeenAt, now) === "stale") return "offline";
+  return sessionStatus === "logged_in" ? "active" : "online";
 }

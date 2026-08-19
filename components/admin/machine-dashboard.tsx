@@ -7,7 +7,7 @@ import {
   summarizeDashboardMachines,
   type DashboardFilter,
 } from "@/lib/machines/dashboard-view";
-import type { MachineDashboardRow } from "@/lib/machines/queries";
+import type { MachineDashboardRow, TimelockSyncHealth } from "@/lib/machines/queries";
 
 const sessionLabels = {
   logged_in: "กำลัง Login",
@@ -32,23 +32,23 @@ function formatTime(value: string | null) {
 }
 
 function connectionTone(machine: MachineDashboardRow) {
-  if (machine.connectionStatus === "stale") {
+  if (machine.operationalStatus === "offline") {
     return { rail: "bg-slate-300", dot: "bg-slate-300", label: "Offline", labelTone: "bg-slate-100 text-slate-600" };
   }
-  if (machine.sessionStatus === "logged_in") {
-    return { rail: "bg-[#16a34a]", dot: "bg-[#16a34a]", label: "Login", labelTone: "bg-emerald-50 text-emerald-700" };
+  if (machine.operationalStatus === "active") {
+    return { rail: "bg-[#16a34a]", dot: "bg-[#16a34a]", label: "Active", labelTone: "bg-emerald-50 text-emerald-700" };
   }
   return { rail: "bg-[#06b6d4]", dot: "bg-[#06b6d4]", label: "Online", labelTone: "bg-cyan-50 text-cyan-700" };
 }
 
-const filterCards: Array<{ key: DashboardFilter; label: string; countKey: "all" | "online" | "loggedIn" | "stale"; dot: string }> = [
+const filterCards: Array<{ key: DashboardFilter; label: string; countKey: "all" | "online" | "active" | "offline"; dot: string }> = [
   { key: "all", label: "เครื่องทั้งหมด", countKey: "all", dot: "bg-[#2563eb]" },
   { key: "online", label: "กำลัง Online", countKey: "online", dot: "bg-[#06b6d4]" },
-  { key: "logged_in", label: "กำลัง Login", countKey: "loggedIn", dot: "bg-[#16a34a]" },
-  { key: "stale", label: "Offline / Stale", countKey: "stale", dot: "bg-slate-300" },
+  { key: "active", label: "กำลังใช้งาน", countKey: "active", dot: "bg-[#16a34a]" },
+  { key: "offline", label: "Offline", countKey: "offline", dot: "bg-slate-300" },
 ];
 
-export function MachineDashboard({ machines }: { machines: MachineDashboardRow[] }) {
+export function MachineDashboard({ machines, syncHealth }: { machines: MachineDashboardRow[]; syncHealth: TimelockSyncHealth | null }) {
   const router = useRouter();
   const [filter, setFilter] = useState<DashboardFilter>("all");
 
@@ -92,6 +92,12 @@ export function MachineDashboard({ machines }: { machines: MachineDashboardRow[]
           <span className="h-2 w-2 animate-pulse rounded-full bg-[#16a34a]" aria-hidden="true" />
           รีเฟรชอัตโนมัติทุก 15 วินาที
         </span>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 rounded-xl border border-slate-200/80 bg-white/70 px-4 py-3 text-xs text-slate-500">
+        <span>Google Sheet: <strong className={syncHealth?.lastError ? "text-rose-600" : "text-slate-700"}>{syncHealth?.lastError ? "Sync มีปัญหา" : syncHealth?.lastSuccessAt ? formatTime(syncHealth.lastSuccessAt) : "ยังไม่เคย Sync"}</strong></span>
+        <span>บัญชีล่าสุด: <strong className="text-slate-700">{syncHealth?.syncedRowCount ?? 0}</strong></span>
+        <span>รอเขียนกลับ: <strong className={syncHealth?.pendingOutboxCount ? "text-amber-600" : "text-slate-700"}>{syncHealth?.pendingOutboxCount ?? 0}</strong></span>
       </div>
 
       {visibleMachines.length > 0 ? (

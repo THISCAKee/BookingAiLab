@@ -13,6 +13,7 @@ const machines: MachineDashboardRow[] = [
     location: "AI Lab",
     machineStatus: "available",
     connectionStatus: "online",
+    operationalStatus: "active",
     sessionStatus: "logged_in",
     username: "student@msu.ac.th",
     lastSeenAt: "2026-08-18T16:00:00.000Z",
@@ -28,6 +29,7 @@ const machines: MachineDashboardRow[] = [
     location: "AI Lab",
     machineStatus: "available",
     connectionStatus: "online",
+    operationalStatus: "online",
     sessionStatus: "idle",
     username: null,
     lastSeenAt: "2026-08-18T16:00:00.000Z",
@@ -43,6 +45,7 @@ const machines: MachineDashboardRow[] = [
     location: "AI Lab",
     machineStatus: "maintenance",
     connectionStatus: "stale",
+    operationalStatus: "offline",
     sessionStatus: "logged_out",
     username: null,
     lastSeenAt: null,
@@ -57,16 +60,16 @@ describe("admin dashboard view", () => {
   it("summarizes the live room state independently", () => {
     expect(summarizeDashboardMachines(machines)).toEqual({
       all: 3,
-      online: 2,
-      loggedIn: 1,
-      stale: 1,
+      online: 1,
+      active: 1,
+      offline: 1,
     });
   });
 
   it("filters machines by connection and login state", () => {
-    expect(filterDashboardMachines(machines, "online").map((machine) => machine.id)).toEqual(["machine-1", "machine-2"]);
-    expect(filterDashboardMachines(machines, "logged_in").map((machine) => machine.id)).toEqual(["machine-1"]);
-    expect(filterDashboardMachines(machines, "stale").map((machine) => machine.id)).toEqual(["machine-3"]);
+    expect(filterDashboardMachines(machines, "online").map((machine) => machine.id)).toEqual(["machine-2"]);
+    expect(filterDashboardMachines(machines, "active").map((machine) => machine.id)).toEqual(["machine-1"]);
+    expect(filterDashboardMachines(machines, "offline").map((machine) => machine.id)).toEqual(["machine-3"]);
     expect(filterDashboardMachines(machines, "all").map((machine) => machine.id)).toEqual(["machine-1", "machine-2", "machine-3"]);
   });
 });
