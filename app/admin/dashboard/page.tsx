@@ -2,14 +2,17 @@ import { redirect } from "next/navigation";
 import { MachineDashboard } from "@/components/admin/machine-dashboard";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { requireActiveAdmin } from "@/lib/auth/admin";
-import { listMachineDashboard } from "@/lib/machines/queries";
+import { getTimelockSyncHealth, listMachineDashboard } from "@/lib/machines/queries";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function AdminDashboardPage() {
   const supabase = await createSupabaseServerClient();
   await requireActiveAdmin(supabase).catch(() => redirect("/admin"));
 
-  const machines = await listMachineDashboard(supabase);
+  const [machines, syncHealth] = await Promise.all([
+    listMachineDashboard(supabase),
+    getTimelockSyncHealth(supabase),
+  ]);
 
   return (
     <main className="min-h-screen bg-[#f3f6fa] text-[#0b1324]">
@@ -27,7 +30,7 @@ export default async function AdminDashboardPage() {
           <p className="max-w-xl text-sm leading-7 text-slate-600 sm:text-base">ดูการเชื่อมต่อ TimeLockApp ผู้ที่กำลัง Login และรายการจองปัจจุบันของเครื่องทั้ง 6 ในหน้าเดียว</p>
         </header>
 
-        <MachineDashboard machines={machines} />
+        <MachineDashboard machines={machines} syncHealth={syncHealth} />
       </div>
     </main>
   );

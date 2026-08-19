@@ -1,13 +1,13 @@
 import type { MachineDashboardRow } from "@/lib/machines/queries";
 
-export type DashboardFilter = "all" | "online" | "logged_in" | "stale";
+export type DashboardFilter = "all" | "online" | "active" | "offline";
 
 export function summarizeDashboardMachines(machines: MachineDashboardRow[]) {
   return {
     all: machines.length,
-    online: machines.filter((machine) => machine.connectionStatus === "online").length,
-    loggedIn: machines.filter((machine) => machine.sessionStatus === "logged_in").length,
-    stale: machines.filter((machine) => machine.connectionStatus === "stale").length,
+    online: machines.filter((machine) => machine.operationalStatus === "online").length,
+    active: machines.filter((machine) => machine.operationalStatus === "active").length,
+    offline: machines.filter((machine) => machine.operationalStatus === "offline").length,
   };
 }
 
@@ -15,8 +15,6 @@ export function filterDashboardMachines(
   machines: MachineDashboardRow[],
   filter: DashboardFilter,
 ) {
-  if (filter === "online") return machines.filter((machine) => machine.connectionStatus === "online");
-  if (filter === "logged_in") return machines.filter((machine) => machine.sessionStatus === "logged_in");
-  if (filter === "stale") return machines.filter((machine) => machine.connectionStatus === "stale");
+  if (filter !== "all") return machines.filter((machine) => machine.operationalStatus === filter);
   return machines;
 }
