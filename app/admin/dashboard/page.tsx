@@ -5,6 +5,8 @@ import { requireActiveAdmin } from "@/lib/auth/admin";
 import { getTimelockSyncHealth, listMachineDashboard } from "@/lib/machines/queries";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminDashboardPage() {
   const supabase = await createSupabaseServerClient();
   await requireActiveAdmin(supabase).catch(() => redirect("/admin"));

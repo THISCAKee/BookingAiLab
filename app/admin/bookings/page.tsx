@@ -4,6 +4,8 @@ import { AdminCancelBookingButton } from "@/components/admin/admin-cancel-bookin
 import { requireActiveAdmin } from "@/lib/auth/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 const dateTime = new Intl.DateTimeFormat("th-TH", { timeZone: "Asia/Bangkok", dateStyle: "short", timeStyle: "short" });
 const allowedStatuses = ["all", "confirmed", "app_pending", "app_received", "active", "completed", "cancelled", "expired"];
 

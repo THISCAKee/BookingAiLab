@@ -5,6 +5,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { BookingSettingsForm } from "@/components/admin/booking-settings-form";
 import { AdminNav } from "@/components/admin/admin-nav";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminSettingsPage() {
   const supabase = await createSupabaseServerClient();
   await requireActiveAdmin(supabase).catch(() => redirect("/admin"));

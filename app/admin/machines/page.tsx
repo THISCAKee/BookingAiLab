@@ -4,6 +4,8 @@ import { MachineAdminCard } from "@/components/admin/machine-admin-card";
 import { requireActiveAdmin } from "@/lib/auth/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminMachinesPage() {
   const supabase = await createSupabaseServerClient();
   await requireActiveAdmin(supabase).catch(() => redirect("/admin"));
