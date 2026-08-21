@@ -1,8 +1,63 @@
 const TABS = {
+  settings: 'Settings',
+  machines: 'Machines',
   bookings: 'Bookings',
   users: 'Users',
+  events: 'Events',
   audit: 'AuditLog',
+  loginLocks: 'LoginLocks',
 };
+
+const SHEET_HEADERS = {
+  Settings: ['Key', 'Value', 'UpdatedAt'],
+  Machines: ['machineId', 'machineCode', 'machineName', 'location', 'status', 'deviceTokenHash', 'lastSeenAt', 'updatedAt'],
+  Bookings: ['bookingId', 'bookingNumber', 'email', 'name', 'hd', 'emailPrefix', 'machineId', 'machineCode', 'startAt', 'endAt', 'status', 'manageCodeHash', 'createdAt', 'updatedAt', 'idempotencyKey'],
+  Users: ['userId', 'email', 'name', 'emailPrefix', 'username', 'role', 'machineCode', 'passwordAlgorithm', 'passwordIterations', 'passwordSalt', 'passwordHash', 'allowedMinutes', 'isActive', 'sourceBookingId', 'updatedAt'],
+  Events: ['eventId', 'eventType', 'sessionId', 'bookingId', 'machineCode', 'username', 'status', 'payload', 'createdAt', 'updatedAt'],
+  AuditLog: ['auditId', 'actorEmail', 'action', 'entityType', 'entityId', 'metadata', 'createdAt'],
+  LoginLocks: ['username', 'failedCount', 'lockedUntil', 'lastFailedAt', 'updatedAt'],
+};
+
+function initializeSpreadsheet() {
+  const spreadsheet = SpreadsheetApp.getActive();
+  const requiredTabs = Object.keys(SHEET_HEADERS);
+  const existing = requiredTabs.map(name => spreadsheet.getSheetByName(name)).filter(Boolean);
+  const hasData = existing.some(sheet => {
+    const values = sheet.getDataRange().getDisplayValues();
+    return values.some(row => row.some(value => String(value).trim() !== ''));
+  });
+  if (hasData) throw new Error('INITIALIZE_REQUIRES_BLANK_SPREADSHEET');
+
+  spreadsheet.setSpreadsheetTimeZone('Asia/Bangkok');
+  requiredTabs.forEach(name => {
+    const sheet = spreadsheet.getSheetByName(name) || spreadsheet.insertSheet(name);
+    sheet.clear();
+    const headers = SHEET_HEADERS[name];
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold').setBackground('#dbeafe');
+    sheet.setFrozenRows(1);
+  });
+
+  const now = new Date().toISOString();
+  const settings = [
+    ['serviceWeekdays', '1,2,3,4,5', now],
+    ['openingTime', '08:30', now],
+    ['closingTime', '16:30', now],
+    ['durationMinutes', '180', now],
+    ['graceMinutes', '15', now],
+    ['timezone', 'Asia/Bangkok', now],
+  ];
+  spreadsheet.getSheetByName(TABS.settings).getRange(2, 1, settings.length, settings[0].length).setValues(settings);
+
+  const machines = Array.from({ length: 6 }, (_, index) => {
+    const number = String(index + 1).padStart(3, '0');
+    return [Utilities.getUuid(), `PC-${number}`, `Workstation ${index + 1}`, 'AI Lab', 'available', '', '', now];
+  });
+  spreadsheet.getSheetByName(TABS.machines).getRange(2, 1, machines.length, machines[0].length).setValues(machines);
+  spreadsheet.getSheets().forEach(sheet => sheet.autoResizeColumns(1, sheet.getLastColumn()));
+
+  return { spreadsheetId: spreadsheet.getId(), spreadsheetUrl: spreadsheet.getUrl(), tabs: requiredTabs };
+}
 
 function json_(value) {
   return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(ContentService.MimeType.JSON);

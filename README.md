@@ -26,8 +26,12 @@
 1. ติดตั้ง dependencies ด้วย `npm install`
 2. ตั้งค่า Environment Variables ตาม `.env.example` โดยห้าม Commit Secret
 3. สร้าง Google OAuth redirect URI เป็น `/api/auth/google/callback`
-4. แชร์ Private Google Sheet ให้ service account ของ Backend
-5. Deploy Apps Script จาก `scripts/google-apps-script/Code.gs` และตั้งค่า shared secret
+4. สร้าง Google Sheet ใหม่แบบว่าง ห้ามใช้ Sheet ID เดิม
+5. เปิด Extensions → Apps Script แล้ววางโค้ดจาก `scripts/google-apps-script/Code.gs`
+6. รัน `initializeSpreadsheet()` หนึ่งครั้ง เพื่อสร้างทุกแท็บ, settings และเครื่อง `PC-001` ถึง `PC-006`
+7. ตั้ง Script Property ชื่อ `ATOMIC_MUTATION_SECRET` ให้ตรงกับ `GOOGLE_ATOMIC_MUTATION_SECRET`
+8. Deploy Apps Script เป็น Web app แล้วนำ URL ใส่ `GOOGLE_ATOMIC_MUTATION_URL`
+9. แชร์ Private Google Sheet ให้ service account ของ Backend และนำ Sheet ID ใหม่ใส่ `GOOGLE_SHEET_ID`
 
 ## Google Sheet tabs
 

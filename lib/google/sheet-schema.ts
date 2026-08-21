@@ -48,7 +48,7 @@ export function parseMachines(rows: readonly (readonly string[])[]): SheetMachin
       lastSeenAt: optional(valueAt(row, positions, "lastSeenAt")),
       updatedAt: valueAt(row, positions, "updatedAt"),
     };
-    if (!machine.machineId || !machine.machineCode || !machine.machineName || !MACHINE_STATUSES.has(status) || !machine.deviceTokenHash || !isIsoDate(machine.updatedAt) || (machine.lastSeenAt !== null && !isIsoDate(machine.lastSeenAt))) {
+    if (!machine.machineId || !machine.machineCode || !machine.machineName || !MACHINE_STATUSES.has(status) || !isIsoDate(machine.updatedAt) || (machine.lastSeenAt !== null && !isIsoDate(machine.lastSeenAt))) {
       throw new Error(`SHEET_MACHINE_INVALID:${sourceRow}`);
     }
     return [machine];

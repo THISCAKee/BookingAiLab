@@ -28,6 +28,14 @@ describe("Google Sheet schema", () => {
     ]);
   });
 
+  it("allows a new machine to start without a device token", () => {
+    const rows = [
+      MACHINE_HEADERS,
+      ["m-1", "PC-001", "Workstation 1", "AI Lab", "available", "", "", "2026-08-21T00:00:00.000Z"],
+    ];
+    expect(parseMachines(rows)[0].deviceTokenHash).toBe("");
+  });
+
   it("rejects missing headers and invalid booking rows", () => {
     expect(() => parseMachines([["bad"]])).toThrow("SHEET_HEADER_INVALID:Machines");
     expect(() =>
