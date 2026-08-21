@@ -4,7 +4,7 @@ export const MACHINE_HEADERS = [
   "machineId", "machineCode", "machineName", "location", "status", "deviceTokenHash", "lastSeenAt", "updatedAt",
 ] as const;
 export const BOOKING_HEADERS = [
-  "bookingId", "bookingNumber", "email", "name", "hd", "emailPrefix", "machineId", "machineCode", "startAt", "endAt", "status", "manageCodeHash", "createdAt", "updatedAt",
+  "bookingId", "bookingNumber", "email", "name", "hd", "emailPrefix", "machineId", "machineCode", "startAt", "endAt", "status", "manageCodeHash", "createdAt", "updatedAt", "idempotencyKey",
 ] as const;
 
 const MACHINE_STATUSES = new Set<MachineStatus>(["inactive", "available", "maintenance", "disabled"]);
@@ -77,6 +77,7 @@ export function parseBookings(rows: readonly (readonly string[])[]): SheetBookin
       manageCodeHash: valueAt(row, positions, "manageCodeHash"),
       createdAt: valueAt(row, positions, "createdAt"),
       updatedAt: valueAt(row, positions, "updatedAt"),
+      idempotencyKey: valueAt(row, positions, "idempotencyKey") || undefined,
     };
     const validEmail = /^[^@\s]+@msu\.ac\.th$/.test(booking.email);
     if (!booking.bookingId || !booking.bookingNumber || !validEmail || !booking.name || booking.hd !== "msu.ac.th" || booking.emailPrefix !== booking.email.split("@")[0] || !booking.machineId || !booking.machineCode || !isIsoDate(booking.startAt) || !isIsoDate(booking.endAt) || Date.parse(booking.startAt) >= Date.parse(booking.endAt) || !BOOKING_STATUSES.has(booking.status) || !booking.manageCodeHash || !isIsoDate(booking.createdAt) || !isIsoDate(booking.updatedAt)) {

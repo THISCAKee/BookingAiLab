@@ -36,4 +36,5 @@ export type SheetBooking = {
   manageCodeHash: string;
   createdAt: string;
   updatedAt: string;
+  idempotencyKey?: string;
 };

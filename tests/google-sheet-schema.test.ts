@@ -33,7 +33,7 @@ describe("Google Sheet schema", () => {
     expect(() =>
       parseBookings([
         BOOKING_HEADERS,
-        ["b-1", "BK-1", "student@msu.ac.th", "Student", "msu.ac.th", "student", "m-1", "PC-001", "bad", "", "confirmed", "hash", "", ""],
+        ["b-1", "BK-1", "student@msu.ac.th", "Student", "msu.ac.th", "student", "m-1", "PC-001", "bad", "", "confirmed", "hash", "", "", "request-1"],
       ]),
     ).toThrow("SHEET_BOOKING_INVALID:2");
   });
