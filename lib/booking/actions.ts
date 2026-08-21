@@ -46,7 +46,7 @@ export async function createScheduledBooking(input: { identity?: string; machine
     if (!machine) return { ok: false, message: "ไม่พบเครื่องที่เลือก" };
     const endAt = new Date(new Date(input.startAt).getTime() + settings.durationMinutes * 60_000).toISOString();
     assertSheetBookingAllowed({ machine, bookings, email: identity.email, startAt: input.startAt, endAt, settings });
-    const data = await createSheetBooking({ machineId: machine.machineId, startAt: input.startAt, idempotencyKey: randomUUID() }, identity);
+    const data = await createSheetBooking({ machineId: machine.machineId, startAt: input.startAt, endAt, idempotencyKey: randomUUID() }, identity);
     revalidatePath("/booking"); revalidatePath("/my-bookings");
     return { ok: true, data: { ...(data as CreatedBooking), machineCode: machine.machineCode, startAt: input.startAt, endAt, status: "confirmed" }, message: "จองเครื่องสำเร็จ" };
   } catch (error) { return { ok: false, message: getBookingErrorMessage(error) }; }

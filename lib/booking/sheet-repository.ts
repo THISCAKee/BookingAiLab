@@ -16,7 +16,7 @@ function atomicOptions(options: AtomicOptions) {
 }
 
 export async function createSheetBooking(
-  input: { machineId: string; startAt: string; idempotencyKey: string },
+  input: { machineId: string; startAt: string; endAt?: string; idempotencyKey: string },
   identity: GoogleIdentity,
   options: AtomicOptions = {},
 ) {
@@ -31,6 +31,7 @@ export async function createSheetBooking(
       payload: {
         machineId: input.machineId,
         startAt: input.startAt,
+        endAt: input.endAt,
         email: identity.email,
         name: identity.name,
         hd: identity.hd,
