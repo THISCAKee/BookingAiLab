@@ -78,8 +78,16 @@ export function PublicBookingBoard({
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300">รหัสจัดการ · แสดงครั้งเดียว</p>
               <p className="font-display mt-3 break-all text-2xl font-bold tracking-[0.12em]">{booking.manageCode}</p>
             </div>
+            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-600">ชื่อผู้ใช้ TimeLock</p>
+              <p className="font-display mt-3 break-all text-xl font-semibold">{booking.timelockUsername}</p>
+            </div>
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">รหัสผ่าน TimeLock · แสดงครั้งเดียว</p>
+              <p className="font-display mt-3 break-all text-xl font-bold tracking-[0.08em]">{booking.timelockPassword}</p>
+            </div>
           </div>
-          <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-600">ใช้ข้อมูลทั้งสองรายการเพื่อตรวจสอบหรือยกเลิกการจอง ระบบไม่สามารถแสดงรหัสจัดการนี้ซ้ำได้</p>
+          <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-600">ใช้ email prefix และรหัสผ่าน TimeLock เพื่อเข้าเครื่องที่จอง โปรดบันทึกรหัสจัดการและรหัสผ่านก่อนปิดหน้า เพราะระบบจะแสดงเพียงครั้งเดียว</p>
           <a href="/my-bookings" className="mt-6 inline-flex rounded-xl bg-[#2563eb] px-5 py-3 font-semibold text-white transition hover:bg-[#1d4ed8] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200">จัดการการจองนี้</a>
         </div>
       </section>

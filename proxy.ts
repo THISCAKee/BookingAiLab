@@ -1,5 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
-const protectedPrefixes = ["/booking", "/my-bookings", "/admin/dashboard", "/admin/bookings", "/admin/settings", "/admin/machines"];
+
+const protectedPrefixes = [
+  "/booking",
+  "/my-bookings",
+  "/admin/dashboard",
+  "/admin/bookings",
+  "/admin/settings",
+  "/admin/machines",
+];
 
 function isProtectedPath(pathname: string) {
   return protectedPrefixes.some(
@@ -7,7 +15,7 @@ function isProtectedPath(pathname: string) {
   );
 }
 
-export async function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const hasSessionCookie = Boolean(request.cookies.get("booking_session")?.value);
   if (isProtectedPath(request.nextUrl.pathname) && !hasSessionCookie) {
     const loginUrl = request.nextUrl.clone();

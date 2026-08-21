@@ -84,29 +84,16 @@ export function validateBookingSettings(
   };
 }
 
-export async function getBookingSettings(supabase: SupabaseClient) {
-  const { data, error } = await supabase
-    .from("booking_settings")
-    .select(
-      "id, service_weekdays, opening_time, closing_time, duration_minutes, grace_minutes, timezone, created_at, updated_at",
-    )
-    .eq("id", 1)
-    .single();
-
-  if (error) {
-    throw error;
-  }
-
+export async function getBookingSettings() {
+  const { getAdminBookingSettings } = await import("@/lib/admin/sheet-repository");
+  const data = await getAdminBookingSettings();
   return {
-    id: data.id,
-    serviceWeekdays: data.service_weekdays as number[],
-    openingTime: String(data.opening_time).slice(0, 5),
-    closingTime: String(data.closing_time).slice(0, 5),
-    durationMinutes: data.duration_minutes,
-    graceMinutes: data.grace_minutes,
+    id: 1,
+    serviceWeekdays: data.serviceWeekdays,
+    openingTime: data.openingTime,
+    closingTime: data.closingTime,
+    durationMinutes: data.durationMinutes,
+    graceMinutes: data.graceMinutes,
     timezone: data.timezone,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
   } satisfies BookingSettings;
 }
-import type { SupabaseClient } from "@supabase/supabase-js";

@@ -61,7 +61,7 @@ export default async function AdminLoginPage() {
               Admin access
             </div>
             <h1 className="font-display mt-4 text-4xl font-semibold tracking-[-0.035em]">เข้าสู่ระบบผู้ดูแล</h1>
-            <p className="mt-3 text-sm leading-7 text-slate-600">ใช้ชื่อผู้ใช้ <strong className="font-semibold text-[#0b1324]">admin</strong> และรหัสผ่านที่กำหนดไว้</p>
+            <p className="mt-3 text-sm leading-7 text-slate-600">ใช้บัญชี Google <strong className="font-semibold text-[#0b1324]">@msu.ac.th</strong> ที่อยู่ในรายการผู้ดูแลระบบ</p>
 
             <AdminLoginForm />
 

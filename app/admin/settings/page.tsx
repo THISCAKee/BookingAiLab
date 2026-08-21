@@ -1,15 +1,13 @@
 import { redirect } from "next/navigation";
-import { requireActiveAdmin } from "@/lib/auth/admin";
+import { requireAdminIdentity } from "@/lib/auth/identity";
 import { getBookingSettings } from "@/lib/booking/settings";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { BookingSettingsForm } from "@/components/admin/booking-settings-form";
 import { AdminNav } from "@/components/admin/admin-nav";
 
 export default async function AdminSettingsPage() {
-  const supabase = await createSupabaseServerClient();
-  await requireActiveAdmin(supabase).catch(() => redirect("/admin"));
+  await requireAdminIdentity().catch(() => redirect("/admin"));
 
-  const settings = await getBookingSettings(supabase);
+  const settings = await getBookingSettings();
 
   return (
     <main className="min-h-screen bg-[#f4f6f8] text-slate-950">

@@ -11,10 +11,13 @@ describe("Sheet booking repository", () => {
       url: "https://script.example.test/exec", secret: "secret", fetchImpl,
     });
 
-    expect(result).toEqual({ bookingId: "b-1" });
+    expect(result).toMatchObject({ bookingId: "b-1", timelockUsername: "student" });
+    expect(result.timelockPassword).toMatch(/^[A-Za-z0-9_-]{12}$/);
     expect(fetchImpl).toHaveBeenCalledWith("https://script.example.test/exec", expect.objectContaining({ method: "POST", cache: "no-store" }));
     const body = JSON.parse(fetchImpl.mock.calls[0][1].body as string);
-    expect(body).toMatchObject({ operation: "create_booking", idempotencyKey: "request-1", secret: "secret", payload: { machineId: "m-1", email: identity.email, hd: identity.hd, emailPrefix: identity.emailPrefix } });
+    expect(body).toMatchObject({ operation: "create_booking", idempotencyKey: "request-1", secret: "secret", payload: { machineId: "m-1", email: identity.email, hd: identity.hd, emailPrefix: identity.emailPrefix, account: { username: "student", passwordAlgorithm: "pbkdf2-sha256", passwordIterations: 600_000 } } });
+    expect(body.payload.account.passwordHash).toBeTruthy();
+    expect(body.payload.account.passwordSalt).toBeTruthy();
   });
 
   it("fails closed when atomic booking configuration is unavailable", async () => {

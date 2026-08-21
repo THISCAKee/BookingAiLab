@@ -17,29 +17,38 @@
 - [Design Spec](docs/booking-design-spec.md)
 - [API Contract](docs/booking-api-contract.md)
 
-## ขอบเขตเริ่มต้น
+## Backend
 
-โฟลเดอร์นี้เป็นเอกสารออกแบบสำหรับนำไปสร้างโปรเจกต์ Next.js ต่อบน MacBook ยังไม่มีโค้ดระบบ Production และยังไม่มี Secret ใด ๆ อยู่ในโฟลเดอร์นี้
+ระบบใช้ Google OAuth โดยตรงและใช้ Private Google Sheet เป็นแหล่งข้อมูลหลักทั้งหมด ไม่มีการใช้ Supabase ใน runtime
 
 ## การพัฒนาบน MacBook
 
-1. คัดลอกโฟลเดอร์ `BookingAiLab` ไปยังเครื่อง MacBook
-2. สร้าง Next.js App ภายในโฟลเดอร์นี้หรือตามโครงสร้างที่ทีมกำหนด
-3. ตั้งค่า Environment Variables จากไฟล์ตัวอย่างของระบบจริง โดยห้าม Commit Secret
-4. อ่าน Design Spec และ API Contract ก่อนเริ่มแก้ฐานข้อมูลหรือ WPF
+1. ติดตั้ง dependencies ด้วย `npm install`
+2. ตั้งค่า Environment Variables ตาม `.env.example` โดยห้าม Commit Secret
+3. สร้าง Google OAuth redirect URI เป็น `/api/auth/google/callback`
+4. แชร์ Private Google Sheet ให้ service account ของ Backend
+5. Deploy Apps Script จาก `scripts/google-apps-script/Code.gs` และตั้งค่า shared secret
+
+## Google Sheet tabs
+
+- `Settings`: `Key`, `Value`, `UpdatedAt`
+- `Machines`: `machineId`, `machineCode`, `machineName`, `location`, `status`, `deviceTokenHash`, `lastSeenAt`, `updatedAt`
+- `Bookings`: `bookingId`, `bookingNumber`, `email`, `name`, `hd`, `emailPrefix`, `machineId`, `machineCode`, `startAt`, `endAt`, `status`, `manageCodeHash`, `createdAt`, `updatedAt`, `idempotencyKey`
+- `Users`: `userId`, `email`, `name`, `emailPrefix`, `username`, `role`, `machineCode`, `passwordAlgorithm`, `passwordIterations`, `passwordSalt`, `passwordHash`, `allowedMinutes`, `isActive`, `sourceBookingId`, `updatedAt`
+
+`emailPrefix` เป็น username สำหรับ TimeLock ส่วน password จะถูกสร้างใหม่เมื่อจอง เก็บใน Sheet เฉพาะ PBKDF2 verifier และแสดงรหัสจริงแก่ผู้ใช้ครั้งเดียว
 
 ## TimeLock Gateway
 
-ระบบ TimeLock รุ่นใหม่ไม่อ่าน Google Sheet จากเครื่องลูกโดยตรงแล้ว เส้นทางข้อมูลคือ
-`Private Google Sheet → BookingAiLab API → Supabase → TimeLockApp`
+ระบบ TimeLock ไม่อ่าน Google Sheet จากเครื่องลูกโดยตรง เส้นทางข้อมูลคือ
+`Private Google Sheet → BookingAiLab API → TimeLockApp`
 
 ก่อน deploy:
 
 1. เพิ่มคอลัมน์ `MachineCode` ต่อจาก `IsActive` ในชีต `Users` และกำหนดค่า เช่น `PC-001`
 2. ตั้ง Google Sheet เป็น Private และแชร์ให้ service account ของ Backend เท่านั้น
-3. ตั้ง Environment Variables ตาม `.env.example` ใน Vercel (ห้ามใช้ service-role key ในตัว TimeLockApp)
-4. รัน migration `202608190001_timelock_gateway.sql` บน Supabase
-5. สร้าง/หมุน Device Token ที่หน้า `/admin/machines` แล้วกรอก Token ครั้งเดียวตอนเปิด TimeLockApp ครั้งแรก
+3. ตั้ง Environment Variables ตาม `.env.example` ใน Vercel
+4. สร้าง/หมุน Device Token ที่หน้า `/admin/machines` แล้วกรอก Token ครั้งเดียวตอนเปิด TimeLockApp ครั้งแรก
 
 TimeLockApp ส่ง heartbeat ทุก 15 วินาที หน้า Dashboard ถือว่า Offline เมื่อขาด heartbeat เกิน 45 วินาที
 บัญชี offline cache ใช้ได้ 24 ชั่วโมง ผูกกับ MachineCode และถูกป้องกันด้วย Windows DPAPI

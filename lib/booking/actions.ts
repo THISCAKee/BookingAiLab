@@ -13,7 +13,7 @@ import { createGoogleSheetsClient } from "@/lib/google/sheets-client";
 export type PublicMachineOption = { id: string; machineCode: string; machineName: string; location: string | null; available: boolean };
 export type PublicBookingSlot = { startAt: string; endAt: string; label: string; machines: PublicMachineOption[] };
 export type PublicBookingOptions = { date: string; slots: PublicBookingSlot[] };
-export type CreatedBooking = { bookingId: string; bookingNumber: string; manageCode: string; machineCode: string; startAt: string; endAt: string; status: string };
+export type CreatedBooking = { bookingId: string; bookingNumber: string; manageCode: string; timelockUsername: string; timelockPassword: string; machineCode: string; startAt: string; endAt: string; status: string };
 export type ManagedBooking = { bookingId: string; bookingNumber: string; machineCode: string; machineName: string; location: string | null; startAt: string; endAt: string; status: string; canCancel: boolean };
 export type BookingActionResult<T = undefined> = { ok: true; data: T; message?: string } | { ok: false; message: string };
 

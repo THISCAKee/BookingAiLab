@@ -1,5 +1,6 @@
 const TABS = {
   bookings: 'Bookings',
+  users: 'Users',
   audit: 'AuditLog',
 };
 
@@ -70,6 +71,7 @@ function createBooking_(body) {
     idempotencyKey: body.idempotencyKey,
   }[header] || ''));
   sheet.appendRow(row);
+  upsertUser_(body.payload, bookingId, machine.machineCode, now);
   return { ok: true, data: Object.assign(rowObject_(headers, row), { manageCode: manageCode }) };
 }
 
@@ -87,7 +89,49 @@ function cancelBooking_(body) {
   row[index.status] = 'cancelled';
   row[index.updatedAt] = new Date().toISOString();
   sheet.getRange(rowNumber + 2, 1, 1, headers.length).setValues([row]);
+  deactivateBookingUser_(String(row[index.bookingId]));
   return { ok: true };
+}
+
+function upsertUser_(payload, bookingId, machineCode, now) {
+  const sheet = SpreadsheetApp.getActive().getSheetByName(TABS.users);
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows.shift().map(String);
+  const index = Object.fromEntries(headers.map((header, position) => [header, position]));
+  const existingIndex = rows.findIndex(row => String(row[index.emailPrefix] || '').toLowerCase() === String(payload.emailPrefix).toLowerCase());
+  const current = existingIndex >= 0 ? rows[existingIndex] : [];
+  const values = {
+    userId: current[index.userId] || Utilities.getUuid(),
+    email: payload.email,
+    name: payload.name,
+    emailPrefix: payload.emailPrefix,
+    username: payload.account.username,
+    role: 'user',
+    machineCode: machineCode,
+    passwordAlgorithm: payload.account.passwordAlgorithm,
+    passwordIterations: payload.account.passwordIterations,
+    passwordSalt: payload.account.passwordSalt,
+    passwordHash: payload.account.passwordHash,
+    allowedMinutes: payload.account.allowedMinutes,
+    isActive: true,
+    sourceBookingId: bookingId,
+    updatedAt: now,
+  };
+  const row = headers.map(header => values[header] === undefined ? '' : values[header]);
+  if (existingIndex >= 0) sheet.getRange(existingIndex + 2, 1, 1, headers.length).setValues([row]);
+  else sheet.appendRow(row);
+}
+
+function deactivateBookingUser_(bookingId) {
+  const sheet = SpreadsheetApp.getActive().getSheetByName(TABS.users);
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows.shift().map(String);
+  const index = Object.fromEntries(headers.map((header, position) => [header, position]));
+  const rowIndex = rows.findIndex(row => String(row[index.sourceBookingId]) === bookingId);
+  if (rowIndex < 0) return;
+  rows[rowIndex][index.isActive] = false;
+  rows[rowIndex][index.updatedAt] = new Date().toISOString();
+  sheet.getRange(rowIndex + 2, 1, 1, headers.length).setValues([rows[rowIndex]]);
 }
 
 function active_(status) { return ['cancelled', 'expired', 'completed'].indexOf(status) < 0; }

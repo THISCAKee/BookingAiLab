@@ -1,17 +1,15 @@
 import { redirect } from "next/navigation";
 import { MachineDashboard } from "@/components/admin/machine-dashboard";
 import { AdminNav } from "@/components/admin/admin-nav";
-import { requireActiveAdmin } from "@/lib/auth/admin";
+import { requireAdminIdentity } from "@/lib/auth/identity";
 import { getTimelockSyncHealth, listMachineDashboard } from "@/lib/machines/queries";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function AdminDashboardPage() {
-  const supabase = await createSupabaseServerClient();
-  await requireActiveAdmin(supabase).catch(() => redirect("/admin"));
+  await requireAdminIdentity().catch(() => redirect("/admin"));
 
   const [machines, syncHealth] = await Promise.all([
-    listMachineDashboard(supabase),
-    getTimelockSyncHealth(supabase),
+    listMachineDashboard(),
+    getTimelockSyncHealth(),
   ]);
 
   return (

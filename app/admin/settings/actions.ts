@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireActiveAdmin } from "@/lib/auth/admin";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireAdminIdentity } from "@/lib/auth/identity";
+import { updateAdminSettings } from "@/lib/admin/sheet-repository";
 import { validateBookingSettings } from "@/lib/booking/settings";
 
 export type SettingsFormState = {
@@ -19,8 +19,7 @@ export async function updateBookingSettingsAction(
   formData: FormData,
 ): Promise<SettingsFormState> {
   try {
-    const supabase = await createSupabaseServerClient();
-    await requireActiveAdmin(supabase);
+    await requireAdminIdentity();
 
     const validation = validateBookingSettings({
       serviceWeekdays: formData
@@ -37,21 +36,7 @@ export async function updateBookingSettingsAction(
       return { ok: false, message: validation.message };
     }
 
-    const { error } = await supabase
-      .from("booking_settings")
-      .update({
-        service_weekdays: validation.value.serviceWeekdays,
-        opening_time: validation.value.openingTime,
-        closing_time: validation.value.closingTime,
-        duration_minutes: validation.value.durationMinutes,
-        grace_minutes: validation.value.graceMinutes,
-        timezone: validation.value.timezone,
-      })
-      .eq("id", 1);
-
-    if (error) {
-      return { ok: false, message: "บันทึก Settings ไม่สำเร็จ กรุณาลองใหม่" };
-    }
+    await updateAdminSettings(validation.value);
 
     revalidatePath("/admin/settings");
     revalidatePath("/booking");
