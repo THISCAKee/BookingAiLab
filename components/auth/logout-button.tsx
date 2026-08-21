@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signOutUser } from "@/lib/auth/logout";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export function LogoutButton({ redirectTo = "/login" }: { redirectTo?: string }) {
   const router = useRouter();
@@ -14,17 +12,7 @@ export function LogoutButton({ redirectTo = "/login" }: { redirectTo?: string })
     setIsPending(true);
     setMessage(null);
 
-    const supabase = createSupabaseBrowserClient();
-    const result = await signOutUser(supabase.auth);
-
-    if (!result.ok) {
-      setMessage(result.message);
-      setIsPending(false);
-      return;
-    }
-
-    router.replace(redirectTo);
-    router.refresh();
+    window.location.assign(`/api/auth/logout?redirectTo=${encodeURIComponent(redirectTo)}`);
   }
 
   return (

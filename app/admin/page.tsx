@@ -1,16 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AdminLoginForm } from "@/components/admin/admin-login-form";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireAdminIdentity } from "@/lib/auth/identity";
 
 export default async function AdminLoginPage() {
   try {
-    const supabase = await createSupabaseServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data } = await supabase.from("admin_profiles").select("is_active").eq("auth_user_id", user.id).maybeSingle();
-      if (data?.is_active) redirect("/admin/dashboard");
-    }
+    await requireAdminIdentity();
+    redirect("/admin/dashboard");
   } catch (error) {
     if (typeof error === "object" && error && "digest" in error) throw error;
   }
