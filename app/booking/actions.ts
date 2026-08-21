@@ -6,7 +6,6 @@ import {
   type CreatedBooking,
   type PublicBookingOptions,
 } from "@/lib/booking/actions";
-import { validateScheduledBookingInput } from "@/lib/booking/action-utils";
 
 export type BookingFormState =
   | { ok: false; message?: string }
@@ -25,14 +24,14 @@ export async function bookMachineAction(
   _previousState: BookingFormState,
   formData: FormData,
 ): Promise<BookingFormState> {
-  const input = validateScheduledBookingInput({
-    identity: formData.get("identity"),
-    machineId: formData.get("machineId"),
-    startAt: formData.get("startAt"),
-  });
+  const machineId = formData.get("machineId");
+  const startAt = formData.get("startAt");
+  const input = typeof machineId === "string" && typeof startAt === "string" && machineId.trim() && startAt.trim()
+    ? { machineId: machineId.trim(), startAt: startAt.trim() }
+    : null;
 
   if (!input) {
-    return { ok: false, message: "กรอกรหัสนิสิตหรืออีเมล @msu.ac.th และเลือกวัน เวลา และเครื่องให้ครบ" };
+    return { ok: false, message: "เลือกวัน เวลา และเครื่องให้ครบ" };
   }
 
   const result = await createScheduledBooking(input);

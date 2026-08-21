@@ -93,17 +93,7 @@ export function PublicBookingBoard({
       <aside className="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_22px_60px_-48px_rgba(11,19,36,0.55)] sm:p-6 lg:sticky lg:top-5">
         <section>
           <StepHeading number="01" title="ข้อมูลผู้จอง" />
-          <label className="mt-4 block text-sm font-semibold text-slate-700">
-            รหัสนิสิตหรืออีเมลมหาวิทยาลัย
-            <input
-              name="identity"
-              required
-              autoComplete="email"
-              placeholder="67012345 หรือ name@msu.ac.th"
-              className="mt-2 block w-full rounded-xl border border-slate-200 bg-[#f8fafc] px-4 py-3.5 text-base text-[#0b1324] outline-none transition placeholder:text-slate-400 focus:border-[#2563eb] focus:bg-white focus:ring-4 focus:ring-blue-100"
-            />
-          </label>
-          <p className="mt-2 text-xs leading-5 text-slate-500">ใช้บัญชี Google @msu.ac.th ที่มีอยู่ในระบบ</p>
+          <p className="mt-4 text-sm leading-6 text-slate-600">ใช้บัญชี Google @msu.ac.th ที่เข้าสู่ระบบอยู่ ระบบจะบันทึกชื่อและอีเมลจากบัญชีนั้นโดยอัตโนมัติ</p>
         </section>
 
         <section className="mt-6 border-t border-slate-100 pt-6">

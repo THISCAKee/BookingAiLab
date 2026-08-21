@@ -1,126 +1,70 @@
+import { createHash, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { requireGoogleIdentity } from "@/lib/auth/identity";
 import { getBookingErrorMessage } from "@/lib/booking/action-utils";
+import { getBookingSlots } from "@/lib/booking/schedule";
+import { assertSheetBookingAllowed } from "@/lib/booking/sheet-policy";
+import { cancelSheetBooking, createSheetBooking } from "@/lib/booking/sheet-repository";
+import { getGoogleRuntimeConfig } from "@/lib/google/config";
+import { parseBookings, parseMachines, parseSettings } from "@/lib/google/sheet-schema";
+import type { SheetBooking, SheetMachine, SheetSettings } from "@/lib/google/sheet-types";
+import { createGoogleSheetsClient } from "@/lib/google/sheets-client";
 
-export type PublicMachineOption = {
-  id: string;
-  machineCode: string;
-  machineName: string;
-  location: string | null;
-  available: boolean;
-};
+export type PublicMachineOption = { id: string; machineCode: string; machineName: string; location: string | null; available: boolean };
+export type PublicBookingSlot = { startAt: string; endAt: string; label: string; machines: PublicMachineOption[] };
+export type PublicBookingOptions = { date: string; slots: PublicBookingSlot[] };
+export type CreatedBooking = { bookingId: string; bookingNumber: string; manageCode: string; machineCode: string; startAt: string; endAt: string; status: string };
+export type ManagedBooking = { bookingId: string; bookingNumber: string; machineCode: string; machineName: string; location: string | null; startAt: string; endAt: string; status: string; canCancel: boolean };
+export type BookingActionResult<T = undefined> = { ok: true; data: T; message?: string } | { ok: false; message: string };
 
-export type PublicBookingSlot = {
-  startAt: string;
-  endAt: string;
-  label: string;
-  machines: PublicMachineOption[];
-};
+function sheets() { return createGoogleSheetsClient({ spreadsheetId: getGoogleRuntimeConfig().spreadsheetId }); }
 
-export type PublicBookingOptions = {
-  date: string;
-  slots: PublicBookingSlot[];
-};
-
-export type CreatedBooking = {
-  bookingId: string;
-  bookingNumber: string;
-  manageCode: string;
-  machineCode: string;
-  startAt: string;
-  endAt: string;
-  status: string;
-};
-
-export type ManagedBooking = {
-  bookingId: string;
-  bookingNumber: string;
-  machineCode: string;
-  machineName: string;
-  location: string | null;
-  startAt: string;
-  endAt: string;
-  status: string;
-  canCancel: boolean;
-};
-
-export type BookingActionResult<T = undefined> =
-  | { ok: true; data: T; message?: string }
-  | { ok: false; message: string };
-
-async function getClient() {
-  const { createSupabaseServerClient } = await import("@/lib/supabase/server");
-  return createSupabaseServerClient();
+async function readBookingData() {
+  const client = sheets();
+  const [settingsRows, machineRows, bookingRows] = await Promise.all([client.readSheet("Settings"), client.readSheet("Machines"), client.readSheet("Bookings")]);
+  return { settings: parseSettings(settingsRows), machines: parseMachines(machineRows), bookings: parseBookings(bookingRows) };
 }
 
-export async function getPublicBookingOptions(
-  date: string,
-): Promise<BookingActionResult<PublicBookingOptions>> {
-  try {
-    const supabase = await getClient();
-    const { data, error } = await supabase.rpc("get_booking_options", {
-      p_booking_date: date,
-    });
-    if (error) return { ok: false, message: getBookingErrorMessage(error) };
-    return { ok: true, data: data as PublicBookingOptions };
-  } catch (error) {
-    return { ok: false, message: getBookingErrorMessage(error) };
-  }
+function active(booking: SheetBooking) { return !["cancelled", "expired", "completed"].includes(booking.status); }
+function overlaps(booking: SheetBooking, startAt: string, endAt: string) { return active(booking) && new Date(booking.startAt).getTime() < new Date(endAt).getTime() && new Date(startAt).getTime() < new Date(booking.endAt).getTime(); }
+
+function bookingOptions(date: string, settings: SheetSettings, machines: SheetMachine[], bookings: SheetBooking[]): PublicBookingOptions {
+  const slots = getBookingSlots(date, { weekdays: settings.serviceWeekdays, openingTime: settings.openingTime, closingTime: settings.closingTime, durationMinutes: settings.durationMinutes, timezone: settings.timezone });
+  return { date, slots: slots.map((slot) => ({ ...slot, machines: machines.map((machine) => ({ id: machine.machineId, machineCode: machine.machineCode, machineName: machine.machineName, location: machine.location, available: machine.status === "available" && !bookings.some((booking) => booking.machineId === machine.machineId && overlaps(booking, slot.startAt, slot.endAt)) })) })) };
 }
 
-export async function createScheduledBooking(input: {
-  identity: string;
-  machineId: string;
-  startAt: string;
-}): Promise<BookingActionResult<CreatedBooking>> {
-  try {
-    const supabase = await getClient();
-    const { data, error } = await supabase.rpc("create_scheduled_booking", {
-      p_identity: input.identity,
-      p_machine_id: input.machineId,
-      p_start_at: input.startAt,
-    });
-    if (error) return { ok: false, message: getBookingErrorMessage(error) };
-    revalidatePath("/booking");
-    return { ok: true, data: data as CreatedBooking, message: "จองเครื่องสำเร็จ" };
-  } catch (error) {
-    return { ok: false, message: getBookingErrorMessage(error) };
-  }
+export async function getPublicBookingOptions(date: string): Promise<BookingActionResult<PublicBookingOptions>> {
+  try { const { settings, machines, bookings } = await readBookingData(); return { ok: true, data: bookingOptions(date, settings, machines, bookings) }; }
+  catch (error) { return { ok: false, message: getBookingErrorMessage(error) }; }
 }
 
-export async function getManagedBooking(
-  bookingNumber: string,
-  manageCode: string,
-): Promise<BookingActionResult<ManagedBooking>> {
+export async function createScheduledBooking(input: { identity?: string; machineId: string; startAt: string }): Promise<BookingActionResult<CreatedBooking>> {
   try {
-    const supabase = await getClient();
-    const { data, error } = await supabase.rpc("get_booking_by_code", {
-      p_booking_number: bookingNumber,
-      p_manage_code: manageCode,
-    });
-    if (error || !data) {
-      return { ok: false, message: "ไม่พบรายการจองหรือรหัสจัดการไม่ถูกต้อง" };
-    }
-    return { ok: true, data: data as ManagedBooking };
-  } catch {
-    return { ok: false, message: "ไม่สามารถตรวจสอบรายการจองได้ กรุณาลองใหม่" };
-  }
+    const identity = await requireGoogleIdentity();
+    const { settings, machines, bookings } = await readBookingData();
+    const machine = machines.find((row) => row.machineId === input.machineId);
+    if (!machine) return { ok: false, message: "ไม่พบเครื่องที่เลือก" };
+    const endAt = new Date(new Date(input.startAt).getTime() + settings.durationMinutes * 60_000).toISOString();
+    assertSheetBookingAllowed({ machine, bookings, email: identity.email, startAt: input.startAt, endAt, settings });
+    const data = await createSheetBooking({ machineId: machine.machineId, startAt: input.startAt, idempotencyKey: randomUUID() }, identity);
+    revalidatePath("/booking"); revalidatePath("/my-bookings");
+    return { ok: true, data: { ...(data as CreatedBooking), machineCode: machine.machineCode, startAt: input.startAt, endAt, status: "confirmed" }, message: "จองเครื่องสำเร็จ" };
+  } catch (error) { return { ok: false, message: getBookingErrorMessage(error) }; }
 }
 
-export async function cancelManagedBooking(
-  bookingNumber: string,
-  manageCode: string,
-): Promise<BookingActionResult<undefined>> {
+function managementHash(code: string) { return createHash("sha256").update(code).digest("hex"); }
+
+export async function getManagedBooking(bookingNumber: string, manageCode: string): Promise<BookingActionResult<ManagedBooking>> {
   try {
-    const supabase = await getClient();
-    const { error } = await supabase.rpc("cancel_booking_by_code", {
-      p_booking_number: bookingNumber,
-      p_manage_code: manageCode,
-    });
-    if (error) return { ok: false, message: getBookingErrorMessage(error) };
-    revalidatePath("/booking");
-    revalidatePath("/my-bookings");
-    return { ok: true, data: undefined, message: "ยกเลิกการจองแล้ว" };
-  } catch (error) {
-    return { ok: false, message: getBookingErrorMessage(error) };
-  }
+    const { machines, bookings } = await readBookingData();
+    const booking = bookings.find((row) => row.bookingNumber === bookingNumber && row.manageCodeHash === managementHash(manageCode));
+    if (!booking) return { ok: false, message: "ไม่พบรายการจองหรือรหัสจัดการไม่ถูกต้อง" };
+    const machine = machines.find((row) => row.machineId === booking.machineId);
+    return { ok: true, data: { bookingId: booking.bookingId, bookingNumber: booking.bookingNumber, machineCode: booking.machineCode, machineName: machine?.machineName ?? booking.machineCode, location: machine?.location ?? null, startAt: booking.startAt, endAt: booking.endAt, status: booking.status, canCancel: active(booking) } };
+  } catch (error) { return { ok: false, message: getBookingErrorMessage(error) }; }
+}
+
+export async function cancelManagedBooking(bookingNumber: string, manageCode: string): Promise<BookingActionResult<undefined>> {
+  try { const identity = await requireGoogleIdentity(); await cancelSheetBooking({ bookingNumber, manageCode, idempotencyKey: randomUUID() }, identity); revalidatePath("/booking"); revalidatePath("/my-bookings"); return { ok: true, data: undefined, message: "ยกเลิกการจองแล้ว" }; }
+  catch (error) { return { ok: false, message: getBookingErrorMessage(error) }; }
 }
