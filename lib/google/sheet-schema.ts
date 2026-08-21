@@ -1,4 +1,4 @@
-import type { BookingStatus, MachineStatus, SheetBooking, SheetMachine } from "@/lib/google/sheet-types";
+import type { BookingStatus, MachineStatus, SheetBooking, SheetMachine, SheetSettings } from "@/lib/google/sheet-types";
 
 export const MACHINE_HEADERS = [
   "machineId", "machineCode", "machineName", "location", "status", "deviceTokenHash", "lastSeenAt", "updatedAt",
@@ -6,6 +6,7 @@ export const MACHINE_HEADERS = [
 export const BOOKING_HEADERS = [
   "bookingId", "bookingNumber", "email", "name", "hd", "emailPrefix", "machineId", "machineCode", "startAt", "endAt", "status", "manageCodeHash", "createdAt", "updatedAt", "idempotencyKey",
 ] as const;
+export const SETTINGS_HEADERS = ["Key", "Value", "UpdatedAt"] as const;
 
 const MACHINE_STATUSES = new Set<MachineStatus>(["inactive", "available", "maintenance", "disabled"]);
 const BOOKING_STATUSES = new Set<BookingStatus>(["confirmed", "app_pending", "app_received", "active", "completed", "cancelled", "expired"]);
@@ -85,4 +86,22 @@ export function parseBookings(rows: readonly (readonly string[])[]): SheetBookin
     }
     return [booking];
   });
+}
+
+export function parseSettings(rows: readonly (readonly string[])[]): SheetSettings {
+  if (rows.length === 0) throw new Error("SHEET_HEADER_INVALID:Settings");
+  const positions = headerPositions(rows, SETTINGS_HEADERS, "Settings");
+  const values = new Map<string, string>();
+  for (const row of rows.slice(1)) values.set(valueAt(row, positions, "Key"), valueAt(row, positions, "Value"));
+  const weekdays = values.get("serviceWeekdays")?.split(",").map(Number).filter(Number.isInteger) ?? [];
+  const settings: SheetSettings = {
+    serviceWeekdays: weekdays,
+    openingTime: values.get("openingTime") ?? "",
+    closingTime: values.get("closingTime") ?? "",
+    durationMinutes: Number(values.get("durationMinutes")),
+    graceMinutes: Number(values.get("graceMinutes")),
+    timezone: values.get("timezone") ?? "",
+  };
+  if (!settings.serviceWeekdays.length || !/^\d{2}:\d{2}$/.test(settings.openingTime) || !/^\d{2}:\d{2}$/.test(settings.closingTime) || !Number.isInteger(settings.durationMinutes) || settings.durationMinutes <= 0 || !Number.isInteger(settings.graceMinutes) || settings.graceMinutes < 0 || !settings.timezone) throw new Error("SHEET_SETTINGS_INVALID");
+  return settings;
 }

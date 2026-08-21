@@ -38,3 +38,12 @@ export type SheetBooking = {
   updatedAt: string;
   idempotencyKey?: string;
 };
+
+export type SheetSettings = {
+  serviceWeekdays: number[];
+  openingTime: string;
+  closingTime: string;
+  durationMinutes: number;
+  graceMinutes: number;
+  timezone: string;
+};
