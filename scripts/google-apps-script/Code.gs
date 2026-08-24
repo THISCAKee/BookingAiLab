@@ -228,6 +228,46 @@ function extendBooking_(body, currentTime) {
   return { ok: true, data: result };
 }
 
+function installDailyCleanupTrigger(currentTime) {
+  ScriptApp.getProjectTriggers().forEach(trigger => {
+    if (trigger.getHandlerFunction() === 'dailyCleanupTick_') ScriptApp.deleteTrigger(trigger);
+  });
+  const now = currentTime || new Date();
+  PropertiesService.getScriptProperties().setProperty('LAST_DAILY_CLEANUP_DATE', bangkokDate_(now));
+  ScriptApp.newTrigger('dailyCleanupTick_').timeBased().everyMinutes(1).create();
+  return { installed: true, date: bangkokDate_(now) };
+}
+
+function dailyCleanupTick_(currentTime) {
+  const now = currentTime || new Date();
+  const today = bangkokDate_(now);
+  const properties = PropertiesService.getScriptProperties();
+  if (properties.getProperty('LAST_DAILY_CLEANUP_DATE') === today) return { bookingsDeleted: 0, usersDeleted: 0 };
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    if (properties.getProperty('LAST_DAILY_CLEANUP_DATE') === today) return { bookingsDeleted: 0, usersDeleted: 0 };
+    const spreadsheet = SpreadsheetApp.getActive();
+    const bookingSheet = spreadsheet.getSheetByName(TABS.bookings);
+    const userSheet = spreadsheet.getSheetByName(TABS.users);
+    const bookingsDeleted = Math.max(0, bookingSheet.getLastRow() - 1);
+    const usersDeleted = Math.max(0, userSheet.getLastRow() - 1);
+    if (bookingsDeleted > 0) bookingSheet.deleteRows(2, bookingsDeleted);
+    if (usersDeleted > 0) userSheet.deleteRows(2, usersDeleted);
+    const completedAt = now.toISOString();
+    if (bookingsDeleted > 0 || usersDeleted > 0) {
+      appendAudit_({
+        actorEmail: 'system', action: 'daily_cleanup', entityType: 'spreadsheet', entityId: today,
+        metadata: JSON.stringify({ bookingsDeleted: bookingsDeleted, usersDeleted: usersDeleted }), createdAt: completedAt,
+      });
+    }
+    properties.setProperty('LAST_DAILY_CLEANUP_DATE', today);
+    return { bookingsDeleted: bookingsDeleted, usersDeleted: usersDeleted };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 function cancelBooking_(body) {
   const sheet = SpreadsheetApp.getActive().getSheetByName(TABS.bookings);
   const rows = sheet.getDataRange().getValues();

@@ -50,6 +50,14 @@ class FakeSheet {
   appendRow(row: unknown[]) {
     this.rows.push(structuredClone(row));
   }
+
+  getLastRow() {
+    return this.rows.length;
+  }
+
+  deleteRows(startRow: number, count: number) {
+    this.rows.splice(startRow - 1, count);
+  }
 }
 
 function rowObject(sheet: FakeSheet, id: string) {
@@ -103,6 +111,8 @@ function runtime(extraBookings: unknown[][] = [], includeCurrentBooking = true) 
     ]),
   };
   let id = 1;
+  const properties = new Map<string, string>();
+  const triggers: Array<{ handler: string }> = [];
   const context = vm.createContext({
     SpreadsheetApp: {
       getActive: () => ({ getSheetByName: (name: keyof typeof sheets) => sheets[name] }),
@@ -121,12 +131,41 @@ function runtime(extraBookings: unknown[][] = [], includeCurrentBooking = true) 
       },
     },
     Session: { getScriptTimeZone: () => "Asia/Bangkok" },
+    PropertiesService: {
+      getScriptProperties: () => ({
+        getProperty: (key: string) => properties.get(key) ?? null,
+        setProperty: (key: string, value: string) => { properties.set(key, value); },
+      }),
+    },
+    LockService: {
+      getScriptLock: () => ({
+        tryLock: () => true,
+        waitLock: () => undefined,
+        releaseLock: () => undefined,
+      }),
+    },
+    ScriptApp: {
+      getProjectTriggers: () => triggers.map((trigger) => ({ getHandlerFunction: () => trigger.handler })),
+      deleteTrigger: (trigger: { getHandlerFunction: () => string }) => {
+        const index = triggers.findIndex((item) => item.handler === trigger.getHandlerFunction());
+        if (index >= 0) triggers.splice(index, 1);
+      },
+      newTrigger: (handler: string) => ({
+        timeBased: () => ({
+          everyMinutes: (minutes: number) => ({
+            create: () => { triggers.push({ handler: `${handler}:${minutes}` }); },
+          }),
+        }),
+      }),
+    },
     console,
   });
   vm.runInContext(readFileSync("scripts/google-apps-script/Code.gs", "utf8"), context);
   return { context: context as typeof context & {
     createBooking_: (body: unknown, now: Date) => unknown;
     extendBooking_: (body: unknown, now: Date) => unknown;
+    installDailyCleanupTrigger: (now: Date) => unknown;
+    dailyCleanupTick_: (now: Date) => unknown;
   }, sheets };
 }
 
@@ -221,5 +260,23 @@ describe("Google Apps Script booking extension", () => {
     expect(() => context.extendBooking_(body, new Date("2026-08-24T03:00:00.000Z")))
       .toThrow("EXTENSION_NEXT_BOOKING_CONFLICT");
     expect({ bookings: sheets.Bookings.rows, users: sheets.Users.rows }).toEqual(before);
+  });
+});
+
+describe("Google Apps Script daily cleanup", () => {
+  it("keeps current rows on install and clears Bookings and Users once after the date changes", () => {
+    const { context, sheets } = runtime();
+
+    context.installDailyCleanupTrigger(new Date("2026-08-24T03:00:00.000Z"));
+    expect(sheets.Bookings.rows).toHaveLength(2);
+    expect(sheets.Users.rows).toHaveLength(2);
+
+    context.dailyCleanupTick_(new Date("2026-08-24T17:00:30.000Z"));
+    expect(sheets.Bookings.rows).toEqual([BOOKING_HEADERS]);
+    expect(sheets.Users.rows).toEqual([USER_HEADERS]);
+    expect(sheets.AuditLog.rows).toHaveLength(2);
+
+    context.dailyCleanupTick_(new Date("2026-08-24T17:01:30.000Z"));
+    expect(sheets.AuditLog.rows).toHaveLength(2);
   });
 });
