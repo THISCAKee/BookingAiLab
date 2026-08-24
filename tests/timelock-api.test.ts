@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   parseDeviceRequest,
+  parseExtensionCheckRequest,
+  parseExtensionConfirmRequest,
   parseLoginRequest,
   parseLogoutRequest,
   parseOfflineSessionRequest,
@@ -47,6 +49,19 @@ describe("TimeLock API request contracts", () => {
         status: "logged_out",
       }),
     ).toThrow("OFFLINE_SESSION_INVALID");
+  });
+
+  it("normalizes extension check and confirmation bodies", () => {
+    expect(parseExtensionCheckRequest({ sessionId: " s-1 " })).toEqual({ sessionId: "s-1" });
+    expect(parseExtensionConfirmRequest({
+      sessionId: " s-1 ",
+      idempotencyKey: " request-1 ",
+    })).toEqual({ sessionId: "s-1", idempotencyKey: "request-1" });
+  });
+
+  it("rejects an extension confirmation without idempotency", () => {
+    expect(() => parseExtensionConfirmRequest({ sessionId: "s-1" }))
+      .toThrow("EXTENSION_CONFIRM_INVALID");
   });
 });
 

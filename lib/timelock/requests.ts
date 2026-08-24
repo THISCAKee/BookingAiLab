@@ -61,3 +61,18 @@ export function parseOfflineSessionRequest(body: unknown) {
     status,
   };
 }
+
+export function parseExtensionCheckRequest(body: unknown) {
+  if (!body || typeof body !== "object") throw new Error("EXTENSION_CHECK_INVALID");
+  const value = body as Record<string, unknown>;
+  return { sessionId: requiredString(value.sessionId, "EXTENSION_CHECK_INVALID") };
+}
+
+export function parseExtensionConfirmRequest(body: unknown) {
+  if (!body || typeof body !== "object") throw new Error("EXTENSION_CONFIRM_INVALID");
+  const value = body as Record<string, unknown>;
+  return {
+    sessionId: requiredString(value.sessionId, "EXTENSION_CONFIRM_INVALID"),
+    idempotencyKey: requiredString(value.idempotencyKey, "EXTENSION_CONFIRM_INVALID"),
+  };
+}

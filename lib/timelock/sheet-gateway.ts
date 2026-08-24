@@ -1,13 +1,14 @@
 import { createHash, randomUUID } from "node:crypto";
 import { getGoogleRuntimeConfig } from "@/lib/google/config";
 import { createGoogleSheetsClient } from "@/lib/google/sheets-client";
-import { parseMachines } from "@/lib/google/sheet-schema";
+import { parseBookings, parseMachines } from "@/lib/google/sheet-schema";
 import type { SheetTab } from "@/lib/google/sheets-client";
 import { buildOfflineAccount } from "@/lib/timelock/offline-cache";
+import { evaluateBookingExtension } from "@/lib/booking/extension-policy";
 import { verifyPassword, type PasswordVerifier } from "@/lib/timelock/passwords";
 import type { DeviceRequest, TimelockLogoutStatus } from "@/lib/timelock/requests";
 import type { NormalizedHeartbeat } from "@/lib/machines/presence";
-import { parseTimelockEvents, parseTimelockUsers, type TimelockSheetUser } from "@/lib/timelock/sheet-records";
+import { parseTimelockEvents, parseTimelockUsers, resolveActiveSheetSession, type TimelockSheetUser } from "@/lib/timelock/sheet-records";
 
 export type SheetDeviceContext = { id: string; machineCode: string };
 
@@ -22,6 +23,11 @@ type GatewayDependencies = {
   sheets?: TimelockGatewaySheets;
   now?: () => Date;
   randomId?: () => string;
+  atomic?: {
+    url: string;
+    secret: string;
+    fetchImpl: typeof fetch;
+  };
 };
 
 function dependencies(options: GatewayDependencies) {
@@ -97,4 +103,69 @@ export async function reconcileOfflineSession(device: SheetDeviceContext, input:
   const account = (await users(client())).find((row) => (row.emailPrefix || row.username) === input.username.toLowerCase() && row.machineCode === device.machineCode && row.isActive);
   if (!account) throw new Error("ACCOUNT_MACHINE_MISMATCH");
   return { sessionId: input.clientSessionId, username: input.username, machineCode: device.machineCode, startedAt: input.startedAt, endedAt: input.endedAt, usedSeconds: input.usedSeconds, status: input.status };
+}
+
+async function activeSessionContext(
+  device: SheetDeviceContext,
+  sessionId: string,
+  sheetsClient: TimelockGatewaySheets,
+) {
+  const [userRows, eventRows, bookingRows] = await Promise.all([
+    sheetsClient.readSheet("Users"),
+    sheetsClient.readSheet("Events"),
+    sheetsClient.readSheet("Bookings"),
+  ]);
+  const bookings = parseBookings(bookingRows);
+  const session = resolveActiveSheetSession({
+    sessionId,
+    machineCode: device.machineCode,
+    users: parseTimelockUsers(userRows),
+    events: parseTimelockEvents(eventRows),
+    bookings,
+  });
+  return { bookings, session };
+}
+
+export async function checkTimelockExtension(
+  device: SheetDeviceContext,
+  input: { sessionId: string },
+  options: GatewayDependencies = {},
+) {
+  const deps = dependencies(options);
+  const { bookings, session } = await activeSessionContext(device, input.sessionId, deps.sheets);
+  return evaluateBookingExtension({ booking: session.booking, bookings, now: deps.now() });
+}
+
+export async function confirmTimelockExtension(
+  device: SheetDeviceContext,
+  input: { sessionId: string; idempotencyKey: string },
+  options: GatewayDependencies = {},
+) {
+  const deps = dependencies(options);
+  const { session } = await activeSessionContext(device, input.sessionId, deps.sheets);
+  const config = options.atomic ?? (() => {
+    const runtime = getGoogleRuntimeConfig();
+    if (!runtime.atomicMutationUrl || !runtime.atomicMutationSecret) throw new Error("BOOKING_ATOMIC_NOT_CONFIGURED");
+    return { url: runtime.atomicMutationUrl, secret: runtime.atomicMutationSecret, fetchImpl: fetch };
+  })();
+  const response = await config.fetchImpl(config.url, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      operation: "extend_booking",
+      secret: config.secret,
+      idempotencyKey: input.idempotencyKey,
+      payload: {
+        sessionId: session.sessionId,
+        bookingId: session.booking.bookingId,
+        machineCode: session.machineCode,
+        username: session.username,
+      },
+    }),
+    cache: "no-store",
+  });
+  if (!response.ok) throw new Error("EXTENSION_CONFIRM_FAILED");
+  const result = (await response.json()) as { ok?: boolean; data?: unknown; code?: string };
+  if (!result.ok || result.data === undefined) throw new Error(result.code || "EXTENSION_CONFIRM_FAILED");
+  return result.data;
 }
