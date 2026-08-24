@@ -3,7 +3,7 @@ import Link from "next/link";
 export function PublicBookingNav() {
   return (
     <nav className="flex items-center justify-between gap-4" aria-label="เมนูหลัก">
-      <Link href="/" className="group inline-flex items-center gap-3 text-[#0b1324]">
+      <Link href="/booking" className="group inline-flex items-center gap-3 text-[#0b1324]">
         <span className="grid h-9 w-9 grid-cols-2 gap-0.5 rounded-xl bg-[#0b1324] p-2" aria-hidden="true">
           <span className="rounded-sm bg-white" />
           <span className="rounded-sm bg-[#06b6d4]" />

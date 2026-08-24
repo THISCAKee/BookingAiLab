@@ -1,7 +1,9 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { validateGoogleClaims } from "@/lib/auth/google-claims";
+import { completeGoogleLogin } from "@/lib/auth/complete-login";
 import { createSessionCookie } from "@/lib/auth/session";
+import { upsertLoginIdentity } from "@/lib/auth/sheet-identities";
 import { exchangeGoogleCode, verifyGoogleIdToken } from "@/lib/auth/google-oauth";
 
 export async function GET(request: Request) {
@@ -21,18 +23,10 @@ export async function GET(request: Request) {
   try {
     const claims = await verifyGoogleIdToken(await exchangeGoogleCode(code, verifier));
     const identity = validateGoogleClaims(claims);
-    const session = await createSessionCookie(identity);
-    const response = NextResponse.redirect(new URL("/", requestUrl.origin));
-    response.cookies.set("booking_session", session, {
-      httpOnly: true,
-      secure: requestUrl.protocol === "https:",
-      sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60,
-      path: "/",
+    return completeGoogleLogin(identity, requestUrl, {
+      upsertIdentity: upsertLoginIdentity,
+      createSession: createSessionCookie,
     });
-    response.cookies.delete("google_oauth_state");
-    response.cookies.delete("google_oauth_verifier");
-    return response;
   } catch (error) {
     loginUrl.searchParams.set(
       "error",

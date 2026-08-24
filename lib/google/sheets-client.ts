@@ -1,6 +1,6 @@
 import { getGoogleSheetsAccessToken } from "@/lib/google/service-account";
 
-export type SheetTab = "Settings" | "Machines" | "Bookings" | "Users" | "Events" | "AuditLog" | "LoginLocks";
+export type SheetTab = "Settings" | "Machines" | "Bookings" | "Users" | "Identities" | "Events" | "AuditLog" | "LoginLocks";
 type FetchImpl = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
 type GoogleSheetsClientOptions = {

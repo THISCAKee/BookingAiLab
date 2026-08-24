@@ -10,12 +10,19 @@ const protectedPrefixes = [
 ];
 
 function isProtectedPath(pathname: string) {
-  return pathname === "/" || protectedPrefixes.some(
+  return protectedPrefixes.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 }
 
 export function proxy(request: NextRequest) {
+  if (request.nextUrl.pathname === "/") {
+    const logoutUrl = request.nextUrl.clone();
+    logoutUrl.pathname = "/api/auth/logout";
+    logoutUrl.searchParams.set("redirectTo", "/login");
+    return NextResponse.redirect(logoutUrl);
+  }
+
   const hasSessionCookie = Boolean(request.cookies.get("booking_session")?.value);
   if (isProtectedPath(request.nextUrl.pathname) && !hasSessionCookie) {
     const loginUrl = request.nextUrl.clone();

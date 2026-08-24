@@ -22,7 +22,7 @@ export default async function AdminLoginPage() {
           </div>
 
           <div>
-            <Link href="/" className="inline-flex items-center gap-3 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-400/30">
+            <Link href="/booking" className="inline-flex items-center gap-3 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-400/30">
               <span className="grid h-10 w-10 grid-cols-2 gap-0.5 rounded-xl bg-white p-2.5" aria-hidden="true">
                 <span className="rounded-sm bg-[#0b1324]" />
                 <span className="rounded-sm bg-[#06b6d4]" />
