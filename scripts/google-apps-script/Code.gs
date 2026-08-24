@@ -3,6 +3,7 @@ const TABS = {
   machines: 'Machines',
   bookings: 'Bookings',
   users: 'Users',
+  identities: 'Identities',
   events: 'Events',
   audit: 'AuditLog',
   loginLocks: 'LoginLocks',
@@ -11,8 +12,9 @@ const TABS = {
 const SHEET_HEADERS = {
   Settings: ['Key', 'Value', 'UpdatedAt'],
   Machines: ['machineId', 'machineCode', 'machineName', 'location', 'status', 'deviceTokenHash', 'lastSeenAt', 'updatedAt'],
-  Bookings: ['bookingId', 'bookingNumber', 'email', 'name', 'hd', 'emailPrefix', 'machineId', 'machineCode', 'startAt', 'endAt', 'status', 'manageCodeHash', 'createdAt', 'updatedAt', 'idempotencyKey'],
+  Bookings: ['bookingId', 'bookingNumber', 'email', 'name', 'hd', 'emailPrefix', 'machineId', 'machineCode', 'startAt', 'endAt', 'status', 'manageCodeHash', 'createdAt', 'updatedAt', 'idempotencyKey', 'extensionCount'],
   Users: ['userId', 'email', 'name', 'emailPrefix', 'username', 'role', 'machineCode', 'passwordAlgorithm', 'passwordIterations', 'passwordSalt', 'passwordHash', 'allowedMinutes', 'isActive', 'sourceBookingId', 'updatedAt'],
+  Identities: ['identityId', 'email', 'name', 'hd', 'emailPrefix', 'lastLoginAt', 'updatedAt'],
   Events: ['eventId', 'eventType', 'sessionId', 'bookingId', 'machineCode', 'username', 'status', 'payload', 'createdAt', 'updatedAt'],
   AuditLog: ['auditId', 'actorEmail', 'action', 'entityType', 'entityId', 'metadata', 'createdAt'],
   LoginLocks: ['username', 'failedCount', 'lockedUntil', 'lastFailedAt', 'updatedAt'],
@@ -40,7 +42,7 @@ function initializeSpreadsheet() {
 
   const now = new Date().toISOString();
   const settings = [
-    ['serviceWeekdays', '1,2,3,4,5', now],
+    ['serviceWeekdays', '1,2,3,4,5,6,7', now],
     ['openingTime', '08:30', now],
     ['closingTime', '16:30', now],
     ['durationMinutes', '180', now],
@@ -73,6 +75,7 @@ function doPost(e) {
   try {
     if (body.operation === 'create_booking') return json_(createBooking_(body));
     if (body.operation === 'cancel_booking') return json_(cancelBooking_(body));
+    if (body.operation === 'extend_booking') return json_(extendBooking_(body));
     return json_({ ok: false, code: 'BOOKING_OPERATION_INVALID' });
   } catch (error) {
     return json_({ ok: false, code: error.message || 'BOOKING_ATOMIC_FAILED' });
@@ -81,7 +84,7 @@ function doPost(e) {
   }
 }
 
-function createBooking_(body) {
+function createBooking_(body, currentTime) {
   const sheet = SpreadsheetApp.getActive().getSheetByName(TABS.bookings);
   const rows = sheet.getDataRange().getValues();
   const headers = rows.shift().map(String);
@@ -92,6 +95,9 @@ function createBooking_(body) {
   const start = new Date(body.payload.startAt);
   const end = new Date(body.payload.endAt);
   if (isNaN(start.getTime()) || isNaN(end.getTime()) || start >= end) throw new Error('BOOKING_TIME_INVALID');
+  if (end.getTime() - start.getTime() !== 180 * 60 * 1000) throw new Error('BOOKING_DURATION_INVALID');
+  const current = currentTime || new Date();
+  if (bangkokDate_(start) !== bangkokDate_(current)) throw new Error('BOOKING_DATE_NOT_ALLOWED');
   if (!inSchedule_(start, end, settings)) throw new Error('BOOKING_OUTSIDE_SCHEDULE');
   const duplicate = rows.find(row => String(row[index.idempotencyKey] || '') === String(body.idempotencyKey));
   if (duplicate) return { ok: true, data: rowObject_(headers, duplicate) };
@@ -104,11 +110,11 @@ function createBooking_(body) {
       if (String(row[index.email]).toLowerCase() === String(body.payload.email).toLowerCase()) throw new Error('BOOKING_CUSTOMER_OVERLAP');
     }
   }
-  const now = new Date().toISOString();
+  const now = current.toISOString();
   const bookingId = Utilities.getUuid();
   const bookingNumber = 'BK-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd-HHmmss') + '-' + bookingId.slice(0, 6).toUpperCase();
   const manageCode = randomCode_();
-  const row = headers.map(header => ({
+  const bookingValues = {
     bookingId: bookingId,
     bookingNumber: bookingNumber,
     email: body.payload.email,
@@ -124,10 +130,102 @@ function createBooking_(body) {
     createdAt: now,
     updatedAt: now,
     idempotencyKey: body.idempotencyKey,
-  }[header] || ''));
+    extensionCount: 0,
+  };
+  const row = headers.map(header => bookingValues[header] === undefined ? '' : bookingValues[header]);
   sheet.appendRow(row);
+  body.payload.account.allowedMinutes = 180;
   upsertUser_(body.payload, bookingId, machine.machineCode, now);
   return { ok: true, data: Object.assign(rowObject_(headers, row), { manageCode: manageCode }) };
+}
+
+function extendBooking_(body, currentTime) {
+  const spreadsheet = SpreadsheetApp.getActive();
+  const bookingSheet = spreadsheet.getSheetByName(TABS.bookings);
+  const userSheet = spreadsheet.getSheetByName(TABS.users);
+  const eventSheet = spreadsheet.getSheetByName(TABS.events);
+  const bookingValues = bookingSheet.getDataRange().getValues();
+  const userValues = userSheet.getDataRange().getValues();
+  const eventValues = eventSheet.getDataRange().getValues();
+  const bookingHeaders = bookingValues.shift().map(String);
+  const userHeaders = userValues.shift().map(String);
+  const eventHeaders = eventValues.shift().map(String);
+  const bookingIndex = headerIndex_(bookingHeaders);
+  const userIndex = headerIndex_(userHeaders);
+  const eventIndex = headerIndex_(eventHeaders);
+  const idempotencyKey = String(body.idempotencyKey || '');
+  if (!idempotencyKey) throw new Error('EXTENSION_CONFIRM_INVALID');
+
+  const duplicate = eventValues.find(row => {
+    if (String(row[eventIndex.eventType]) !== 'booking_extended') return false;
+    try { return JSON.parse(String(row[eventIndex.payload] || '{}')).idempotencyKey === idempotencyKey; }
+    catch (_) { return false; }
+  });
+  if (duplicate) {
+    const stored = JSON.parse(String(duplicate[eventIndex.payload]));
+    return { ok: true, data: stored.result };
+  }
+
+  const payload = body.payload || {};
+  const sessionId = String(payload.sessionId || '');
+  const bookingId = String(payload.bookingId || '');
+  const machineCode = String(payload.machineCode || '').toUpperCase();
+  const username = String(payload.username || '').toLowerCase();
+  if (!sessionId || !bookingId || !machineCode || !username) throw new Error('EXTENSION_CONFIRM_INVALID');
+
+  const startedPosition = findLastIndex_(eventValues, row => String(row[eventIndex.sessionId]) === sessionId && String(row[eventIndex.eventType]) === 'session_started');
+  if (startedPosition < 0) throw new Error('SESSION_NOT_FOUND');
+  const started = eventValues[startedPosition];
+  const ended = eventValues.some((row, position) => position > startedPosition && String(row[eventIndex.sessionId]) === sessionId && String(row[eventIndex.eventType]) === 'session_ended');
+  if (ended) throw new Error('SESSION_NOT_FOUND');
+  if (String(started[eventIndex.bookingId]) !== bookingId || String(started[eventIndex.machineCode]).toUpperCase() !== machineCode || String(started[eventIndex.username]).toLowerCase() !== username) {
+    throw new Error('EXTENSION_ACCOUNT_MISMATCH');
+  }
+
+  const bookingPosition = bookingValues.findIndex(row => String(row[bookingIndex.bookingId]) === bookingId);
+  if (bookingPosition < 0) throw new Error('EXTENSION_BOOKING_INACTIVE');
+  const booking = bookingValues[bookingPosition];
+  if (!active_(String(booking[bookingIndex.status])) || String(booking[bookingIndex.machineCode]).toUpperCase() !== machineCode || String(booking[bookingIndex.emailPrefix]).toLowerCase() !== username) {
+    throw new Error('EXTENSION_BOOKING_INACTIVE');
+  }
+
+  const nowDate = currentTime || new Date();
+  const currentEnd = new Date(booking[bookingIndex.endAt]);
+  if (isNaN(currentEnd.getTime()) || bangkokDate_(currentEnd) !== bangkokDate_(nowDate)) throw new Error('EXTENSION_BOOKING_INACTIVE');
+  const extensionCount = Number(booking[bookingIndex.extensionCount]);
+  if (!Number.isInteger(extensionCount) || extensionCount < 0 || extensionCount >= 2) throw new Error('EXTENSION_LIMIT_REACHED');
+  const proposedEnd = new Date(currentEnd.getTime() + 180 * 60 * 1000);
+  if (proposedEnd.getTime() > nextBangkokMidnight_(currentEnd).getTime()) throw new Error('EXTENSION_CROSSES_MIDNIGHT');
+
+  const conflict = bookingValues.some(row => {
+    if (String(row[bookingIndex.bookingId]) === bookingId || !active_(String(row[bookingIndex.status]))) return false;
+    if (String(row[bookingIndex.machineCode]).toUpperCase() !== machineCode) return false;
+    return new Date(row[bookingIndex.startAt]).getTime() < proposedEnd.getTime() && currentEnd.getTime() < new Date(row[bookingIndex.endAt]).getTime();
+  });
+  if (conflict) throw new Error('EXTENSION_NEXT_BOOKING_CONFLICT');
+
+  const userPosition = userValues.findIndex(row => String(row[userIndex.sourceBookingId]) === bookingId && String(row[userIndex.machineCode]).toUpperCase() === machineCode && String(row[userIndex.username]).toLowerCase() === username && String(row[userIndex.isActive]).toLowerCase() === 'true');
+  if (userPosition < 0) throw new Error('EXTENSION_ACCOUNT_MISMATCH');
+  const nextExtensionCount = extensionCount + 1;
+  const allowedMinutes = (nextExtensionCount + 1) * 180;
+  const updatedAt = nowDate.toISOString();
+  booking[bookingIndex.endAt] = proposedEnd.toISOString();
+  booking[bookingIndex.extensionCount] = nextExtensionCount;
+  booking[bookingIndex.updatedAt] = updatedAt;
+  const user = userValues[userPosition];
+  user[userIndex.allowedMinutes] = allowedMinutes;
+  user[userIndex.updatedAt] = updatedAt;
+  bookingSheet.getRange(bookingPosition + 2, 1, 1, bookingHeaders.length).setValues([booking]);
+  userSheet.getRange(userPosition + 2, 1, 1, userHeaders.length).setValues([user]);
+
+  const result = { bookingId: bookingId, endAt: proposedEnd.toISOString(), extensionCount: nextExtensionCount, allowedMinutes: allowedMinutes };
+  appendMappedRow_(eventSheet, eventHeaders, {
+    eventId: Utilities.getUuid(), eventType: 'booking_extended', sessionId: sessionId,
+    bookingId: bookingId, machineCode: machineCode, username: username, status: 'confirmed',
+    payload: JSON.stringify({ idempotencyKey: idempotencyKey, result: result }), createdAt: updatedAt, updatedAt: updatedAt,
+  });
+  appendAudit_({ actorEmail: username + '@msu.ac.th', action: 'booking_extended', entityType: 'booking', entityId: bookingId, metadata: JSON.stringify(result), createdAt: updatedAt });
+  return { ok: true, data: result };
 }
 
 function cancelBooking_(body) {
@@ -190,6 +288,17 @@ function deactivateBookingUser_(bookingId) {
 }
 
 function active_(status) { return ['cancelled', 'expired', 'completed'].indexOf(status) < 0; }
+function bangkokDate_(date) { return new Date(date.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10); }
+function nextBangkokMidnight_(date) { return new Date(new Date(bangkokDate_(date) + 'T00:00:00+07:00').getTime() + 24 * 60 * 60 * 1000); }
+function headerIndex_(headers) { return Object.fromEntries(headers.map((header, position) => [header, position])); }
+function findLastIndex_(rows, predicate) { for (let index = rows.length - 1; index >= 0; index -= 1) if (predicate(rows[index], index)) return index; return -1; }
+function appendMappedRow_(sheet, headers, values) { sheet.appendRow(headers.map(header => values[header] === undefined ? '' : values[header])); }
+function appendAudit_(values) {
+  const sheet = SpreadsheetApp.getActive().getSheetByName(TABS.audit);
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows.shift().map(String);
+  appendMappedRow_(sheet, headers, Object.assign({ auditId: Utilities.getUuid() }, values));
+}
 function hash_(value) { return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, value).map(function(byte) { return ('0' + (byte & 0xFF).toString(16)).slice(-2); }).join(''); }
 function randomCode_() { return Utilities.getUuid().replace(/-/g, '').slice(0, 12).toUpperCase(); }
 function settings_() {
