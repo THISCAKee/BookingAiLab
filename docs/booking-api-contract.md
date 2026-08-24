@@ -132,9 +132,86 @@ INVALID_STATUS_TRANSITION
 RATE_LIMITED
 ```
 
+## ต่อเวลา TimeLock Session
+
+ทุก request ใช้ header ของเครื่องเดิม:
+
+```http
+x-machine-code: PC-001
+x-device-token: <device-token>
+Content-Type: application/json
+```
+
+### ตรวจสิทธิ์ต่อเวลา
+
+```http
+POST /api/timelock/extension/check
+```
+
+```json
+{
+  "sessionId": "session-id-from-login"
+}
+```
+
+Response เมื่ออนุญาต:
+
+```json
+{
+  "ok": true,
+  "data": {
+    "canExtend": true,
+    "reason": "EXTENSION_AVAILABLE",
+    "currentEndAt": "2026-08-24T04:30:00.000Z",
+    "proposedEndAt": "2026-08-24T07:30:00.000Z",
+    "extensionCount": 0,
+    "maxExtensionCount": 2
+  }
+}
+```
+
+เมื่อ `canExtend` เป็น `false`, `proposedEndAt` เป็น `null` และ `reason` เป็นหนึ่งใน:
+
+- `EXTENSION_LIMIT_REACHED`: ใช้ครบ 3 ช่วงหรือ 540 นาทีแล้ว
+- `EXTENSION_CROSSES_MIDNIGHT`: เวลาใหม่จะเกิน 00:00 หรือเหลือเวลาไม่ครบ 180 นาที
+- `EXTENSION_NEXT_BOOKING_CONFLICT`: มีคิวถัดไปของเครื่องเดียวกันซ้อนช่วงใหม่
+- `EXTENSION_BOOKING_INACTIVE`: Booking จบแล้วหรือไม่ใช่ข้อมูลของวันปัจจุบัน
+- `EXTENSION_ACCOUNT_MISMATCH`: Session, User, Booking หรือเครื่องไม่สัมพันธ์กัน
+
+### ยืนยันต่อเวลา
+
+```http
+POST /api/timelock/extension/confirm
+```
+
+```json
+{
+  "sessionId": "session-id-from-login",
+  "idempotencyKey": "new-uuid-for-this-confirmation"
+}
+```
+
+Response สำเร็จ:
+
+```json
+{
+  "ok": true,
+  "data": {
+    "bookingId": "booking-id",
+    "endAt": "2026-08-24T07:30:00.000Z",
+    "extensionCount": 1,
+    "allowedMinutes": 360
+  }
+}
+```
+
+WPF ต้องใช้ `idempotencyKey` เดิมเมื่อ retry request เดิม ห้ามสร้างค่าใหม่จนกว่าจะเป็นการกดต่อเวลาครั้งถัดไป Server จะคำนวณเวลาใหม่เองและไม่รับ `endAt`, `allowedMinutes`, `bookingId` หรือ `machineCode` จาก body
+
+เมื่อครบเวลา WPF ต้องบังการใช้งานเครื่องและแสดง popup 60 วินาที มีปุ่ม “ต่อเวลา 3 ชั่วโมง” กับ “ออกจากระบบ” หากไม่เลือกภายในเวลาให้ forced logout เมื่อผู้ใช้กดต่อเวลา ห้ามเพิ่มเวลาที่ client จนกว่า confirm จะสำเร็จ หาก confirm ถูกปฏิเสธเพราะมีคิวใหม่ ให้ปิด popup และจบ session ตามเวลาเดิม
+
 ## ข้อกำหนดด้านความปลอดภัย
 
-- ห้ามส่ง Supabase Service Role Key ให้ WPF
+- ห้ามส่ง Google Service Account Key หรือ Apps Script secret ให้ WPF
 - ห้ามส่ง Credential ผ่าน Query String
 - ห้ามบันทึก Password ลง Log
 - จำกัด Event ตาม `machine_id` ของ Token

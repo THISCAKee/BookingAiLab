@@ -31,14 +31,20 @@
 6. รัน `initializeSpreadsheet()` หนึ่งครั้ง เพื่อสร้างทุกแท็บ, settings และเครื่อง `PC-001` ถึง `PC-006`
 7. ตั้ง Script Property ชื่อ `ATOMIC_MUTATION_SECRET` ให้ตรงกับ `GOOGLE_ATOMIC_MUTATION_SECRET`
 8. Deploy Apps Script เป็น Web app แล้วนำ URL ใส่ `GOOGLE_ATOMIC_MUTATION_URL`
-9. แชร์ Private Google Sheet ให้ service account ของ Backend และนำ Sheet ID ใหม่ใส่ `GOOGLE_SHEET_ID`
+9. รัน `installDailyCleanupTrigger()` หนึ่งครั้งและอนุญาตสิทธิ์ เพื่อสร้าง trigger ตรวจการข้ามวันทุก 1 นาที
+10. แชร์ Private Google Sheet ให้ service account ของ Backend และนำ Sheet ID ใหม่ใส่ `GOOGLE_SHEET_ID`
+
+เมื่อแก้ `Code.gs` ต้อง Deploy → Manage deployments → Edit → New version เพื่อให้ Web app `/exec` ใช้โค้ดล่าสุด การกด Save อย่างเดียวไม่เปลี่ยนเวอร์ชันที่ Backend เรียก
 
 ## Google Sheet tabs
 
 - `Settings`: `Key`, `Value`, `UpdatedAt`
 - `Machines`: `machineId`, `machineCode`, `machineName`, `location`, `status`, `deviceTokenHash`, `lastSeenAt`, `updatedAt`
-- `Bookings`: `bookingId`, `bookingNumber`, `email`, `name`, `hd`, `emailPrefix`, `machineId`, `machineCode`, `startAt`, `endAt`, `status`, `manageCodeHash`, `createdAt`, `updatedAt`, `idempotencyKey`
+- `Bookings`: `bookingId`, `bookingNumber`, `email`, `name`, `hd`, `emailPrefix`, `machineId`, `machineCode`, `startAt`, `endAt`, `status`, `manageCodeHash`, `createdAt`, `updatedAt`, `idempotencyKey`, `extensionCount`
 - `Users`: `userId`, `email`, `name`, `emailPrefix`, `username`, `role`, `machineCode`, `passwordAlgorithm`, `passwordIterations`, `passwordSalt`, `passwordHash`, `allowedMinutes`, `isActive`, `sourceBookingId`, `updatedAt`
+- `Identities`: `identityId`, `email`, `name`, `hd`, `emailPrefix`, `lastLoginAt`, `updatedAt`
+- `Events`: `eventId`, `eventType`, `sessionId`, `bookingId`, `machineCode`, `username`, `status`, `payload`, `createdAt`, `updatedAt`
+- `AuditLog`: `auditId`, `actorEmail`, `action`, `entityType`, `entityId`, `metadata`, `createdAt`
 
 `emailPrefix` เป็น username สำหรับ TimeLock ส่วน password จะถูกสร้างใหม่เมื่อจอง เก็บใน Sheet เฉพาะ PBKDF2 verifier และแสดงรหัสจริงแก่ผู้ใช้ครั้งเดียว
 
@@ -47,12 +53,20 @@
 ระบบ TimeLock ไม่อ่าน Google Sheet จากเครื่องลูกโดยตรง เส้นทางข้อมูลคือ
 `Private Google Sheet → BookingAiLab API → TimeLockApp`
 
-ก่อน deploy:
+กติกาการใช้งาน:
 
-1. เพิ่มคอลัมน์ `MachineCode` ต่อจาก `IsActive` ในชีต `Users` และกำหนดค่า เช่น `PC-001`
+- จองได้เฉพาะวันปัจจุบัน ทุกวัน รอบละ 180 นาที
+- รอบแรกนับเป็นช่วงที่ 1 ต่อได้อีกไม่เกิน 2 ครั้ง รวมสูงสุด 540 นาที
+- ต่อเวลาได้เฉพาะเมื่อไม่มีคิวถัดไปของเครื่องเดียวกันและเวลาใหม่ไม่เกิน 00:00
+- เวลาเปลี่ยนวัน Apps Script จะลบ data rows ใน `Bookings` และ `Users` โดยคง header, Events, Audit และ Identities
+
+ก่อน deploy TimeLockApp:
+
+1. ตรวจว่าแท็บ `Users` ใช้ schema ตัวพิมพ์เล็กตามรายการด้านบนและมี `machineCode`, `isActive`, `sourceBookingId`
 2. ตั้ง Google Sheet เป็น Private และแชร์ให้ service account ของ Backend เท่านั้น
 3. ตั้ง Environment Variables ตาม `.env.example` ใน Vercel
 4. สร้าง/หมุน Device Token ที่หน้า `/admin/machines` แล้วกรอก Token ครั้งเดียวตอนเปิด TimeLockApp ครั้งแรก
+5. ให้ WPF เรียก extension check เมื่อครบเวลา แสดง popup แบบบังการใช้งาน 60 วินาที และเพิ่มเวลาเฉพาะหลัง confirm สำเร็จ
 
 TimeLockApp ส่ง heartbeat ทุก 15 วินาที หน้า Dashboard ถือว่า Offline เมื่อขาด heartbeat เกิน 45 วินาที
 บัญชี offline cache ใช้ได้ 24 ชั่วโมง ผูกกับ MachineCode และถูกป้องกันด้วย Windows DPAPI
