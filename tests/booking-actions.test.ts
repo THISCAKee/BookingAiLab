@@ -40,6 +40,12 @@ describe("booking action utilities", () => {
     expect(getBookingErrorMessage({ message: "MACHINE_UNAVAILABLE" })).toContain(
       "เครื่องนี้ไม่ว่าง",
     );
+    expect(getBookingErrorMessage({ message: "BOOKING_DATE_NOT_ALLOWED" })).toBe(
+      "เลือกจองได้เฉพาะวันนี้",
+    );
+    expect(getBookingErrorMessage({ message: "BOOKING_DURATION_INVALID" })).toContain(
+      "3 ชั่วโมง",
+    );
     expect(getBookingErrorMessage({ message: "UNKNOWN_DATABASE_ERROR" })).toBe(
       "ไม่สามารถทำรายการจองได้ กรุณาลองใหม่อีกครั้ง",
     );

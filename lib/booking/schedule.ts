@@ -25,12 +25,6 @@ function bangkokDateValue(date: Date) {
   return `${values.year}-${values.month}-${values.day}`;
 }
 
-function addCalendarDays(dateValue: string, days: number) {
-  const date = new Date(`${dateValue}T00:00:00.000Z`);
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
-}
-
 function parseMinutes(value: string) {
   const match = /^(\d{2}):(\d{2})$/.exec(value);
   const hour = Number(match?.[1]);
@@ -59,13 +53,7 @@ export function normalizeBookingIdentity(value: unknown) {
 
 export function getSelectableBookingDates(now = new Date(), timezone = "Asia/Bangkok") {
   if (timezone !== "Asia/Bangkok") throw new Error("UNSUPPORTED_TIMEZONE");
-  const today = bangkokDateValue(now);
-
-  return [today, addCalendarDays(today, 1)].map((value, index) => ({
-    value,
-    kind: index === 0 ? "today" : "tomorrow",
-    label: index === 0 ? "วันนี้" : "พรุ่งนี้",
-  }));
+  return [{ value: bangkokDateValue(now), kind: "today", label: "วันนี้" }];
 }
 
 export function getBookingSlots(

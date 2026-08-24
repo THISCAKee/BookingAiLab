@@ -127,7 +127,7 @@ export function PublicBookingBoard({
               </label>
             ))}
             {isLoadingSlots ? <p className="rounded-xl bg-slate-50 p-3 text-sm text-slate-500">กำลังโหลดรอบเวลา…</p> : null}
-            {!isLoadingSlots && options.slots.length === 0 ? <p className="rounded-xl bg-slate-100 p-3.5 text-sm leading-6 text-slate-600">วันที่เลือกไม่มีรอบที่เปิดจอง ลองเลือกวันถัดไป</p> : null}
+            {!isLoadingSlots && options.slots.length === 0 ? <p className="rounded-xl bg-slate-100 p-3.5 text-sm leading-6 text-slate-600">วันนี้ไม่มีรอบที่เปิดจองแล้ว</p> : null}
           </div>
         </section>
       </aside>

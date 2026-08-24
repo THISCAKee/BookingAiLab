@@ -34,13 +34,13 @@ describe("scheduled booking identity", () => {
 });
 
 describe("scheduled booking dates and slots", () => {
-  it("offers only today and tomorrow in Bangkok", () => {
+  it("offers only today in Bangkok", () => {
     expect(
       getSelectableBookingDates(
         new Date("2026-08-18T17:30:00.000Z"),
         "Asia/Bangkok",
-      ).map((date) => date.value),
-    ).toEqual(["2026-08-19", "2026-08-20"]);
+      ),
+    ).toEqual([{ value: "2026-08-19", kind: "today", label: "วันนี้" }]);
   });
 
   it("builds consecutive complete slots from opening time", () => {

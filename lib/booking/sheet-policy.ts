@@ -42,14 +42,18 @@ export function assertSheetBookingAllowed(input: {
   startAt: string;
   endAt: string;
   settings: SheetBookingSettings;
+  now?: Date;
 }) {
   if (input.machine.status !== "available") throw new Error("BOOKING_MACHINE_UNAVAILABLE");
   const start = new Date(input.startAt).getTime();
   const end = new Date(input.endAt).getTime();
   if (!Number.isFinite(start) || !Number.isFinite(end) || start >= end) throw new Error("BOOKING_TIME_INVALID");
+  if (end - start !== 180 * 60_000) throw new Error("BOOKING_DURATION_INVALID");
 
   const startLocal = localParts(input.startAt, input.settings.timezone);
   const endLocal = localParts(input.endAt, input.settings.timezone);
+  const todayLocal = localParts((input.now ?? new Date()).toISOString(), input.settings.timezone);
+  if (startLocal.date !== todayLocal.date) throw new Error("BOOKING_DATE_NOT_ALLOWED");
   const opening = timeMinutes(input.settings.openingTime);
   const closing = timeMinutes(input.settings.closingTime);
   if (startLocal.date !== endLocal.date || !input.settings.serviceWeekdays.includes(startLocal.weekday) || startLocal.minutes < opening || endLocal.minutes > closing) {
