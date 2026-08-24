@@ -4,7 +4,7 @@ export const MACHINE_HEADERS = [
   "machineId", "machineCode", "machineName", "location", "status", "deviceTokenHash", "lastSeenAt", "updatedAt",
 ] as const;
 export const BOOKING_HEADERS = [
-  "bookingId", "bookingNumber", "email", "name", "hd", "emailPrefix", "machineId", "machineCode", "startAt", "endAt", "status", "manageCodeHash", "createdAt", "updatedAt", "idempotencyKey",
+  "bookingId", "bookingNumber", "email", "name", "hd", "emailPrefix", "machineId", "machineCode", "startAt", "endAt", "status", "manageCodeHash", "createdAt", "updatedAt", "idempotencyKey", "extensionCount",
 ] as const;
 export const SETTINGS_HEADERS = ["Key", "Value", "UpdatedAt"] as const;
 
@@ -79,9 +79,10 @@ export function parseBookings(rows: readonly (readonly string[])[]): SheetBookin
       createdAt: valueAt(row, positions, "createdAt"),
       updatedAt: valueAt(row, positions, "updatedAt"),
       idempotencyKey: valueAt(row, positions, "idempotencyKey") || undefined,
+      extensionCount: Number(valueAt(row, positions, "extensionCount")),
     };
     const validEmail = /^[^@\s]+@msu\.ac\.th$/.test(booking.email);
-    if (!booking.bookingId || !booking.bookingNumber || !validEmail || !booking.name || booking.hd !== "msu.ac.th" || booking.emailPrefix !== booking.email.split("@")[0] || !booking.machineId || !booking.machineCode || !isIsoDate(booking.startAt) || !isIsoDate(booking.endAt) || Date.parse(booking.startAt) >= Date.parse(booking.endAt) || !BOOKING_STATUSES.has(booking.status) || !booking.manageCodeHash || !isIsoDate(booking.createdAt) || !isIsoDate(booking.updatedAt)) {
+    if (!booking.bookingId || !booking.bookingNumber || !validEmail || !booking.name || booking.hd !== "msu.ac.th" || booking.emailPrefix !== booking.email.split("@")[0] || !booking.machineId || !booking.machineCode || !isIsoDate(booking.startAt) || !isIsoDate(booking.endAt) || Date.parse(booking.startAt) >= Date.parse(booking.endAt) || !BOOKING_STATUSES.has(booking.status) || !booking.manageCodeHash || !isIsoDate(booking.createdAt) || !isIsoDate(booking.updatedAt) || !Number.isInteger(booking.extensionCount) || booking.extensionCount < 0 || booking.extensionCount > 2) {
       throw new Error(`SHEET_BOOKING_INVALID:${sourceRow}`);
     }
     return [booking];

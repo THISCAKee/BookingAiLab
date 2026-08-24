@@ -37,6 +37,7 @@ export type SheetBooking = {
   createdAt: string;
   updatedAt: string;
   idempotencyKey?: string;
+  extensionCount: number;
 };
 
 export type SheetSettings = {

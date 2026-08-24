@@ -45,4 +45,19 @@ describe("Google Sheet schema", () => {
       ]),
     ).toThrow("SHEET_BOOKING_INVALID:2");
   });
+
+  it("parses extension counts and rejects more than two extensions", () => {
+    const booking = [
+      "b-1", "BK-1", "student@msu.ac.th", "Student", "msu.ac.th", "student",
+      "m-1", "PC-001", "2026-08-24T01:30:00.000Z", "2026-08-24T04:30:00.000Z",
+      "confirmed", "hash", "2026-08-24T00:00:00.000Z", "2026-08-24T00:00:00.000Z",
+      "request-1", "0",
+    ];
+
+    expect(parseBookings([BOOKING_HEADERS, booking])[0].extensionCount).toBe(0);
+    expect(() => parseBookings([
+      BOOKING_HEADERS,
+      [...booking.slice(0, -1), "3"],
+    ])).toThrow("SHEET_BOOKING_INVALID:2");
+  });
 });
