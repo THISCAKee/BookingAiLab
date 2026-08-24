@@ -10,7 +10,7 @@ const protectedPrefixes = [
 ];
 
 function isProtectedPath(pathname: string) {
-  return protectedPrefixes.some(
+  return pathname === "/" || protectedPrefixes.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 }
