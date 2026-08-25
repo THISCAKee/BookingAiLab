@@ -6,6 +6,7 @@ import {
   loadBookingOptionsAction,
   type BookingFormState,
 } from "@/app/booking/actions";
+import { BookingResultPanel } from "@/components/booking/booking-result-panel";
 import type { PublicBookingOptions } from "@/lib/booking/actions";
 
 const initialState: BookingFormState = { ok: false, code: "", message: "", retryable: true };
@@ -59,45 +60,23 @@ export function PublicBookingBoard({
   }
 
   if (state.ok) {
-    const booking = state.booking;
-    return (
-      <section className="mt-8 overflow-hidden rounded-3xl border border-emerald-200 bg-white shadow-[0_24px_70px_-45px_rgba(11,19,36,0.45)]">
-        <div className="flex items-center gap-3 border-b border-emerald-100 bg-emerald-50 px-6 py-4 text-sm font-semibold text-emerald-800">
-          <span className="grid h-7 w-7 place-items-center rounded-full bg-emerald-500 text-white" aria-hidden="true">✓</span>
-          ยืนยันการจองแล้ว
-        </div>
-        <div className="p-6 sm:p-9">
-          <p className="text-sm font-semibold text-emerald-700">{booking.machineCode} พร้อมสำหรับรอบที่เลือก</p>
-          <h2 className="font-display mt-2 text-3xl font-semibold tracking-tight">บันทึกข้อมูลนี้ไว้ก่อนปิดหน้า</h2>
-          <div className="mt-7 grid gap-4 sm:grid-cols-2">
-            <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">เลขที่การจอง</p>
-              <p className="font-display mt-3 break-all text-xl font-semibold">{booking.bookingNumber}</p>
-            </div>
-            <div className="rounded-2xl bg-[#0b1324] p-5 text-white">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300">รหัสจัดการ · แสดงครั้งเดียว</p>
-              <p className="font-display mt-3 break-all text-2xl font-bold tracking-[0.12em]">{booking.manageCode}</p>
-            </div>
-            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-600">ชื่อผู้ใช้ TimeLock</p>
-              <p className="font-display mt-3 break-all text-xl font-semibold">{booking.timelockUsername}</p>
-            </div>
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">รหัสผ่าน TimeLock · แสดงครั้งเดียว</p>
-              <p className="font-display mt-3 break-all text-xl font-bold tracking-[0.08em]">{booking.timelockPassword}</p>
-            </div>
-          </div>
-          <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-600">ใช้ email prefix และรหัสผ่าน TimeLock เพื่อเข้าเครื่องที่จอง โปรดบันทึกรหัสจัดการและรหัสผ่านก่อนปิดหน้า เพราะระบบจะแสดงเพียงครั้งเดียว</p>
-          <a href="/my-bookings" className="mt-6 inline-flex rounded-xl bg-[#2563eb] px-5 py-3 font-semibold text-white transition hover:bg-[#1d4ed8] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200">จัดการการจองนี้</a>
-        </div>
-      </section>
-    );
+    return <BookingResultPanel state={state} />;
   }
 
   const machines = slot?.machines ?? [];
 
   return (
-    <form action={formAction} className="mt-8 grid gap-5 lg:grid-cols-[330px_1fr] lg:items-start">
+    <>
+      {!state.ok && state.code ? (
+        <BookingResultPanel
+          state={state}
+          onRetry={() => {
+            setSelectedMachine("");
+            setLoadMessage("");
+          }}
+        />
+      ) : null}
+      <form action={formAction} className="mt-8 grid gap-5 lg:grid-cols-[330px_1fr] lg:items-start">
       <aside className="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_22px_60px_-48px_rgba(11,19,36,0.55)] sm:p-6 lg:sticky lg:top-5">
         <section>
           <StepHeading number="01" title="ข้อมูลผู้จอง" />
@@ -171,11 +150,12 @@ export function PublicBookingBoard({
         ) : null}
 
         <input type="hidden" name="startAt" value={selectedSlot} />
-        {(state.message || loadMessage) ? <p role="alert" className="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{state.message || loadMessage}</p> : null}
+        {loadMessage ? <p role="alert" className="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{loadMessage}</p> : null}
         <button type="submit" disabled={isPending || !selectedSlot || !selectedMachine} className="mt-5 w-full rounded-xl bg-[#2563eb] px-6 py-4 text-base font-semibold text-white transition hover:bg-[#1d4ed8] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500">
           {isPending ? "กำลังยืนยันการจอง…" : selectedMachine ? "ยืนยันการจองเครื่องที่เลือก" : "เลือกเครื่องเพื่อดำเนินการต่อ"}
         </button>
       </section>
-    </form>
+      </form>
+    </>
   );
 }
