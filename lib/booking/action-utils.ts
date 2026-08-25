@@ -4,6 +4,8 @@ type ActionUser = {
 };
 
 const bookingErrorMessages: Record<string, string> = {
+  BOOKING_INPUT_INVALID: "เลือกวัน เวลา และเครื่องให้ครบ",
+  MACHINE_NOT_FOUND: "ไม่พบเครื่องที่เลือก",
   AUTH_REQUIRED: "กรุณาเข้าสู่ระบบก่อนจองเครื่อง",
   CUSTOMER_PROFILE_REQUIRED: "ไม่พบข้อมูลผู้จอง กรุณาลองเข้าสู่ระบบใหม่",
   CUSTOMER_AUTH_NOT_ALLOWED: "บัญชีนี้ไม่ได้เข้าสู่ระบบด้วย Google ที่ยืนยันแล้ว",
@@ -12,6 +14,12 @@ const bookingErrorMessages: Record<string, string> = {
   SERVICE_NOT_OPEN: "ยังไม่ถึงเวลาเปิดให้บริการ",
   INSUFFICIENT_SERVICE_TIME: "เหลือเวลาให้บริการไม่พอสำหรับการจอง 3 ชั่วโมง",
   MACHINE_UNAVAILABLE: "เครื่องนี้ไม่ว่างแล้ว กรุณาเลือกเครื่องอื่น",
+  BOOKING_MACHINE_UNAVAILABLE: "เครื่องนี้ไม่ว่างแล้ว กรุณาเลือกเครื่องอื่น",
+  BOOKING_MACHINE_OVERLAP: "เครื่องนี้ถูกจองในช่วงเวลาดังกล่าวแล้ว กรุณาเลือกเครื่องอื่น",
+  BOOKING_CUSTOMER_OVERLAP: "คุณมีรายการจองทับช่วงเวลานี้อยู่แล้ว",
+  BOOKING_OUTSIDE_SCHEDULE: "ช่วงเวลานี้อยู่นอกเวลาที่เปิดให้บริการ",
+  BOOKING_ATOMIC_NOT_CONFIGURED: "ระบบจองยังตั้งค่าไม่ครบ กรุณาติดต่อผู้ดูแลระบบ",
+  BOOKING_ATOMIC_FAILED: "ระบบบันทึกการจองขัดข้อง กรุณาลองใหม่อีกครั้ง",
   BOOKING_ALREADY_ACTIVE: "คุณยังมีการจองที่ไม่สิ้นสุดอยู่ ไม่สามารถจองซ้ำได้",
   BOOKING_CONFLICT: "มีผู้จองเครื่องนี้พร้อมกัน กรุณาเลือกเครื่องอื่น",
   BOOKING_REQUEST_NOT_ALLOWED: "ตรวจสอบรหัสนิสิตหรืออีเมล วัน เวลา และเครื่องที่เลือกอีกครั้ง",
@@ -92,4 +100,34 @@ export function getBookingErrorMessage(error: unknown) {
     bookingErrorMessages[errorCode] ??
     "ไม่สามารถทำรายการจองได้ กรุณาลองใหม่อีกครั้ง"
   );
+}
+
+export type BookingFailure = {
+  ok: false;
+  code: string;
+  message: string;
+  retryable: boolean;
+};
+
+const nonRetryableBookingErrors = new Set([
+  "AUTH_REQUIRED",
+  "CUSTOMER_PROFILE_REQUIRED",
+  "BOOKING_ATOMIC_NOT_CONFIGURED",
+  "SERVICE_CLOSED",
+  "SERVICE_NOT_OPEN",
+  "INSUFFICIENT_SERVICE_TIME",
+]);
+
+export function toBookingFailure(error: unknown): BookingFailure {
+  const rawMessage =
+    typeof error === "object" && error !== null && "message" in error
+      ? String(error.message)
+      : "BOOKING_FAILED";
+  const code = rawMessage.split(/\s|:/, 1)[0] || "BOOKING_FAILED";
+  return {
+    ok: false,
+    code,
+    message: getBookingErrorMessage(error),
+    retryable: !nonRetryableBookingErrors.has(code),
+  };
 }

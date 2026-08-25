@@ -6,10 +6,11 @@ import {
   type CreatedBooking,
   type PublicBookingOptions,
 } from "@/lib/booking/actions";
+import { toBookingFailure, type BookingFailure } from "@/lib/booking/action-utils";
 
 export type BookingFormState =
-  | { ok: false; message?: string }
-  | { ok: true; message: string; booking: CreatedBooking };
+  | BookingFailure
+  | { ok: true; code: "BOOKING_CONFIRMED"; message: string; booking: CreatedBooking };
 
 export async function loadBookingOptionsAction(date: string): Promise<{
   ok: boolean;
@@ -31,11 +32,11 @@ export async function bookMachineAction(
     : null;
 
   if (!input) {
-    return { ok: false, message: "เลือกวัน เวลา และเครื่องให้ครบ" };
+    return toBookingFailure(new Error("BOOKING_INPUT_INVALID"));
   }
 
   const result = await createScheduledBooking(input);
   return result.ok
-    ? { ok: true, message: result.message ?? "จองเครื่องสำเร็จ", booking: result.data }
+    ? { ok: true, code: "BOOKING_CONFIRMED", message: result.message ?? "จองเครื่องสำเร็จ", booking: result.data }
     : result;
 }

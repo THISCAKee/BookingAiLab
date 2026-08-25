@@ -8,7 +8,7 @@ import {
 } from "@/app/booking/actions";
 import type { PublicBookingOptions } from "@/lib/booking/actions";
 
-const initialState: BookingFormState = { ok: false };
+const initialState: BookingFormState = { ok: false, code: "", message: "", retryable: true };
 
 function StepHeading({ number, title }: { number: string; title: string }) {
   return (
