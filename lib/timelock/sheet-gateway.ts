@@ -78,13 +78,35 @@ export async function syncTimelockDevice(device: SheetDeviceContext) {
 
 export async function loginTimelockUser(device: SheetDeviceContext, input: { username: string; password: string }, options: GatewayDependencies = {}) {
   const deps = dependencies(options);
-  const account = (await users(deps.sheets)).find((row) => (row.emailPrefix || row.username) === input.username.toLowerCase() && row.machineCode === device.machineCode && row.isActive);
+  const [accounts, bookingRows] = await Promise.all([
+    users(deps.sheets),
+    deps.sheets.readSheet("Bookings"),
+  ]);
+  const account = accounts.find((row) => (row.emailPrefix || row.username) === input.username.toLowerCase() && row.machineCode === device.machineCode && row.isActive);
   if (!account || !(await verifyPassword(input.password, verifier(account)))) throw new Error("CREDENTIALS_INVALID");
+  const booking = parseBookings(bookingRows).find((row) =>
+    row.bookingId === account.sourceBookingId
+    && row.machineCode === device.machineCode
+    && row.emailPrefix === (account.emailPrefix || account.username)
+    && !["cancelled", "expired", "completed"].includes(row.status),
+  );
+  if (!booking) throw new Error("ACCOUNT_MACHINE_MISMATCH");
   const sessionId = deps.randomId();
   const eventId = deps.randomId();
   const startedAt = deps.now().toISOString();
   await deps.sheets.appendSheetRow("Events", [eventId, "session_started", sessionId, account.sourceBookingId, device.machineCode, account.username, "active", "{}", startedAt, startedAt]);
-  return { sessionId, username: input.username.toLowerCase(), machineCode: device.machineCode, startedAt, status: "active" };
+  return {
+    sessionId,
+    bookingId: booking.bookingId,
+    bookingNumber: booking.bookingNumber,
+    username: input.username.toLowerCase(),
+    machineCode: device.machineCode,
+    startedAt,
+    endAt: booking.endAt,
+    allowedMinutes: account.allowedMinutes,
+    extensionCount: booking.extensionCount,
+    status: "active",
+  };
 }
 
 export async function logoutTimelockUser(device: SheetDeviceContext, input: { sessionId: string; usedSeconds: number; status: TimelockLogoutStatus }, options: GatewayDependencies = {}) {
