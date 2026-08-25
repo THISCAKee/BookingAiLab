@@ -1,16 +1,19 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-const protectedPrefixes = [
+const protectedBookingPrefixes = [
   "/booking",
   "/my-bookings",
+];
+
+const protectedAdminPrefixes = [
   "/admin/dashboard",
   "/admin/bookings",
   "/admin/settings",
   "/admin/machines",
 ];
 
-function isProtectedPath(pathname: string) {
-  return protectedPrefixes.some(
+function matchesPrefix(pathname: string, prefixes: string[]) {
+  return prefixes.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 }
@@ -23,10 +26,15 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(logoutUrl);
   }
 
-  const hasSessionCookie = Boolean(request.cookies.get("booking_session")?.value);
-  if (isProtectedPath(request.nextUrl.pathname) && !hasSessionCookie) {
+  const pathname = request.nextUrl.pathname;
+  const needsAdminSession = matchesPrefix(pathname, protectedAdminPrefixes);
+  const needsBookingSession = matchesPrefix(pathname, protectedBookingPrefixes);
+  const hasAdminSession = Boolean(request.cookies.get("admin_session")?.value);
+  const hasBookingSession = Boolean(request.cookies.get("booking_session")?.value);
+
+  if ((needsAdminSession && !hasAdminSession) || (needsBookingSession && !hasBookingSession)) {
     const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/login";
+    loginUrl.pathname = needsAdminSession ? "/admin" : "/login";
     loginUrl.search = "";
     return NextResponse.redirect(loginUrl);
   }
