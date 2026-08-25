@@ -40,7 +40,7 @@ export function BookingResultPanel({
         ยืนยันการจองแล้ว
       </div>
       <div className="p-6 sm:p-9">
-        <p className="text-sm font-semibold text-emerald-700">{booking.machineCode} พร้อมสำหรับรอบที่เลือก</p>
+        <p className="text-sm font-semibold text-emerald-700">{booking.machineCode} พร้อมใช้งานสำหรับช่วงเวลาที่เริ่มทันที</p>
         <h2 className="font-display mt-2 text-3xl font-semibold tracking-tight">บันทึกข้อมูลนี้ไว้ก่อนปิดหน้า</h2>
         <div className="mt-7 grid gap-4 sm:grid-cols-2">
           <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-5">

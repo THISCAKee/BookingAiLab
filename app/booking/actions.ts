@@ -1,7 +1,7 @@
 "use server";
 
 import {
-  createScheduledBooking,
+  createImmediateBooking,
   getPublicBookingOptions,
   type CreatedBooking,
   type PublicBookingOptions,
@@ -26,16 +26,15 @@ export async function bookMachineAction(
   formData: FormData,
 ): Promise<BookingFormState> {
   const machineId = formData.get("machineId");
-  const startAt = formData.get("startAt");
-  const input = typeof machineId === "string" && typeof startAt === "string" && machineId.trim() && startAt.trim()
-    ? { machineId: machineId.trim(), startAt: startAt.trim() }
+  const input = typeof machineId === "string" && machineId.trim()
+    ? { machineId: machineId.trim() }
     : null;
 
   if (!input) {
     return toBookingFailure(new Error("BOOKING_INPUT_INVALID"));
   }
 
-  const result = await createScheduledBooking(input);
+  const result = await createImmediateBooking(input);
   return result.ok
     ? { ok: true, code: "BOOKING_CONFIRMED", message: result.message ?? "จองเครื่องสำเร็จ", booking: result.data }
     : result;

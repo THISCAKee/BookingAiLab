@@ -59,8 +59,19 @@ describe("Sheet booking policy", () => {
     expect(() => assertSheetBookingAllowed({ machine: { ...machine, machineId: "m-2" }, bookings: [{ ...baseBooking, email: "student@msu.ac.th" }], email: "student@msu.ac.th", startAt: "2026-08-21T04:00:00.000Z", endAt: "2026-08-21T07:00:00.000Z", settings, now: new Date("2026-08-21T01:00:00.000Z") })).toThrow("BOOKING_CUSTOMER_OVERLAP");
   });
 
-  it("rejects a non-service day and unavailable machine", () => {
-    expect(() => assertSheetBookingAllowed({ machine, bookings: [], email: "student@msu.ac.th", startAt: "2026-08-22T03:00:00.000Z", endAt: "2026-08-22T06:00:00.000Z", settings, now: new Date("2026-08-22T01:00:00.000Z") })).toThrow("BOOKING_OUTSIDE_SCHEDULE");
+  it("allows any weekday and ignores the configured opening and closing times", () => {
+    expect(() => assertSheetBookingAllowed({ machine, bookings: [], email: "student@msu.ac.th", startAt: "2026-08-22T13:00:00.000Z", endAt: "2026-08-22T16:00:00.000Z", settings, now: new Date("2026-08-22T12:00:00.000Z") })).not.toThrow();
+  });
+
+  it("allows a booking that ends exactly at midnight", () => {
+    expect(() => assertSheetBookingAllowed({ machine, bookings: [], email: "student@msu.ac.th", startAt: "2026-08-22T14:00:00.000Z", endAt: "2026-08-22T17:00:00.000Z", settings, now: new Date("2026-08-22T13:00:00.000Z") })).not.toThrow();
+  });
+
+  it("rejects a three-hour window that crosses Bangkok midnight", () => {
+    expect(() => assertSheetBookingAllowed({ machine, bookings: [], email: "student@msu.ac.th", startAt: "2026-08-22T16:00:00.000Z", endAt: "2026-08-22T19:00:00.000Z", settings, now: new Date("2026-08-22T15:00:00.000Z") })).toThrow("BOOKING_CROSSES_MIDNIGHT");
+  });
+
+  it("rejects an unavailable machine", () => {
     expect(() => assertSheetBookingAllowed({ machine: { ...machine, status: "maintenance" }, bookings: [], email: "student@msu.ac.th", startAt: "2026-08-21T03:00:00.000Z", endAt: "2026-08-21T06:00:00.000Z", settings, now: new Date("2026-08-21T01:00:00.000Z") })).toThrow("BOOKING_MACHINE_UNAVAILABLE");
   });
 });

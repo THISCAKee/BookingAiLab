@@ -3,7 +3,6 @@ import {
   getBookingErrorMessage,
   normalizeManagementCredentials,
   normalizeDisplayName,
-  validateScheduledBookingInput,
   validateMachineId,
 } from "@/lib/booking/action-utils";
 
@@ -49,24 +48,6 @@ describe("booking action utilities", () => {
     expect(getBookingErrorMessage({ message: "UNKNOWN_DATABASE_ERROR" })).toBe(
       "ไม่สามารถทำรายการจองได้ กรุณาลองใหม่อีกครั้ง",
     );
-  });
-
-  it("validates the public scheduled booking payload", () => {
-    expect(
-      validateScheduledBookingInput({
-        identity: " 65011234 ",
-        machineId: "33000000-0000-0000-0000-000000000001",
-        startAt: "2026-08-19T01:30:00.000Z",
-      }),
-    ).toEqual({
-      identity: "65011234",
-      machineId: "33000000-0000-0000-0000-000000000001",
-      startAt: "2026-08-19T01:30:00.000Z",
-    });
-
-    expect(
-      validateScheduledBookingInput({ identity: "bad", machineId: "", startAt: "later" }),
-    ).toBeNull();
   });
 
   it("normalizes booking management credentials without revealing account data", () => {

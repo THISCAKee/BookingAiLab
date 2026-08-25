@@ -12,23 +12,12 @@ export type SheetBookingSettings = {
 function localParts(value: string, timezone: string) {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: timezone,
-    weekday: "short",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
   }).formatToParts(new Date(value));
   const get = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
-  const weekday = { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 }[get("weekday") as "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun"] ?? 0;
-  return { date: `${get("year")}-${get("month")}-${get("day")}`, weekday, minutes: Number(get("hour")) * 60 + Number(get("minute")) };
-}
-
-function timeMinutes(value: string) {
-  const match = /^(\d{2}):(\d{2})$/.exec(value);
-  if (!match) throw new Error("BOOKING_SETTINGS_INVALID");
-  return Number(match[1]) * 60 + Number(match[2]);
+  return { date: `${get("year")}-${get("month")}-${get("day")}` };
 }
 
 function active(status: SheetBooking["status"]) {
@@ -51,14 +40,10 @@ export function assertSheetBookingAllowed(input: {
   if (end - start !== 180 * 60_000) throw new Error("BOOKING_DURATION_INVALID");
 
   const startLocal = localParts(input.startAt, input.settings.timezone);
-  const endLocal = localParts(input.endAt, input.settings.timezone);
   const todayLocal = localParts((input.now ?? new Date()).toISOString(), input.settings.timezone);
   if (startLocal.date !== todayLocal.date) throw new Error("BOOKING_DATE_NOT_ALLOWED");
-  const opening = timeMinutes(input.settings.openingTime);
-  const closing = timeMinutes(input.settings.closingTime);
-  if (startLocal.date !== endLocal.date || !input.settings.serviceWeekdays.includes(startLocal.weekday) || startLocal.minutes < opening || endLocal.minutes > closing) {
-    throw new Error("BOOKING_OUTSIDE_SCHEDULE");
-  }
+  const nextMidnight = new Date(`${startLocal.date}T00:00:00+07:00`).getTime() + 24 * 60 * 60 * 1000;
+  if (end > nextMidnight) throw new Error("BOOKING_CROSSES_MIDNIGHT");
 
   for (const booking of input.bookings.filter((row) => active(row.status))) {
     const existingStart = new Date(booking.startAt).getTime();

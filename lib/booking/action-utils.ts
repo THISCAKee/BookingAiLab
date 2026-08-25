@@ -4,7 +4,7 @@ type ActionUser = {
 };
 
 const bookingErrorMessages: Record<string, string> = {
-  BOOKING_INPUT_INVALID: "เลือกวัน เวลา และเครื่องให้ครบ",
+  BOOKING_INPUT_INVALID: "เลือกเครื่องให้ครบ",
   MACHINE_NOT_FOUND: "ไม่พบเครื่องที่เลือก",
   AUTH_REQUIRED: "กรุณาเข้าสู่ระบบก่อนจองเครื่อง",
   CUSTOMER_PROFILE_REQUIRED: "ไม่พบข้อมูลผู้จอง กรุณาลองเข้าสู่ระบบใหม่",
@@ -18,6 +18,7 @@ const bookingErrorMessages: Record<string, string> = {
   BOOKING_MACHINE_OVERLAP: "เครื่องนี้ถูกจองในช่วงเวลาดังกล่าวแล้ว กรุณาเลือกเครื่องอื่น",
   BOOKING_CUSTOMER_OVERLAP: "คุณมีรายการจองทับช่วงเวลานี้อยู่แล้ว",
   BOOKING_OUTSIDE_SCHEDULE: "ช่วงเวลานี้อยู่นอกเวลาที่เปิดให้บริการ",
+  BOOKING_CROSSES_MIDNIGHT: "เหลือเวลาไม่ถึง 3 ชั่วโมงก่อนเที่ยงคืน ไม่สามารถจองได้",
   BOOKING_ATOMIC_NOT_CONFIGURED: "ระบบจองยังตั้งค่าไม่ครบ กรุณาติดต่อผู้ดูแลระบบ",
   BOOKING_ATOMIC_FAILED: "ระบบบันทึกการจองขัดข้อง กรุณาลองใหม่อีกครั้ง",
   BOOKING_ALREADY_ACTIVE: "คุณยังมีการจองที่ไม่สิ้นสุดอยู่ ไม่สามารถจองซ้ำได้",
@@ -51,29 +52,6 @@ export function validateMachineId(input: unknown) {
   }
 
   return input.trim();
-}
-
-export function validateScheduledBookingInput(input: {
-  identity: unknown;
-  machineId: unknown;
-  startAt: unknown;
-}) {
-  const identity = typeof input.identity === "string" ? input.identity.trim() : "";
-  const machineId = validateMachineId(input.machineId);
-  const startAt = typeof input.startAt === "string" ? input.startAt.trim() : "";
-  const parsedStart = new Date(startAt);
-
-  if (
-    !identity ||
-    !machineId ||
-    !startAt ||
-    Number.isNaN(parsedStart.getTime()) ||
-    !(/^\d+$/.test(identity) || /^[^@\s]+@msu\.ac\.th$/i.test(identity))
-  ) {
-    return null;
-  }
-
-  return { identity, machineId, startAt: parsedStart.toISOString() };
 }
 
 export function normalizeManagementCredentials(
@@ -116,6 +94,7 @@ const nonRetryableBookingErrors = new Set([
   "SERVICE_CLOSED",
   "SERVICE_NOT_OPEN",
   "INSUFFICIENT_SERVICE_TIME",
+  "BOOKING_CROSSES_MIDNIGHT",
 ]);
 
 export function toBookingFailure(error: unknown): BookingFailure {

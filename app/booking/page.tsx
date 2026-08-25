@@ -10,7 +10,7 @@ export default async function BookingPage() {
   const initial = await getPublicBookingOptions(dates[0].value);
   const options: PublicBookingOptions = initial.ok
     ? initial.data
-    : { date: dates[0].value, slots: [] };
+    : { date: dates[0].value, startAt: null, endAt: null, machines: [] };
 
   return (
     <main className="min-h-screen bg-[#f3f6fa] text-[#0b1324]">
@@ -29,11 +29,11 @@ export default async function BookingPage() {
             </h1>
           </div>
           <p className="max-w-xl text-sm leading-7 text-slate-600 sm:text-base">
-            กรอกรหัสนิสิต เลือกวันและรอบเวลา จากนั้นเลือกเครื่องที่มีสถานะว่าง ระบบจะแสดงรหัสจัดการหลังยืนยันการจอง
+            เลือกเครื่องที่มีสถานะว่าง ระบบจะเริ่มจองทันที 3 ชั่วโมงจากเวลาปัจจุบัน และจะแสดงรหัสจัดการหลังยืนยันการจอง
           </p>
         </header>
 
-        <PublicBookingBoard dates={dates} initialOptions={options} initialMessage={initial.ok ? undefined : initial.message} />
+        <PublicBookingBoard initialOptions={options} initialMessage={initial.ok ? undefined : initial.message} />
       </div>
     </main>
   );

@@ -89,7 +89,6 @@ function createBooking_(body, currentTime) {
   const rows = sheet.getDataRange().getValues();
   const headers = rows.shift().map(String);
   const index = Object.fromEntries(headers.map((header, position) => [header, position]));
-  const settings = settings_();
   const machine = machine_(body.payload.machineId);
   if (!machine || machine.status !== 'available') throw new Error('BOOKING_MACHINE_UNAVAILABLE');
   const start = new Date(body.payload.startAt);
@@ -98,7 +97,7 @@ function createBooking_(body, currentTime) {
   if (end.getTime() - start.getTime() !== 180 * 60 * 1000) throw new Error('BOOKING_DURATION_INVALID');
   const current = currentTime || new Date();
   if (bangkokDate_(start) !== bangkokDate_(current)) throw new Error('BOOKING_DATE_NOT_ALLOWED');
-  if (!inSchedule_(start, end, settings)) throw new Error('BOOKING_OUTSIDE_SCHEDULE');
+  if (end.getTime() > nextBangkokMidnight_(start).getTime()) throw new Error('BOOKING_CROSSES_MIDNIGHT');
   const duplicate = rows.find(row => String(row[index.idempotencyKey] || '') === String(body.idempotencyKey));
   if (duplicate) return { ok: true, data: rowObject_(headers, duplicate) };
   for (const row of rows) {
@@ -375,12 +374,6 @@ function appendAudit_(values) {
 }
 function hash_(value) { return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, value).map(function(byte) { return ('0' + (byte & 0xFF).toString(16)).slice(-2); }).join(''); }
 function randomCode_() { return Utilities.getUuid().replace(/-/g, '').slice(0, 12).toUpperCase(); }
-function settings_() {
-  const rows = SpreadsheetApp.getActive().getSheetByName('Settings').getDataRange().getValues();
-  const result = {};
-  rows.slice(1).forEach(row => result[String(row[0])] = String(row[1]));
-  return { weekdays: result.serviceWeekdays.split(',').map(Number), opening: result.openingTime, closing: result.closingTime, timezone: result.timezone };
-}
 function machine_(machineId) {
   const rows = SpreadsheetApp.getActive().getSheetByName('Machines').getDataRange().getValues();
   const headers = rows.shift().map(String);
@@ -388,14 +381,6 @@ function machine_(machineId) {
   const row = rows.find(item => String(item[index.machineId]) === String(machineId));
   return row ? { machineCode: String(row[index.machineCode]), status: String(row[index.status]) } : null;
 }
-function inSchedule_(start, end, settings) {
-  const localStart = Utilities.formatDate(start, settings.timezone, 'u HH:mm');
-  const localEnd = Utilities.formatDate(end, settings.timezone, 'u HH:mm');
-  const startParts = localStart.split(' '); const endParts = localEnd.split(' ');
-  if (startParts[0] !== endParts[0] || settings.weekdays.indexOf(Number(startParts[0])) < 0) return false;
-  return startParts[1] >= settings.opening && endParts[1] <= settings.closing;
-}
-
 function rowObject_(headers, row) {
   return Object.fromEntries(headers.map((header, index) => [header, row[index]]));
 }

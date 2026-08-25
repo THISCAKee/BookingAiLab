@@ -238,6 +238,30 @@ describe("Google Apps Script booking extension", () => {
     }, new Date("2026-08-24T00:30:00.000Z"))).toThrow("BOOKING_DATE_NOT_ALLOWED");
   });
 
+  it("allows a late same-day booking but rejects a window crossing Bangkok midnight", () => {
+    const { context } = runtime([], false);
+    const lateBody = {
+      idempotencyKey: "late-create",
+      payload: {
+        machineId: "m-1",
+        startAt: "2026-08-24T13:00:00.000Z",
+        endAt: "2026-08-24T16:00:00.000Z",
+        email: "late@msu.ac.th",
+        name: "Late Student",
+        hd: "msu.ac.th",
+        emailPrefix: "late",
+        account: { username: "late", passwordAlgorithm: "pbkdf2-sha256", passwordIterations: 600000, passwordSalt: "salt", passwordHash: "hash", allowedMinutes: 180 },
+      },
+    };
+
+    expect(() => context.createBooking_(lateBody, new Date("2026-08-24T12:00:00.000Z"))).not.toThrow();
+    expect(() => context.createBooking_({
+      ...lateBody,
+      idempotencyKey: "cross-midnight",
+      payload: { ...lateBody.payload, startAt: "2026-08-24T16:00:00.000Z", endAt: "2026-08-24T19:00:00.000Z" },
+    }, new Date("2026-08-24T15:00:00.000Z"))).toThrow("BOOKING_CROSSES_MIDNIGHT");
+  });
+
   it("updates Booking and User exactly once for a repeated idempotency key", () => {
     const { context, sheets } = runtime();
     const first = JSON.parse(JSON.stringify(context.extendBooking_(body, new Date("2026-08-24T03:00:00.000Z"))));

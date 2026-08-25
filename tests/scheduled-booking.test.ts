@@ -1,17 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
-  getBookingSlots,
+  getImmediateBookingWindow,
   getSelectableBookingDates,
   normalizeBookingIdentity,
 } from "@/lib/booking/schedule";
-
-const settings = {
-  weekdays: [1, 2, 3, 4, 5],
-  openingTime: "08:30",
-  closingTime: "16:30",
-  durationMinutes: 180,
-  timezone: "Asia/Bangkok",
-};
 
 describe("scheduled booking identity", () => {
   it("turns a student id into its university email", () => {
@@ -33,7 +25,29 @@ describe("scheduled booking identity", () => {
   });
 });
 
-describe("scheduled booking dates and slots", () => {
+describe("immediate booking window", () => {
+  it("creates an immediate three-hour window from server time", () => {
+    expect(
+      getImmediateBookingWindow(new Date("2026-08-25T03:15:00.000Z")),
+    ).toEqual({
+      date: "2026-08-25",
+      startAt: "2026-08-25T03:15:00.000Z",
+      endAt: "2026-08-25T06:15:00.000Z",
+    });
+  });
+
+  it("rejects an immediate window that crosses Bangkok midnight", () => {
+    expect(
+      getImmediateBookingWindow(new Date("2026-08-25T16:30:00.000Z")),
+    ).toBeNull();
+  });
+
+  it("allows a window ending exactly at Bangkok midnight", () => {
+    expect(
+      getImmediateBookingWindow(new Date("2026-08-25T14:00:00.000Z")),
+    ).toMatchObject({ endAt: "2026-08-25T17:00:00.000Z" });
+  });
+
   it("offers only today in Bangkok", () => {
     expect(
       getSelectableBookingDates(
@@ -43,44 +57,4 @@ describe("scheduled booking dates and slots", () => {
     ).toEqual([{ value: "2026-08-19", kind: "today", label: "วันนี้" }]);
   });
 
-  it("builds consecutive complete slots from opening time", () => {
-    const slots = getBookingSlots(
-      "2026-08-19",
-      settings,
-      new Date("2026-08-19T01:00:00.000Z"),
-    );
-
-    expect(slots).toEqual([
-      {
-        startAt: "2026-08-19T01:30:00.000Z",
-        endAt: "2026-08-19T04:30:00.000Z",
-        label: "08:30–11:30",
-      },
-      {
-        startAt: "2026-08-19T04:30:00.000Z",
-        endAt: "2026-08-19T07:30:00.000Z",
-        label: "11:30–14:30",
-      },
-    ]);
-  });
-
-  it("hides slots that have already started today", () => {
-    expect(
-      getBookingSlots(
-        "2026-08-19",
-        settings,
-        new Date("2026-08-19T05:00:00.000Z"),
-      ),
-    ).toEqual([]);
-  });
-
-  it("returns no slots outside configured weekdays", () => {
-    expect(
-      getBookingSlots(
-        "2026-08-22",
-        settings,
-        new Date("2026-08-21T01:00:00.000Z"),
-      ),
-    ).toEqual([]);
-  });
 });
