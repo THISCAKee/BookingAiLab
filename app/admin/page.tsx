@@ -3,13 +3,23 @@ import { redirect } from "next/navigation";
 import { AdminLoginForm } from "@/components/admin/admin-login-form";
 import { requireAdminIdentity } from "@/lib/auth/identity";
 
-export default async function AdminLoginPage() {
+export default async function AdminLoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
   try {
     await requireAdminIdentity();
     redirect("/admin/dashboard");
   } catch (error) {
     if (typeof error === "object" && error && "digest" in error) throw error;
   }
+
+  const errorMessages: Record<string, string> = {
+    credentials: "Username หรือ Password ไม่ถูกต้อง",
+    config: "ยังไม่ได้ตั้งค่า ADMIN_PASSWORD ในระบบ",
+  };
 
   return (
     <main className="min-h-screen bg-[#f3f6fa] px-4 py-5 text-[#0b1324] sm:px-7 sm:py-8">
@@ -61,7 +71,8 @@ export default async function AdminLoginPage() {
               Admin access
             </div>
             <h1 className="font-display mt-4 text-4xl font-semibold tracking-[-0.035em]">เข้าสู่ระบบผู้ดูแล</h1>
-            <p className="mt-3 text-sm leading-7 text-slate-600">ใช้บัญชี Google <strong className="font-semibold text-[#0b1324]">@msu.ac.th</strong> ที่อยู่ในรายการผู้ดูแลระบบ</p>
+            <p className="mt-3 text-sm leading-7 text-slate-600">กรอก Username และ Password สำหรับผู้ดูแลระบบ</p>
+            {error && errorMessages[error] ? <p role="alert" className="mt-5 rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{errorMessages[error]}</p> : null}
 
             <AdminLoginForm />
 

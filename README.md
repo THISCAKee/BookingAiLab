@@ -34,6 +34,10 @@
 9. รัน `installDailyCleanupTrigger()` หนึ่งครั้งและอนุญาตสิทธิ์ เพื่อสร้าง trigger ตรวจการข้ามวันทุก 1 นาที
 10. แชร์ Private Google Sheet ให้ service account ของ Backend และนำ Sheet ID ใหม่ใส่ `GOOGLE_SHEET_ID`
 
+## Admin login
+
+หน้า `/admin` ใช้ Username/Password แยกจาก Google login ของผู้จอง โดยค่าเริ่มต้น Username คือ `admin` ให้ตั้ง `ADMIN_PASSWORD` เป็นรหัสผ่านจริงใน `.env.local` และ environment ของ Vercel ห้าม commit รหัสผ่านลง Git ระบบจะสร้าง `admin_session` แบบ HttpOnly และล้าง session เมื่อกดออกจากระบบ
+
 เมื่อแก้ `Code.gs` ต้อง Deploy → Manage deployments → Edit → New version เพื่อให้ Web app `/exec` ใช้โค้ดล่าสุด การกด Save อย่างเดียวไม่เปลี่ยนเวอร์ชันที่ Backend เรียก
 
 ## Google Sheet tabs

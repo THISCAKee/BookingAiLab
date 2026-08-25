@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { ADMIN_SESSION_COOKIE, readAdminSessionCookie } from "@/lib/auth/admin-session";
 import { readSessionCookie } from "@/lib/auth/session";
 import type { GoogleIdentity } from "@/lib/auth/google-claims";
 
@@ -19,11 +20,12 @@ export async function requireGoogleIdentity() {
 }
 
 export async function requireAdminIdentity() {
-  const identity = await getGoogleIdentity();
-  const adminEmails = (process.env.ADMIN_EMAILS ?? "admin@msu.ac.th")
-    .split(",")
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean);
-  if (!adminEmails.includes(identity.email)) throw new Error("ADMIN_REQUIRED");
+  const cookieStore = await cookies();
+  return requireAdminIdentityFromCookie(cookieStore.get(ADMIN_SESSION_COOKIE)?.value);
+}
+
+export async function requireAdminIdentityFromCookie(cookie: string | undefined, secret?: string) {
+  const identity = await readAdminSessionCookie(cookie, new Date(), secret);
+  if (!identity) throw new Error("ADMIN_REQUIRED");
   return identity;
 }

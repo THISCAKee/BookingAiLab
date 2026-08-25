@@ -6,6 +6,7 @@ function logoutResponse(request: Request) {
   const target = redirectTo.startsWith("/") ? redirectTo : "/login";
   const response = NextResponse.redirect(new URL(target, request.url));
   response.cookies.delete("booking_session");
+  response.cookies.delete("admin_session");
   return response;
 }
 
