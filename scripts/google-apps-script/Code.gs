@@ -136,6 +136,40 @@ function createBooking_(body, currentTime) {
   sheet.appendRow(row);
   body.payload.account.allowedMinutes = 180;
   upsertUser_(body.payload, bookingId, machine.machineCode, now);
+  const eventSheet = SpreadsheetApp.getActive().getSheetByName(TABS.events);
+  const eventHeaders = eventSheet.getDataRange().getValues().shift().map(String);
+  appendMappedRow_(eventSheet, eventHeaders, {
+    eventId: Utilities.getUuid(),
+    eventType: 'booking_confirmed',
+    sessionId: 'booking:' + bookingId,
+    bookingId: bookingId,
+    machineCode: machine.machineCode,
+    username: body.payload.account.username,
+    status: 'confirmed',
+    payload: JSON.stringify({
+      bookingNumber: bookingNumber,
+      startAt: body.payload.startAt,
+      endAt: body.payload.endAt,
+      allowedMinutes: 180,
+    }),
+    createdAt: now,
+    updatedAt: now,
+  });
+  appendAudit_({
+    actorEmail: body.payload.email,
+    action: 'booking_confirmed',
+    entityType: 'booking',
+    entityId: bookingId,
+    metadata: JSON.stringify({
+      bookingNumber: bookingNumber,
+      machineCode: machine.machineCode,
+      username: body.payload.account.username,
+      startAt: body.payload.startAt,
+      endAt: body.payload.endAt,
+      allowedMinutes: 180,
+    }),
+    createdAt: now,
+  });
   return { ok: true, data: Object.assign(rowObject_(headers, row), { manageCode: manageCode }) };
 }
 

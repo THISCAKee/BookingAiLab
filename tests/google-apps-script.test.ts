@@ -209,6 +209,18 @@ describe("Google Apps Script booking extension", () => {
     expect(created?.[BOOKING_HEADERS.indexOf("extensionCount")]).toBe(0);
     const createdUser = sheets.Users.rows.at(-1);
     expect(createdUser?.[USER_HEADERS.indexOf("allowedMinutes")]).toBe(180);
+    const confirmedEvent = sheets.Events.rows.at(-1) as unknown[];
+    expect(confirmedEvent?.[EVENT_HEADERS.indexOf("eventType")]).toBe("booking_confirmed");
+    expect(confirmedEvent?.[EVENT_HEADERS.indexOf("bookingId")]).toBe(created?.[BOOKING_HEADERS.indexOf("bookingId")]);
+    expect(String(confirmedEvent)).not.toContain("passwordHash");
+    expect(String(confirmedEvent)).not.toContain("plain-text-password");
+    expect(sheets.AuditLog.rows.at(-1)?.[2]).toBe("booking_confirmed");
+
+    const eventCountAfterCreate = sheets.Events.rows.length;
+    const auditCountAfterCreate = sheets.AuditLog.rows.length;
+    context.createBooking_(createBody, new Date("2026-08-24T00:30:00.000Z"));
+    expect(sheets.Events.rows).toHaveLength(eventCountAfterCreate);
+    expect(sheets.AuditLog.rows).toHaveLength(auditCountAfterCreate);
 
     expect(() => context.createBooking_({
       ...createBody,
