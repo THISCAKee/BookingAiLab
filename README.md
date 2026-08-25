@@ -72,5 +72,9 @@
 4. สร้าง/หมุน Device Token ที่หน้า `/admin/machines` แล้วกรอก Token ครั้งเดียวตอนเปิด TimeLockApp ครั้งแรก
 5. ให้ WPF เรียก extension check เมื่อครบเวลา แสดง popup แบบบังการใช้งาน 60 วินาที และเพิ่มเวลาเฉพาะหลัง confirm สำเร็จ
 
+เมื่อผู้ใช้จองสำเร็จ หน้าเว็บจะแสดงเลขที่จอง, เครื่อง, ช่วงเวลา และ TimeLock username/password แบบใช้ครั้งเดียว
+WPF ต้องใช้ username/password นั้นเรียก `POST /api/timelock/login` พร้อม `x-machine-code` และ `x-device-token`
+จากนั้นใช้ `endAt` ใน response เป็นเวลาสิ้นสุดของ session ห้ามอ่าน Google Sheet หรือใช้เวลาที่คำนวณจาก client
+
 TimeLockApp ส่ง heartbeat ทุก 15 วินาที หน้า Dashboard ถือว่า Offline เมื่อขาด heartbeat เกิน 45 วินาที
 บัญชี offline cache ใช้ได้ 24 ชั่วโมง ผูกกับ MachineCode และถูกป้องกันด้วย Windows DPAPI

@@ -62,11 +62,59 @@ Response สำเร็จ:
 
 ข้อผิดพลาดหลัก: `INVALID_HEARTBEAT`, `MACHINE_TOKEN_INVALID`, `USERNAME_REQUIRED`
 
+### TimeLock login
+
+```http
+POST /api/timelock/login
+x-machine-code: PC-001
+x-device-token: <device-token>
+Content-Type: application/json
+```
+
+Request:
+
+```json
+{
+  "username": "student",
+  "password": "one-time-password"
+}
+```
+
+เมื่อ login สำเร็จ Backend จะตรวจ `Users`, `Bookings` และ machine ให้สัมพันธ์กันก่อนสร้าง
+`session_started` ใน `Events` แล้วคืนข้อมูล session ที่ WPF ใช้ตั้ง timer:
+
+```json
+{
+  "ok": true,
+  "session": {
+    "sessionId": "session-id",
+    "bookingId": "booking-id",
+    "bookingNumber": "BK-20260825-0001",
+    "machineCode": "PC-001",
+    "username": "student",
+    "startedAt": "2026-08-25T01:30:00.000Z",
+    "endAt": "2026-08-25T04:30:00.000Z",
+    "allowedMinutes": 180,
+    "extensionCount": 0,
+    "status": "active"
+  }
+}
+```
+
+`endAt`, `allowedMinutes` และ `extensionCount` เป็นค่าจาก Server เท่านั้น WPF ห้ามคำนวณหรือรับค่าแทนจาก client
+และต้องใช้ `endAt` เป็นเวลาสิ้นสุด authoritative ก่อนเรียก extension check/confirm
+
+ข้อผิดพลาดหลัก: `MACHINE_TOKEN_INVALID`, `LOGIN_INVALID`, `CREDENTIALS_INVALID`, `ACCOUNT_MACHINE_MISMATCH`
+
 ### ดึง Event ของเครื่อง
 
 ```http
 GET /api/machines/PC-001/events?limit=20
 ```
+
+เมื่อมีการจองสำเร็จ ระบบจะบันทึก Event ภายในชื่อ `booking_confirmed` พร้อม `bookingId`, `machineCode`,
+`username` และ metadata ของเลขที่จอง/เวลา/โควตาเพื่อ audit และการตรวจสอบการส่งต่อข้อมูลให้ TimeLock
+โดยไม่มี plaintext password หรือ password verifier อยู่ใน Event
 
 Response:
 
@@ -82,7 +130,11 @@ Response:
       "startAt": "2026-08-20T10:00:00+07:00",
       "endAt": "2026-08-20T12:00:00+07:00",
       "username": "booking_0001",
-      "password": "one-time-password"
+      "status": "confirmed",
+      "payload": {
+        "bookingNumber": "BK-20260820-0001",
+        "allowedMinutes": 180
+      }
     }
   ]
 }
