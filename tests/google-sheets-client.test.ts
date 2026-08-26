@@ -28,4 +28,22 @@ describe("Google Sheets client", () => {
 
     await expect(client.appendSheetRow("Bookings", ["row"])).rejects.toThrow("GOOGLE_SHEET_WRITE_FAILED");
   });
+
+  it("shares one access token across concurrent sheet reads", async () => {
+    const fetchImpl = vi.fn().mockImplementation(
+      async () => new Response(JSON.stringify({ values: [["header"]] }), { status: 200 }),
+    );
+    const accessToken = vi.fn().mockImplementation(
+      () => new Promise<string>((resolve) => setTimeout(() => resolve("token"), 5)),
+    );
+    const client = createGoogleSheetsClient({ spreadsheetId: "sheet-id", accessToken, fetchImpl });
+
+    await Promise.all([
+      client.readSheet("Settings"),
+      client.readSheet("Machines"),
+      client.readSheet("Bookings"),
+    ]);
+
+    expect(accessToken).toHaveBeenCalledTimes(1);
+  });
 });

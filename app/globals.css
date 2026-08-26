@@ -1,17 +1,131 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f3f6fa;
-  --foreground: #0b1324;
+  --theme-yellow: #facc15;
+  --theme-yellow-hover: #eab308;
+  --theme-yellow-soft: #fff9db;
+  --theme-ink: #171717;
+  --theme-gray: #6b7280;
+  --theme-surface: #f3f4f6;
+  --theme-canvas: #ffffff;
+  --background: var(--theme-canvas);
+  --foreground: var(--theme-ink);
 }
 
 .font-display {
   font-family: var(--font-chakra-petch), var(--font-anuphan), sans-serif;
 }
 
+.login-shell {
+  background: #ffffff;
+  isolation: isolate;
+}
+
+.login-shell::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: linear-gradient(rgba(250, 204, 21, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(250, 204, 21, 0.08) 1px, transparent 1px);
+  background-position: center;
+  background-size: 32px 32px;
+  content: "";
+  mask-image: radial-gradient(ellipse at center, black 0%, transparent 72%);
+}
+
+.login-card {
+  animation: login-card-enter 500ms ease-out both;
+}
+
+.login-accent-bar {
+  height: 5px;
+  background: linear-gradient(90deg, #facc15 0%, #facc15 66%, #fde047 66%, #fde047 100%);
+}
+
+.login-logo-mark {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 18px;
+}
+
+.login-logo-mark span {
+  display: block;
+  width: 4px;
+  border-radius: 999px 999px 2px 2px;
+  background: #facc15;
+}
+
+.login-logo-mark span:nth-child(1) {
+  height: 9px;
+  opacity: 0.55;
+}
+
+.login-logo-mark span:nth-child(2) {
+  height: 14px;
+}
+
+.login-logo-mark span:nth-child(3) {
+  height: 18px;
+  background: #fde047;
+}
+
+.login-access-note {
+  background: #fff9db;
+}
+
+.login-access-note--light {
+  border: 1px solid #f8df75;
+}
+
+.login-error {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  color: #9f1239;
+}
+
+.login-spinner {
+  height: 1rem;
+  width: 1rem;
+  border: 2px solid rgba(31, 41, 55, 0.28);
+  border-top-color: #1f2937;
+  border-radius: 999px;
+  animation: login-spin 700ms linear infinite;
+}
+
+.time-value-regular {
+  font-family: var(--font-anuphan), sans-serif;
+  font-weight: 400;
+}
+
+.booking-loading-spinner {
+  height: 1.75rem;
+  width: 1.75rem;
+  border: 3px solid rgba(202, 138, 4, 0.22);
+  border-top-color: #ca8a04;
+  border-radius: 999px;
+  animation: login-spin 700ms linear infinite;
+}
+
+@keyframes login-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes login-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 ::selection {
-  background: #bfdbfe;
-  color: #0b1324;
+  background: #fff1b8;
+  color: var(--theme-ink);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -34,4 +148,90 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-anuphan), sans-serif;
+}
+
+/* Shared white-canvas / yellow-signal theme. The semantic green and red
+   utilities remain available for availability and error states. */
+.bg-\[\#f3f6fa\],
+.bg-\[\#f4f6f8\] {
+  background-color: var(--theme-canvas);
+}
+
+.bg-\[\#2563eb\],
+.bg-blue-700 {
+  background-color: var(--theme-yellow);
+  color: var(--theme-ink);
+}
+
+.bg-\[\#1d4ed8\],
+.bg-blue-800,
+.hover\:bg-\[\#1d4ed8\]:hover,
+.hover\:bg-blue-800:hover {
+  background-color: var(--theme-yellow-hover);
+}
+
+.bg-\[\#06b6d4\] {
+  background-color: var(--theme-yellow);
+}
+
+.bg-cyan-50 {
+  background-color: var(--theme-yellow-soft);
+}
+
+.bg-blue-50,
+.bg-\[\#e8f0ff\] {
+  background-color: var(--theme-yellow-soft);
+}
+
+.text-\[\#2563eb\],
+.text-blue-600,
+.text-blue-700,
+.text-cyan-700,
+.text-cyan-800 {
+  color: #a16207;
+}
+
+.text-cyan-300 {
+  color: #fde047;
+}
+
+.text-blue-800,
+.text-blue-950 {
+  color: #713f12;
+}
+
+.text-\[\#0b1324\] {
+  color: var(--theme-ink);
+}
+
+.bg-\[\#0b1324\],
+.bg-slate-950 {
+  background-color: var(--theme-ink);
+}
+
+.border-blue-200,
+.border-blue-300,
+.hover\:border-blue-200:hover,
+.hover\:border-blue-300:hover {
+  border-color: #f8df75;
+}
+
+.hover\:text-\[\#2563eb\]:hover {
+  color: #a16207;
+}
+
+.focus-visible\:ring-blue-100:focus-visible,
+.focus-visible\:ring-blue-200:focus-visible,
+.focus-visible\:ring-blue-400\/30:focus-visible,
+.focus-within\:ring-blue-100:focus-within,
+.focus\:ring-blue-100:focus {
+  --tw-ring-color: rgba(250, 204, 21, 0.35);
+}
+
+.bg-slate-50 {
+  background-color: #f9fafb;
+}
+
+.bg-\[\#f8fafc\] {
+  background-color: #f9fafb;
 }

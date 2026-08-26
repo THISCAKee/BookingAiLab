@@ -10,7 +10,7 @@ export default async function AdminSettingsPage() {
   const settings = await getBookingSettings();
 
   return (
-    <main className="min-h-screen bg-[#f4f6f8] text-slate-950">
+    <main className="min-h-screen bg-white text-slate-950">
       <div className="mx-auto max-w-4xl px-5 py-8 sm:px-8 sm:py-12">
         <AdminNav />
 

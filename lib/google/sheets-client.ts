@@ -13,9 +13,20 @@ export function createGoogleSheetsClient(options: GoogleSheetsClientOptions) {
   const fetchImpl = options.fetchImpl ?? fetch;
   const accessToken = options.accessToken ?? getGoogleSheetsAccessToken;
   const baseUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(options.spreadsheetId)}`;
+  let accessTokenPromise: Promise<string> | null = null;
+
+  async function getAccessToken() {
+    if (!accessTokenPromise) {
+      accessTokenPromise = accessToken().catch((error) => {
+        accessTokenPromise = null;
+        throw error;
+      });
+    }
+    return accessTokenPromise;
+  }
 
   async function request(path: string, init?: RequestInit) {
-    const token = await accessToken();
+    const token = await getAccessToken();
     const response = await fetchImpl(`${baseUrl}${path}`, {
       ...init,
       headers: {

@@ -10,7 +10,7 @@ const initialState: BookingFormState = { ok: false, code: "", message: "", retry
 function StepHeading({ number, title }: { number: string; title: string }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="font-display grid h-8 w-8 place-items-center rounded-lg bg-[#e8f0ff] text-xs font-bold text-[#2563eb]">{number}</span>
+      <span className="font-display grid h-8 w-8 place-items-center rounded-lg bg-amber-100 text-xs font-bold text-amber-700">{number}</span>
       <h2 className="font-display text-sm font-semibold tracking-wide text-[#0b1324]">{title}</h2>
     </div>
   );
@@ -45,6 +45,26 @@ export function PublicBookingBoard({
 
   return (
     <>
+      {isPending ? (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-[#171717]/45 px-5 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="booking-loading-title"
+        >
+          <div className="w-full max-w-sm rounded-3xl border border-amber-200 bg-white p-7 text-center shadow-[0_24px_70px_-30px_rgba(23,23,23,0.65)]">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-amber-100" aria-hidden="true">
+              <span className="booking-loading-spinner" />
+            </div>
+            <h2 id="booking-loading-title" className="font-display mt-5 text-xl font-semibold text-[#171717]">
+              กำลังยืนยันการจอง
+            </h2>
+            <p role="status" className="mt-2 text-sm leading-6 text-slate-600">
+              ระบบกำลังตรวจสอบเครื่องที่เลือก กรุณารอสักครู่
+            </p>
+          </div>
+        </div>
+      ) : null}
       {state.code ? (
         <BookingResultPanel state={state} onRetry={() => setSelectedMachine("")} />
       ) : null}
@@ -57,10 +77,10 @@ export function PublicBookingBoard({
 
           <section className="mt-6 border-t border-slate-100 pt-6">
             <StepHeading number="02" title="ช่วงเวลาการใช้งาน" />
-            <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-600">เริ่มทันที · 3 ชั่วโมง</p>
-              <p className="mt-2 text-sm font-semibold leading-6 text-blue-950">{windowLabel}</p>
-              <p className="mt-2 text-xs leading-5 text-blue-800">ระบบใช้เวลาปัจจุบันของเซิร์ฟเวอร์และไม่รับเวลาจากเครื่องผู้ใช้</p>
+            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">เริ่มทันที · 3 ชั่วโมง</p>
+              <p className="mt-2 text-sm font-semibold leading-6 text-amber-950">{windowLabel}</p>
+              <p className="mt-2 text-xs leading-5 text-amber-800">ระบบใช้เวลาปัจจุบันของเซิร์ฟเวอร์และไม่รับเวลาจากเครื่องผู้ใช้</p>
             </div>
           </section>
         </aside>
@@ -78,7 +98,7 @@ export function PublicBookingBoard({
             {machines.map((machine, index) => (
               <label
                 key={machine.id}
-                className={`group relative min-h-44 overflow-hidden rounded-2xl border p-5 transition focus-within:ring-4 focus-within:ring-blue-100 ${machine.available ? "cursor-pointer border-slate-200 bg-white hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg has-[:checked]:border-[#2563eb] has-[:checked]:bg-[#0b1324] has-[:checked]:text-white has-[:checked]:shadow-xl" : "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"}`}
+                className={`group relative min-h-44 overflow-hidden rounded-2xl border p-5 transition focus-within:ring-4 focus-within:ring-amber-100 ${machine.available ? "cursor-pointer border-slate-200 bg-white hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-lg has-[:checked]:border-amber-400 has-[:checked]:bg-[#171717] has-[:checked]:text-white has-[:checked]:shadow-xl" : "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"}`}
               >
                 <input type="radio" name="machineId" value={machine.id} disabled={!machine.available} checked={selectedMachine === machine.id} onChange={() => setSelectedMachine(machine.id)} className="sr-only" />
                 <span className={`absolute inset-x-0 top-0 h-1 ${machine.available ? "bg-[#16a34a]" : "bg-slate-300"}`} aria-hidden="true" />
@@ -104,7 +124,7 @@ export function PublicBookingBoard({
           ) : null}
 
           {loadMessage ? <p role="alert" className="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{loadMessage}</p> : null}
-          <button type="submit" disabled={isPending || !hasWindow || !selectedMachine} className="mt-5 w-full rounded-xl bg-[#2563eb] px-6 py-4 text-base font-semibold text-white transition hover:bg-[#1d4ed8] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500">
+          <button type="submit" disabled={isPending || !hasWindow || !selectedMachine} className="mt-5 w-full rounded-xl bg-[#171717] px-6 py-4 text-base font-semibold text-white transition hover:bg-amber-400 hover:text-[#171717] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500">
             {isPending ? "กำลังยืนยันการจอง…" : selectedMachine ? "ยืนยันการจองเครื่องที่เลือก" : "เลือกเครื่องเพื่อดำเนินการต่อ"}
           </button>
         </section>

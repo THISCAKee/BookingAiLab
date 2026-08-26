@@ -23,4 +23,26 @@ describe("Sheet booking repository", () => {
   it("fails closed when atomic booking configuration is unavailable", async () => {
     await expect(createSheetBooking({ machineId: "m-1", startAt: "2026-08-21T03:00:00.000Z", idempotencyKey: "request-1" }, identity, {})).rejects.toThrow("BOOKING_ATOMIC_NOT_CONFIGURED");
   });
+
+  it("stops waiting when the atomic endpoint does not respond", async () => {
+    const fetchImpl = vi.fn().mockImplementation((_input: RequestInfo | URL, init?: RequestInit) =>
+      new Promise<Response>((_resolve, reject) => {
+        const upstreamTimer = setTimeout(() => reject(new Error("upstream still running")), 20);
+        init?.signal?.addEventListener("abort", () => {
+          clearTimeout(upstreamTimer);
+          const error = new Error("aborted");
+          error.name = "AbortError";
+          reject(error);
+        });
+      }),
+    );
+
+    await expect(
+      createSheetBooking(
+        { machineId: "m-1", startAt: "2026-08-21T03:00:00.000Z", idempotencyKey: "request-1" },
+        identity,
+        { url: "https://script.example.test/exec", secret: "secret", fetchImpl, timeoutMs: 1 },
+      ),
+    ).rejects.toThrow("BOOKING_ATOMIC_TIMEOUT");
+  });
 });

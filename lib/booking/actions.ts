@@ -3,7 +3,6 @@ import { revalidatePath } from "next/cache";
 import { requireGoogleIdentity } from "@/lib/auth/identity";
 import { toBookingFailure, type BookingFailure } from "@/lib/booking/action-utils";
 import { getImmediateBookingWindow } from "@/lib/booking/schedule";
-import { assertSheetBookingAllowed } from "@/lib/booking/sheet-policy";
 import { cancelSheetBooking, createSheetBooking } from "@/lib/booking/sheet-repository";
 import { getGoogleRuntimeConfig } from "@/lib/google/config";
 import { parseBookings, parseMachines, parseSettings } from "@/lib/google/sheet-schema";
@@ -52,15 +51,10 @@ export async function getPublicBookingOptions(date: string): Promise<BookingActi
 export async function createImmediateBooking(input: { machineId: string }): Promise<BookingActionResult<CreatedBooking>> {
   try {
     const identity = await requireGoogleIdentity();
-    const { settings, machines, bookings } = await readBookingData();
-    const machine = machines.find((row) => row.machineId === input.machineId);
-    if (!machine) return toBookingFailure(new Error("MACHINE_NOT_FOUND"));
     const window = getImmediateBookingWindow(new Date(), 180);
     if (!window) return toBookingFailure(new Error("BOOKING_CROSSES_MIDNIGHT"));
-    assertSheetBookingAllowed({ machine, bookings, email: identity.email, startAt: window.startAt, endAt: window.endAt, settings });
-    const data = await createSheetBooking({ machineId: machine.machineId, startAt: window.startAt, endAt: window.endAt, idempotencyKey: randomUUID() }, identity);
-    revalidatePath("/booking"); revalidatePath("/my-bookings");
-    return { ok: true, data: { ...(data as CreatedBooking), machineCode: machine.machineCode, startAt: window.startAt, endAt: window.endAt, status: "confirmed" }, message: "จองเครื่องสำเร็จ" };
+    const data = await createSheetBooking({ machineId: input.machineId, startAt: window.startAt, endAt: window.endAt, idempotencyKey: randomUUID() }, identity);
+    return { ok: true, data: { ...(data as CreatedBooking), startAt: window.startAt, endAt: window.endAt, status: "confirmed" }, message: "จองเครื่องสำเร็จ" };
   } catch (error) { return toBookingFailure(error); }
 }
 

@@ -38,12 +38,12 @@ function connectionTone(machine: MachineDashboardRow) {
   if (machine.operationalStatus === "active") {
     return { rail: "bg-[#16a34a]", dot: "bg-[#16a34a]", label: "Active", labelTone: "bg-emerald-50 text-emerald-700" };
   }
-  return { rail: "bg-[#06b6d4]", dot: "bg-[#06b6d4]", label: "Online", labelTone: "bg-cyan-50 text-cyan-700" };
+  return { rail: "bg-amber-400", dot: "bg-amber-400", label: "Online", labelTone: "bg-amber-50 text-amber-700" };
 }
 
 const filterCards: Array<{ key: DashboardFilter; label: string; countKey: "all" | "online" | "active" | "offline"; dot: string }> = [
-  { key: "all", label: "เครื่องทั้งหมด", countKey: "all", dot: "bg-[#2563eb]" },
-  { key: "online", label: "กำลัง Online", countKey: "online", dot: "bg-[#06b6d4]" },
+  { key: "all", label: "เครื่องทั้งหมด", countKey: "all", dot: "bg-amber-400" },
+  { key: "online", label: "กำลัง Online", countKey: "online", dot: "bg-amber-400" },
   { key: "active", label: "กำลังใช้งาน", countKey: "active", dot: "bg-[#16a34a]" },
   { key: "offline", label: "Offline", countKey: "offline", dot: "bg-slate-300" },
 ];
@@ -71,7 +71,7 @@ export function MachineDashboard({ machines, syncHealth }: { machines: MachineDa
               type="button"
               aria-pressed={active}
               onClick={() => setFilter(item.key)}
-              className={`group rounded-2xl border p-4 text-left transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100 sm:p-5 ${active ? "border-[#0b1324] bg-[#0b1324] text-white shadow-lg" : "border-slate-200 bg-white text-[#0b1324] hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"}`}
+              className={`group rounded-2xl border p-4 text-left transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-100 sm:p-5 ${active ? "border-[#0b1324] bg-[#0b1324] text-white shadow-lg" : "border-slate-200 bg-white text-[#0b1324] hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-md"}`}
             >
               <div className="flex items-center justify-between gap-3">
                 <span className={`h-2.5 w-2.5 rounded-full ${item.dot}`} aria-hidden="true" />
@@ -122,11 +122,11 @@ export function MachineDashboard({ machines, syncHealth }: { machines: MachineDa
                 </div>
 
                 <div className="mt-7 flex items-end justify-between border-b border-slate-100 pb-6">
-                  <p className="font-display text-7xl font-semibold leading-none tracking-[-0.09em] text-slate-100 transition group-hover:text-blue-50" aria-hidden="true">{machineNumber}</p>
+                  <p className="font-display text-7xl font-semibold leading-none tracking-[-0.09em] text-slate-100 transition group-hover:text-amber-50" aria-hidden="true">{machineNumber}</p>
                   <div className="text-right">
                     <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Session</p>
                     <p className="mt-1 font-semibold text-[#0b1324]">{sessionLabels[machine.sessionStatus]}</p>
-                    {machine.username ? <p className="mt-1 max-w-44 truncate text-xs text-[#2563eb]" title={machine.username}>{machine.username}</p> : null}
+                    {machine.username ? <p className="mt-1 max-w-44 truncate text-xs text-amber-700" title={machine.username}>{machine.username}</p> : null}
                   </div>
                 </div>
 
@@ -141,8 +141,8 @@ export function MachineDashboard({ machines, syncHealth }: { machines: MachineDa
                   </div>
                 </div>
 
-                <div className={`mt-5 rounded-xl px-3.5 py-3 text-xs ${machine.booking ? "bg-blue-50 text-blue-800" : "bg-slate-50 text-slate-500"}`}>
-                  {machine.booking ? <><span className="font-semibold">Booking</span><span className="mx-2 text-blue-300">·</span>{machine.booking.bookingNumber}</> : "ไม่มีรายการจองที่กำลังใช้งาน"}
+                <div className={`mt-5 rounded-xl px-3.5 py-3 text-xs ${machine.booking ? "bg-amber-50 text-amber-800" : "bg-slate-50 text-slate-500"}`}>
+                  {machine.booking ? <><span className="font-semibold">Booking</span><span className="mx-2 text-amber-300">·</span>{machine.booking.bookingNumber}</> : "ไม่มีรายการจองที่กำลังใช้งาน"}
                 </div>
               </article>
             );

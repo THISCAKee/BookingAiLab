@@ -45,6 +45,9 @@ describe("booking action utilities", () => {
     expect(getBookingErrorMessage({ message: "BOOKING_DURATION_INVALID" })).toContain(
       "3 ชั่วโมง",
     );
+    expect(getBookingErrorMessage({ message: "BOOKING_ATOMIC_TIMEOUT" })).toContain(
+      "ใช้เวลาตอบกลับนานเกินกำหนด",
+    );
     expect(getBookingErrorMessage({ message: "UNKNOWN_DATABASE_ERROR" })).toBe(
       "ไม่สามารถทำรายการจองได้ กรุณาลองใหม่อีกครั้ง",
     );

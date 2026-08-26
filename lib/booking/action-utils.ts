@@ -21,6 +21,7 @@ const bookingErrorMessages: Record<string, string> = {
   BOOKING_CROSSES_MIDNIGHT: "เหลือเวลาไม่ถึง 3 ชั่วโมงก่อนเที่ยงคืน ไม่สามารถจองได้",
   BOOKING_ATOMIC_NOT_CONFIGURED: "ระบบจองยังตั้งค่าไม่ครบ กรุณาติดต่อผู้ดูแลระบบ",
   BOOKING_ATOMIC_FAILED: "ระบบบันทึกการจองขัดข้อง กรุณาลองใหม่อีกครั้ง",
+  BOOKING_ATOMIC_TIMEOUT: "ระบบใช้เวลาตอบกลับนานเกินกำหนด กรุณาลองใหม่อีกครั้ง",
   BOOKING_ALREADY_ACTIVE: "คุณยังมีการจองที่ไม่สิ้นสุดอยู่ ไม่สามารถจองซ้ำได้",
   BOOKING_CONFLICT: "มีผู้จองเครื่องนี้พร้อมกัน กรุณาเลือกเครื่องอื่น",
   BOOKING_REQUEST_NOT_ALLOWED: "ตรวจสอบรหัสนิสิตหรืออีเมล วัน เวลา และเครื่องที่เลือกอีกครั้ง",

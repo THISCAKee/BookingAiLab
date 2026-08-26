@@ -29,6 +29,18 @@ describe("public booking result panel", () => {
     expect(html).toContain("รหัสผ่าน TimeLock");
     expect(html).toContain("one-time-password");
     expect(html).toContain("BK-1");
+    expect(html).toContain("ใช้สำหรับตรวจสอบรายละเอียดการจองของคุณ");
+    expect(html).toContain("ใช้คู่กับเลขที่การจองเมื่อต้องการดูรายละเอียดหรือยกเลิกการจอง");
+    expect(html).toContain("timelock-highlight");
+    expect(html).toContain("time-value-regular");
+    expect(html).toContain("booking-time-section");
+    expect(html).not.toContain("border-amber-300");
+    expect(html).not.toContain("bg-amber-50");
+    expect(html).not.toContain("bg-amber-200");
+    expect(html).not.toContain("text-amber-800");
+    expect(html).not.toContain("text-amber-950");
+    expect(html).not.toContain("bg-[#242424]");
+    expect(html).not.toContain("bg-[#0b1324]");
   });
 
   it("renders an actionable failure without exposing any TimeLock password", () => {

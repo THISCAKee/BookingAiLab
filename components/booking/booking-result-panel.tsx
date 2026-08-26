@@ -43,29 +43,53 @@ export function BookingResultPanel({
         <p className="text-sm font-semibold text-emerald-700">{booking.machineCode} พร้อมใช้งานสำหรับช่วงเวลาที่เริ่มทันที</p>
         <h2 className="font-display mt-2 text-3xl font-semibold tracking-tight">บันทึกข้อมูลนี้ไว้ก่อนปิดหน้า</h2>
         <div className="mt-7 grid gap-4 sm:grid-cols-2">
+          <div className="booking-time-section rounded-2xl border border-slate-200 bg-white p-6 sm:col-span-2">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">ช่วงเวลาที่จอง</p>
+              <span className="rounded-full bg-slate-200 px-3 py-1 text-xs font-bold text-slate-700">เริ่มทันที · 3 ชั่วโมง</span>
+            </div>
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-xl bg-slate-50 px-4 py-3">
+                <p className="text-xs font-medium text-slate-500">เริ่มใช้งาน</p>
+                <p className="time-value-regular mt-1 text-lg font-normal text-slate-900">{dateTime.format(new Date(booking.startAt))}</p>
+              </div>
+              <div className="rounded-xl bg-slate-50 px-4 py-3">
+                <p className="text-xs font-medium text-slate-500">สิ้นสุด</p>
+                <p className="time-value-regular mt-1 text-lg font-normal text-slate-900">{dateTime.format(new Date(booking.endAt))}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="timelock-highlight rounded-2xl border-2 border-slate-300 bg-slate-100 p-7 text-slate-900 shadow-[0_18px_45px_-32px_rgba(15,23,42,0.65)] sm:col-span-2 sm:p-8">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm font-bold uppercase tracking-[0.16em] text-slate-900">ข้อมูลสำหรับ TimeLock</p>
+              <span className="rounded-full bg-slate-200 px-3 py-1 text-xs font-bold text-slate-800">ใช้สำหรับเข้าเครื่องที่จอง</span>
+            </div>
+            <div className="mt-5 grid gap-5 sm:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4">
+                <p className="text-sm font-medium text-slate-600">ชื่อผู้ใช้ TimeLock</p>
+                <p className="font-display mt-2 break-all text-3xl font-semibold text-[#171717]">{booking.timelockUsername}</p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4">
+                <p className="text-sm font-medium text-slate-600">รหัสผ่าน TimeLock · แสดงครั้งเดียว</p>
+                <p className="font-display mt-2 break-all text-3xl font-bold tracking-[0.08em] text-[#171717]">{booking.timelockPassword}</p>
+              </div>
+            </div>
+          </div>
+
           <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">เลขที่การจอง</p>
-            <p className="font-display mt-3 break-all text-xl font-semibold">{booking.bookingNumber}</p>
-          </div>
-          <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-600">ช่วงเวลาที่จอง</p>
-            <p className="mt-3 text-sm font-semibold text-blue-950">{dateTime.format(new Date(booking.startAt))}</p>
-            <p className="mt-1 text-sm font-semibold text-blue-950">ถึง {dateTime.format(new Date(booking.endAt))}</p>
+            <p className="font-display mt-3 break-all text-lg font-semibold text-[#171717]">{booking.bookingNumber}</p>
+            <p className="mt-3 text-xs leading-5 text-slate-500">ใช้สำหรับตรวจสอบรายละเอียดการจองของคุณ</p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">รหัสจัดการ · แสดงครั้งเดียว</p>
-            <p className="font-display mt-3 break-all text-2xl font-bold tracking-[0.12em]">{booking.manageCode}</p>
-          </div>
-          <div className="rounded-2xl bg-[#0b1324] p-5 text-white">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300">ข้อมูลสำหรับ TimeLock</p>
-            <p className="mt-3 text-sm text-slate-300">ชื่อผู้ใช้ TimeLock</p>
-            <p className="font-display break-all text-xl font-semibold">{booking.timelockUsername}</p>
-            <p className="mt-3 text-sm text-slate-300">รหัสผ่าน TimeLock · แสดงครั้งเดียว</p>
-            <p className="font-display break-all text-xl font-bold tracking-[0.08em]">{booking.timelockPassword}</p>
+            <p className="font-display mt-3 break-all text-lg font-bold tracking-[0.1em] text-[#171717]">{booking.manageCode}</p>
+            <p className="mt-3 text-xs leading-5 text-slate-500">ใช้คู่กับเลขที่การจองเมื่อต้องการดูรายละเอียดหรือยกเลิกการจอง</p>
           </div>
         </div>
         <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-600">ใช้ Username และ Password TimeLock เพื่อเข้าเครื่องที่จอง โปรดบันทึกรหัสจัดการและรหัสผ่านก่อนปิดหน้า เพราะระบบจะแสดง password เพียงครั้งเดียว</p>
-        <a href="/my-bookings" className="mt-6 inline-flex rounded-xl bg-[#2563eb] px-5 py-3 font-semibold text-white transition hover:bg-[#1d4ed8] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200">จัดการการจองนี้</a>
+        <a href="/my-bookings" className="mt-6 inline-flex rounded-xl bg-[#171717] px-5 py-3 font-semibold text-white transition hover:bg-amber-400 hover:text-[#171717] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200">จัดการการจองนี้</a>
       </div>
     </section>
   );
