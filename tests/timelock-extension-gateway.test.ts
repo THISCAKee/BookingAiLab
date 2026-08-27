@@ -43,6 +43,7 @@ function sheets() {
       Bookings: bookingRows,
     })[tab] ?? []),
     appendSheetRow: vi.fn().mockResolvedValue(undefined),
+    updateSheetRow: vi.fn().mockResolvedValue(undefined),
   };
 }
 

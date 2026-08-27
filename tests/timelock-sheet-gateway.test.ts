@@ -32,6 +32,7 @@ describe("TimeLock Sheet gateway sessions", () => {
     const sheets = {
       readSheet: vi.fn(async (tab: string) => tab === "Users" ? userRows : bookingRows),
       appendSheetRow: vi.fn().mockResolvedValue(undefined),
+      updateSheetRow: vi.fn().mockResolvedValue(undefined),
     };
     const ids = ["s-1", "e-1"];
 
@@ -73,6 +74,7 @@ describe("TimeLock Sheet gateway sessions", () => {
         ],
       ] : [[...BOOKING_HEADERS]]),
       appendSheetRow: vi.fn().mockResolvedValue(undefined),
+      updateSheetRow: vi.fn().mockResolvedValue(undefined),
     };
 
     await expect(loginTimelockUser(device, {
@@ -82,38 +84,70 @@ describe("TimeLock Sheet gateway sessions", () => {
     expect(sheets.appendSheetRow).not.toHaveBeenCalled();
   });
 
-  it("appends session_ended for a session started on the same machine", async () => {
-    const sheets = {
-      readSheet: vi.fn().mockResolvedValue([
-        TIMELOCK_EVENT_HEADERS,
+  it.each(["logged_out", "completed", "forced_logout"] as const)(
+    "revokes the old password and completes the booking after %s",
+    async (status) => {
+      const verifier = await createPasswordVerifier("secret-password");
+      const userRows = [
+        [...TIMELOCK_USER_HEADERS],
+        [
+          "u-1", "student@msu.ac.th", "Student", "student", "student", "user", "PC-001",
+          verifier.algorithm, String(verifier.iterations), verifier.salt, verifier.hash,
+          "180", "TRUE", "b-1", "2026-08-24T00:00:00.000Z",
+        ],
+      ];
+      const bookingRows = [
+        [...BOOKING_HEADERS],
+        [
+          "b-1", "BK-1", "student@msu.ac.th", "Student", "msu.ac.th", "student", "m-1",
+          "PC-001", "2026-08-24T01:30:00.000Z", "2026-08-24T04:30:00.000Z", "confirmed",
+          "manage-hash", "2026-08-24T00:00:00.000Z", "2026-08-24T00:00:00.000Z", "create-1", "0",
+        ],
+      ];
+      const eventRows = [
+        [...TIMELOCK_EVENT_HEADERS],
         [
           "e-1", "session_started", "s-1", "b-1", "PC-001", "student", "active", "{}",
           "2026-08-24T01:30:00.000Z", "2026-08-24T01:30:00.000Z",
         ],
-      ]),
-      appendSheetRow: vi.fn().mockResolvedValue(undefined),
-    };
+      ];
+      const rows = { Users: userRows, Bookings: bookingRows, Events: eventRows };
+      const sheets = {
+        readSheet: vi.fn(async (tab: keyof typeof rows) => structuredClone(rows[tab])),
+        appendSheetRow: vi.fn(async (tab: keyof typeof rows, row: string[]) => { rows[tab].push([...row]); }),
+        updateSheetRow: vi.fn(async (tab: keyof typeof rows, rowNumber: number, row: string[]) => { rows[tab][rowNumber - 1] = [...row]; }),
+      };
 
-    await expect(logoutTimelockUser(device, {
-      sessionId: "s-1",
-      usedSeconds: 10_800,
-      status: "completed",
-    }, {
-      sheets,
-      now: () => new Date("2026-08-24T04:30:00.000Z"),
-      randomId: () => "e-2",
-    })).resolves.toEqual({
-      sessionId: "s-1",
-      machineCode: "PC-001",
-      usedSeconds: 10_800,
-      status: "completed",
-      endedAt: "2026-08-24T04:30:00.000Z",
-    });
+      await expect(logoutTimelockUser(device, {
+        sessionId: "s-1",
+        usedSeconds: 10_800,
+        status,
+      }, {
+        sheets,
+        now: () => new Date("2026-08-24T04:30:00.000Z"),
+        randomId: () => "e-2",
+      })).resolves.toEqual({
+        sessionId: "s-1",
+        machineCode: "PC-001",
+        usedSeconds: 10_800,
+        status,
+        endedAt: "2026-08-24T04:30:00.000Z",
+      });
 
-    expect(sheets.appendSheetRow).toHaveBeenCalledWith("Events", [
-      "e-2", "session_ended", "s-1", "b-1", "PC-001", "student", "completed",
-      JSON.stringify({ usedSeconds: 10_800 }),
-      "2026-08-24T04:30:00.000Z", "2026-08-24T04:30:00.000Z",
-    ]);
-  });
+      expect(userRows[1][TIMELOCK_USER_HEADERS.indexOf("isActive")]).toBe("FALSE");
+      expect(userRows[1][TIMELOCK_USER_HEADERS.indexOf("userId")]).toBe("u-1");
+      expect(userRows[1][TIMELOCK_USER_HEADERS.indexOf("username")]).toBe("student");
+      expect(bookingRows[1][BOOKING_HEADERS.indexOf("status")]).toBe("completed");
+      expect(eventRows.at(-1)).toEqual([
+        "e-2", "session_ended", "s-1", "b-1", "PC-001", "student", status,
+        JSON.stringify({ usedSeconds: 10_800 }),
+        "2026-08-24T04:30:00.000Z", "2026-08-24T04:30:00.000Z",
+      ]);
+      await expect(loginTimelockUser(device, {
+        username: "student",
+        password: "secret-password",
+      }, { sheets })).rejects.toThrow("CREDENTIALS_INVALID");
+      expect(eventRows).toHaveLength(3);
+    },
+  );
 });

@@ -17,6 +17,7 @@ function client() { return createGoogleSheetsClient({ spreadsheetId: getGoogleRu
 export type TimelockGatewaySheets = {
   readSheet(tab: SheetTab): Promise<string[][]>;
   appendSheetRow(tab: SheetTab, row: string[]): Promise<void>;
+  updateSheetRow(tab: SheetTab, rowNumber: number, row: string[]): Promise<void>;
 };
 
 type GatewayDependencies = {
@@ -70,6 +71,17 @@ function verifier(row: TimelockSheetUser): PasswordVerifier {
   return { algorithm: row.passwordAlgorithm, iterations: row.passwordIterations, salt: row.passwordSalt, hash: row.passwordHash };
 }
 
+function updatedSheetRow(rows: string[][], sourceRow: number, values: Record<string, string>) {
+  const row = [...(rows[sourceRow - 1] ?? [])];
+  const positions = new Map((rows[0] ?? []).map((header, index) => [header, index]));
+  for (const [header, value] of Object.entries(values)) {
+    const position = positions.get(header);
+    if (position === undefined) throw new Error("SHEET_HEADER_INVALID");
+    row[position] = value;
+  }
+  return row;
+}
+
 export async function syncTimelockDevice(device: SheetDeviceContext) {
   const rows = await users(client());
   const now = new Date();
@@ -111,12 +123,30 @@ export async function loginTimelockUser(device: SheetDeviceContext, input: { use
 
 export async function logoutTimelockUser(device: SheetDeviceContext, input: { sessionId: string; usedSeconds: number; status: TimelockLogoutStatus }, options: GatewayDependencies = {}) {
   const deps = dependencies(options);
-  const events = parseTimelockEvents(await deps.sheets.readSheet("Events"));
+  const [eventRows, userRows, bookingRows] = await Promise.all([
+    deps.sheets.readSheet("Events"),
+    deps.sheets.readSheet("Users"),
+    deps.sheets.readSheet("Bookings"),
+  ]);
+  const events = parseTimelockEvents(eventRows);
   const started = events.filter((event) => event.sessionId === input.sessionId && event.eventType === "session_started").sort((left, right) => right.sourceRow - left.sourceRow)[0];
   const ended = started && events.some((event) => event.sessionId === input.sessionId && event.eventType === "session_ended" && event.sourceRow > started.sourceRow);
   if (!started || ended) throw new Error("SESSION_NOT_FOUND");
   if (started.machineCode !== device.machineCode) throw new Error("ACCOUNT_MACHINE_MISMATCH");
+  const account = parseTimelockUsers(userRows).find((row) =>
+    row.sourceBookingId === started.bookingId
+    && row.machineCode === device.machineCode
+    && row.username === started.username,
+  );
+  const booking = parseBookings(bookingRows).find((row) =>
+    row.bookingId === started.bookingId
+    && row.machineCode === device.machineCode
+    && row.emailPrefix === started.username,
+  );
+  if (!account || !booking) throw new Error("ACCOUNT_MACHINE_MISMATCH");
   const endedAt = deps.now().toISOString();
+  await deps.sheets.updateSheetRow("Users", account.sourceRow, updatedSheetRow(userRows, account.sourceRow, { isActive: "FALSE", updatedAt: endedAt }));
+  await deps.sheets.updateSheetRow("Bookings", booking.sourceRow, updatedSheetRow(bookingRows, booking.sourceRow, { status: "completed", updatedAt: endedAt }));
   await deps.sheets.appendSheetRow("Events", [deps.randomId(), "session_ended", input.sessionId, started.bookingId, device.machineCode, started.username, input.status, JSON.stringify({ usedSeconds: input.usedSeconds }), endedAt, endedAt]);
   return { sessionId: input.sessionId, machineCode: device.machineCode, usedSeconds: input.usedSeconds, status: input.status, endedAt };
 }

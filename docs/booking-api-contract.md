@@ -106,6 +106,30 @@ Request:
 
 ข้อผิดพลาดหลัก: `MACHINE_TOKEN_INVALID`, `LOGIN_INVALID`, `CREDENTIALS_INVALID`, `ACCOUNT_MACHINE_MISMATCH`
 
+### TimeLock logout และหมดเวลา
+
+```http
+POST /api/timelock/logout
+x-machine-code: PC-001
+x-device-token: <device-token>
+Content-Type: application/json
+```
+
+```json
+{
+  "sessionId": "session-id-from-login",
+  "usedSeconds": 10800,
+  "status": "completed"
+}
+```
+
+`status` รองรับ `logged_out`, `completed` และ `forced_logout` เมื่อรับรายการสำเร็จ Backend จะสร้าง
+`session_ended`, ปิดบัญชี TimeLock ของ Booking เดิม และเปลี่ยน Booking เป็น `completed` รหัสผ่านเดิม
+จึงใช้ Login ซ้ำไม่ได้ ผู้ใช้ต้องจองใหม่เพื่อรับรหัสผ่านใหม่ แต่ยังใช้ Username เดิมได้
+
+WPF ต้องลบบัญชีดังกล่าวออกจาก Offline Cache ทันทีเมื่อ Session จบทุกสถานะ เพื่อไม่ให้ verifier
+ที่เคย Sync ไปยังเครื่องถูกนำกลับมาใช้ระหว่างออฟไลน์
+
 ### ดึง Event ของเครื่อง
 
 ```http
