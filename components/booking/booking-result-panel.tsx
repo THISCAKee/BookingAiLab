@@ -68,11 +68,11 @@ export function BookingResultPanel({
             <div className="mt-5 grid gap-5 sm:grid-cols-2">
               <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4">
                 <p className="text-sm font-medium text-slate-600">ชื่อผู้ใช้ TimeLock</p>
-                <p className="font-display mt-2 break-all text-3xl font-semibold text-[#171717]">{booking.timelockUsername}</p>
+                <p className="timelock-username-value mt-2 break-all text-3xl font-semibold leading-tight text-[#171717]">{booking.timelockUsername}</p>
               </div>
               <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4">
                 <p className="text-sm font-medium text-slate-600">รหัสผ่าน TimeLock · แสดงครั้งเดียว</p>
-                <p className="font-display mt-2 break-all text-3xl font-bold tracking-[0.08em] text-[#171717]">{booking.timelockPassword}</p>
+                <p className="timelock-password-value mt-2 break-all text-3xl font-semibold leading-tight tracking-[0.04em] text-[#171717]">{booking.timelockPassword}</p>
               </div>
             </div>
           </div>

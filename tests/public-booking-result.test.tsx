@@ -32,6 +32,8 @@ describe("public booking result panel", () => {
     expect(html).toContain("ใช้สำหรับตรวจสอบรายละเอียดการจองของคุณ");
     expect(html).toContain("ใช้คู่กับเลขที่การจองเมื่อต้องการดูรายละเอียดหรือยกเลิกการจอง");
     expect(html).toContain("timelock-highlight");
+    expect(html).toContain('class="timelock-username-value');
+    expect(html).toContain('class="timelock-password-value');
     expect(html).toContain("time-value-regular");
     expect(html).toContain("booking-time-section");
     expect(html).not.toContain("border-amber-300");

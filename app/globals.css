@@ -97,6 +97,16 @@
   font-weight: 400;
 }
 
+.timelock-username-value {
+  font-family: var(--font-anuphan), sans-serif;
+}
+
+.timelock-password-value {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-variant-ligatures: none;
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
 .booking-loading-spinner {
   height: 1.75rem;
   width: 1.75rem;
