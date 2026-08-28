@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { bookMachineAction, type BookingFormState } from "@/app/booking/actions";
 import { BookingResultPanel } from "@/components/booking/booking-result-panel";
 import type { PublicBookingOptions } from "@/lib/booking/actions";
@@ -21,8 +22,24 @@ const statusLabels: Record<QueueOperationalStatus, string> = {
   available: "ว่าง",
   in_use: "ใช้งานอยู่",
   queued: "มีคิว",
+  waiting_for_login: "รอผู้จองก่อนหน้า login",
   full_today: "คิวเต็มสำหรับวันนี้",
 };
+
+const timeOnly = new Intl.DateTimeFormat("th-TH", {
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+  timeZone: "Asia/Bangkok",
+});
+
+function remainingLabel(totalMinutes: number) {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours === 0) return `เหลือ ${minutes} นาที`;
+  if (minutes === 0) return `เหลือ ${hours} ชม.`;
+  return `เหลือ ${hours} ชม. ${minutes} นาที`;
+}
 
 export function PublicBookingBoard({
   initialOptions,
@@ -31,10 +48,28 @@ export function PublicBookingBoard({
   initialOptions: PublicBookingOptions;
   initialMessage?: string;
 }) {
+  const router = useRouter();
   const [selectedMachine, setSelectedMachine] = useState("");
   const [state, formAction, isPending] = useActionState(bookMachineAction, initialState);
   const hasBookableMachine = initialOptions.machines.some((machine) => machine.bookable);
+  const selectedMachineBookable = initialOptions.machines.some(
+    (machine) => machine.id === selectedMachine && machine.bookable,
+  );
   const loadMessage = initialMessage ?? "";
+
+  useEffect(() => {
+    const refresh = () => router.refresh();
+    const timer = window.setInterval(refresh, 10_000);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [router]);
+
+  useEffect(() => {
+    if (selectedMachine && !selectedMachineBookable) setSelectedMachine("");
+  }, [selectedMachine, selectedMachineBookable]);
 
   if (state.ok) {
     return <BookingResultPanel state={state} />;
@@ -114,9 +149,17 @@ export function PublicBookingBoard({
                   <span className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold ${machine.bookable ? "bg-emerald-50 text-emerald-700 group-has-[:checked]:bg-white/10 group-has-[:checked]:text-emerald-200" : "bg-slate-200 text-slate-600"}`}>{statusLabels[machine.operationalStatus]}</span>
                 </div>
                 <div className="mt-5 border-t border-current/10 pt-4 text-xs leading-5">
-                  {machine.bookable ? (
+                  {machine.operationalStatus === "waiting_for_login" ? (
+                    <p className="font-semibold">ยังจองต่อไม่ได้ กรุณารอผู้จองก่อนหน้า login TimeLock</p>
+                  ) : machine.bookable ? (
                     <p className="font-semibold">ใช้งานได้ 3 ชั่วโมง</p>
                   ) : <p className="font-semibold">ไม่มีช่วงเวลาว่างภายในวันนี้</p>}
+                  {machine.currentEndAt !== null && machine.currentRemainingMinutes !== null ? (
+                    <div className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-amber-900 group-has-[:checked]:bg-white/10 group-has-[:checked]:text-amber-100">
+                      <p className="font-semibold">{remainingLabel(machine.currentRemainingMinutes)}</p>
+                      <p className="mt-0.5 opacity-80">สิ้นสุด {timeOnly.format(new Date(machine.currentEndAt))}</p>
+                    </div>
+                  ) : null}
                   {machine.queueCount > 0 ? <p className="mt-1 opacity-75">คิวรอ {machine.queueCount} รายการ</p> : null}
                 </div>
                 <p className="font-display absolute bottom-4 right-5 text-4xl font-semibold leading-none tracking-[-0.08em] opacity-15">{String(index + 1).padStart(2, "0")}</p>
@@ -132,8 +175,9 @@ export function PublicBookingBoard({
           ) : null}
 
           {loadMessage ? <p role="alert" className="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{loadMessage}</p> : null}
-          <button type="submit" disabled={isPending || !initialOptions.viewerCanBook || !selectedMachine} className="mt-5 w-full rounded-xl bg-[#171717] px-6 py-4 text-base font-semibold text-white transition hover:bg-amber-400 hover:text-[#171717] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500">
-            {isPending ? "กำลังยืนยันการจอง…" : selectedMachine ? "ยืนยันการจองเครื่องที่เลือก" : "เลือกเครื่องเพื่อดำเนินการต่อ"}
+          <p className="mt-5 text-center text-xs text-slate-500">สถานะจะอัปเดตอัตโนมัติภายใน 10 วินาทีหลัง login TimeLock</p>
+          <button type="submit" disabled={isPending || !initialOptions.viewerCanBook || !selectedMachineBookable} className="mt-3 w-full rounded-xl bg-[#171717] px-6 py-4 text-base font-semibold text-white transition hover:bg-amber-400 hover:text-[#171717] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500">
+            {isPending ? "กำลังยืนยันการจอง…" : selectedMachineBookable ? "ยืนยันการจองเครื่องที่เลือก" : "เลือกเครื่องเพื่อดำเนินการต่อ"}
           </button>
         </section>
       </form>

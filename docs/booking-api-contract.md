@@ -23,6 +23,7 @@ Apps Script ใช้ Script Lock แล้วอ่านแท็บ `Bookings
 
 - ถ้าเครื่องไม่มี Booking ที่ยังไม่จบ ช่วงใหม่เริ่มจากเวลาปัจจุบัน
 - ถ้ามี Booking ก่อนหน้า ระบบตรวจ `Events` และต้องพบ `session_started` ของ Booking ล่าสุดก่อนจึงสร้างคิวใหม่ได้ หากยังไม่พบจะตอบ `BOOKING_PREVIOUS_NOT_STARTED`
+- หน้า Public Booking ใช้เงื่อนไขเดียวกัน โดยแสดงสถานะ `waiting_for_login`, ปิดการเลือกเครื่องและปุ่มยืนยันจนกว่าจะพบ `session_started` จากนั้น refresh สถานะอัตโนมัติภายใน 10 วินาที เมื่อ session เริ่มแล้ว การ์ดแสดง `currentEndAt` และ `currentRemainingMinutes` จาก Booking สถานะ `active` เท่านั้น
 - เมื่อ predecessor login แล้ว คิวใหม่เริ่ม 15 นาทีหลัง `endAt` จริงของ predecessor
 - ทุกช่วงยาว 180 นาที และต้องสิ้นสุดไม่เกินเที่ยงคืน `Asia/Bangkok`
 - ผู้ใช้ที่มี Booking ปัจจุบันหรืออนาคตบนเครื่องใดอยู่แล้วจะได้รับ `BOOKING_ALREADY_ACTIVE`

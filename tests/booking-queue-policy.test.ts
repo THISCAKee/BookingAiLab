@@ -53,6 +53,7 @@ describe("machine booking queue policy", () => {
     expect(deriveMachineQueueOption({
       machine,
       bookings: [],
+      startedBookingIds: new Set(),
       now: new Date("2026-08-24T03:00:00.000Z"),
     })).toEqual({
       operationalStatus: "available",
@@ -61,6 +62,100 @@ describe("machine booking queue policy", () => {
       nextEndAt: "2026-08-24T06:00:00.000Z",
       queueCount: 0,
       currentEndAt: null,
+      currentRemainingMinutes: null,
+    });
+  });
+
+  it("blocks a machine when its latest booking has not started a TimeLock session", () => {
+    const option = deriveMachineQueueOption({
+      machine,
+      bookings: [booking()],
+      startedBookingIds: new Set(),
+      now: new Date("2026-08-24T03:00:00.000Z"),
+    });
+
+    expect(option).toMatchObject({
+      operationalStatus: "waiting_for_login",
+      bookable: false,
+      nextStartAt: null,
+      nextEndAt: null,
+      currentEndAt: null,
+      currentRemainingMinutes: null,
+    });
+  });
+
+  it("reports the authoritative end and remaining minutes for a logged-in session", () => {
+    expect(deriveMachineQueueOption({
+      machine,
+      bookings: [booking({ status: "active" })],
+      startedBookingIds: new Set(["b-1"]),
+      now: new Date("2026-08-24T03:00:00.000Z"),
+    })).toMatchObject({
+      currentEndAt: "2026-08-24T05:00:00.000Z",
+      currentRemainingMinutes: 120,
+    });
+  });
+
+  it("rounds active session time up to the next whole minute", () => {
+    expect(deriveMachineQueueOption({
+      machine,
+      bookings: [booking({ status: "active" })],
+      startedBookingIds: new Set(["b-1"]),
+      now: new Date("2026-08-24T04:25:50.000Z"),
+    })).toMatchObject({
+      currentEndAt: "2026-08-24T05:00:00.000Z",
+      currentRemainingMinutes: 35,
+    });
+  });
+
+  it("stops exposing the session end when its authoritative time has elapsed", () => {
+    expect(deriveMachineQueueOption({
+      machine,
+      bookings: [booking({ status: "active" })],
+      startedBookingIds: new Set(["b-1"]),
+      now: new Date("2026-08-24T05:00:00.000Z"),
+    })).toMatchObject({
+      currentEndAt: null,
+      currentRemainingMinutes: null,
+    });
+  });
+
+  it("keeps showing the active session while a later queue is waiting to login", () => {
+    expect(deriveMachineQueueOption({
+      machine,
+      bookings: [
+        booking({ status: "active" }),
+        booking({
+          sourceRow: 3,
+          bookingId: "b-2",
+          bookingNumber: "BK-2",
+          email: "next@msu.ac.th",
+          emailPrefix: "next",
+          startAt: "2026-08-24T05:15:00.000Z",
+          endAt: "2026-08-24T08:15:00.000Z",
+        }),
+      ],
+      startedBookingIds: new Set(["b-1"]),
+      now: new Date("2026-08-24T03:00:00.000Z"),
+    })).toMatchObject({
+      operationalStatus: "waiting_for_login",
+      bookable: false,
+      currentEndAt: "2026-08-24T05:00:00.000Z",
+      currentRemainingMinutes: 120,
+    });
+  });
+
+  it("allows the next booking after the latest booking starts a TimeLock session", () => {
+    expect(deriveMachineQueueOption({
+      machine,
+      bookings: [booking()],
+      startedBookingIds: new Set(["b-1"]),
+      now: new Date("2026-08-24T03:00:00.000Z"),
+    })).toMatchObject({
+      operationalStatus: "in_use",
+      bookable: true,
+      nextStartAt: "2026-08-24T05:15:00.000Z",
+      nextEndAt: "2026-08-24T08:15:00.000Z",
     });
   });
 
@@ -79,6 +174,7 @@ describe("machine booking queue policy", () => {
           endAt: "2026-08-24T08:15:00.000Z",
         }),
       ],
+      startedBookingIds: new Set(["b-2"]),
       now: new Date("2026-08-24T03:00:00.000Z"),
     })).toEqual({
       operationalStatus: "in_use",
@@ -86,7 +182,8 @@ describe("machine booking queue policy", () => {
       nextStartAt: "2026-08-24T08:30:00.000Z",
       nextEndAt: "2026-08-24T11:30:00.000Z",
       queueCount: 1,
-      currentEndAt: "2026-08-24T05:00:00.000Z",
+      currentEndAt: null,
+      currentRemainingMinutes: null,
     });
   });
 
@@ -97,6 +194,7 @@ describe("machine booking queue policy", () => {
         startAt: "2026-08-24T05:15:00.000Z",
         endAt: "2026-08-24T08:15:00.000Z",
       })],
+      startedBookingIds: new Set(["b-1"]),
       now: new Date("2026-08-24T03:00:00.000Z"),
     })).toMatchObject({
       operationalStatus: "queued",
@@ -116,7 +214,12 @@ describe("machine booking queue policy", () => {
     ];
 
     expect(ignored.every((row) => !isEffectiveBooking(row, now))).toBe(true);
-    expect(deriveMachineQueueOption({ machine, bookings: [confirmed, ...ignored], now }))
+    expect(deriveMachineQueueOption({
+      machine,
+      bookings: [confirmed, ...ignored],
+      startedBookingIds: new Set(["b-1"]),
+      now,
+    }))
       .toMatchObject({ nextStartAt: "2026-08-24T05:15:00.000Z" });
     expect(confirmed.endAt).toBe("2026-08-24T05:00:00.000Z");
   });
@@ -130,6 +233,7 @@ describe("machine booking queue policy", () => {
     expect(deriveMachineQueueOption({
       machine,
       bookings: [],
+      startedBookingIds: new Set(),
       now: new Date("2026-08-24T16:00:00.000Z"),
     })).toEqual({
       operationalStatus: "full_today",
@@ -138,6 +242,7 @@ describe("machine booking queue policy", () => {
       nextEndAt: null,
       queueCount: 0,
       currentEndAt: null,
+      currentRemainingMinutes: null,
     });
   });
 

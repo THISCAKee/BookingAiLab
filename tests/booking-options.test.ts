@@ -41,6 +41,24 @@ function booking(overrides: Partial<SheetBooking> = {}): SheetBooking {
 }
 
 describe("public booking queue options", () => {
+  it("disables a machine until its latest booking logs in to TimeLock", () => {
+    const options = buildPublicBookingOptions({
+      date: "2026-08-24",
+      machines: [machine()],
+      bookings: [booking({ status: "active" })],
+      startedBookingIds: new Set(),
+      viewerEmail: "other@msu.ac.th",
+      now: new Date("2026-08-24T03:00:00.000Z"),
+    });
+
+    expect(options.machines[0]).toMatchObject({
+      operationalStatus: "waiting_for_login",
+      bookable: false,
+      nextStartAt: null,
+      nextEndAt: null,
+    });
+  });
+
   it("returns per-machine queue previews and a global viewer booking lock", () => {
     const options = buildPublicBookingOptions({
       date: "2026-08-24",
@@ -48,7 +66,8 @@ describe("public booking queue options", () => {
         machine(),
         machine({ sourceRow: 3, machineId: "m-2", machineCode: "PC-002" }),
       ],
-      bookings: [booking()],
+      bookings: [booking({ status: "active" })],
+      startedBookingIds: new Set(["b-1"]),
       viewerEmail: "student@msu.ac.th",
       now: new Date("2026-08-24T03:00:00.000Z"),
     });
@@ -70,6 +89,7 @@ describe("public booking queue options", () => {
           nextEndAt: "2026-08-24T08:15:00.000Z",
           queueCount: 0,
           currentEndAt: "2026-08-24T05:00:00.000Z",
+          currentRemainingMinutes: 120,
         },
         {
           id: "m-2",
@@ -82,6 +102,7 @@ describe("public booking queue options", () => {
           nextEndAt: "2026-08-24T06:00:00.000Z",
           queueCount: 0,
           currentEndAt: null,
+          currentRemainingMinutes: null,
         },
       ],
     });
@@ -92,6 +113,7 @@ describe("public booking queue options", () => {
       date: "2026-08-25",
       machines: [machine()],
       bookings: [],
+      startedBookingIds: new Set(),
       viewerEmail: "new@msu.ac.th",
       now: new Date("2026-08-24T03:00:00.000Z"),
     });

@@ -1,6 +1,6 @@
 import type { SheetBooking, SheetMachine } from "@/lib/google/sheet-types";
 
-export type QueueOperationalStatus = "available" | "in_use" | "queued" | "full_today";
+export type QueueOperationalStatus = "available" | "in_use" | "queued" | "waiting_for_login" | "full_today";
 
 export type QueueMachineOption = {
   operationalStatus: QueueOperationalStatus;
@@ -9,6 +9,7 @@ export type QueueMachineOption = {
   nextEndAt: string | null;
   queueCount: number;
   currentEndAt: string | null;
+  currentRemainingMinutes: number | null;
 };
 
 const SLOT_MS = 180 * 60_000;
@@ -54,6 +55,7 @@ export function viewerHasEffectiveBooking(input: {
 export function deriveMachineQueueOption(input: {
   machine: SheetMachine;
   bookings: SheetBooking[];
+  startedBookingIds: ReadonlySet<string>;
   now: Date;
 }): QueueMachineOption {
   const nowMs = input.now.getTime();
@@ -63,25 +65,64 @@ export function deriveMachineQueueOption(input: {
   const current = effective
     .filter((booking) => new Date(booking.startAt).getTime() <= nowMs)
     .sort((left, right) => new Date(right.endAt).getTime() - new Date(left.endAt).getTime())[0];
+  const activeSession = effective
+    .filter((booking) => booking.status === "active"
+      && input.startedBookingIds.has(booking.bookingId)
+      && new Date(booking.startAt).getTime() <= nowMs
+      && new Date(booking.endAt).getTime() > nowMs)
+    .sort((left, right) => new Date(right.endAt).getTime() - new Date(left.endAt).getTime())[0];
+  const activeEndMs = activeSession ? new Date(activeSession.endAt).getTime() : null;
+  const currentEndAt = activeSession?.endAt ?? null;
+  const currentRemainingMinutes = activeEndMs === null
+    ? null
+    : Math.ceil((activeEndMs - nowMs) / 60_000);
   const queueCount = effective.filter((booking) => new Date(booking.startAt).getTime() > nowMs).length;
   const latestEnd = effective.reduce(
     (latest, booking) => Math.max(latest, new Date(booking.endAt).getTime()),
     Number.NEGATIVE_INFINITY,
   );
+  const latestBooking = effective
+    .slice()
+    .sort((left, right) => new Date(right.endAt).getTime() - new Date(left.endAt).getTime())[0];
   const start = new Date(effective.length === 0 ? nowMs : latestEnd + TURNAROUND_MS);
   const end = new Date(start.getTime() + SLOT_MS);
   const unavailable = input.machine.status !== "available";
   const crossesMidnight = bangkokDateValue(start) !== bangkokDateValue(input.now)
     || end.getTime() > nextBangkokMidnight(start).getTime();
 
-  if (unavailable || crossesMidnight) {
+  if (unavailable) {
     return {
       operationalStatus: "full_today",
       bookable: false,
       nextStartAt: null,
       nextEndAt: null,
       queueCount,
-      currentEndAt: current?.endAt ?? null,
+      currentEndAt,
+      currentRemainingMinutes,
+    };
+  }
+
+  if (latestBooking && !input.startedBookingIds.has(latestBooking.bookingId)) {
+    return {
+      operationalStatus: "waiting_for_login",
+      bookable: false,
+      nextStartAt: null,
+      nextEndAt: null,
+      queueCount,
+      currentEndAt,
+      currentRemainingMinutes,
+    };
+  }
+
+  if (crossesMidnight) {
+    return {
+      operationalStatus: "full_today",
+      bookable: false,
+      nextStartAt: null,
+      nextEndAt: null,
+      queueCount,
+      currentEndAt,
+      currentRemainingMinutes,
     };
   }
 
@@ -91,6 +132,7 @@ export function deriveMachineQueueOption(input: {
     nextStartAt: start.toISOString(),
     nextEndAt: end.toISOString(),
     queueCount,
-    currentEndAt: current?.endAt ?? null,
+    currentEndAt,
+    currentRemainingMinutes,
   };
 }

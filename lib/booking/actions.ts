@@ -14,6 +14,7 @@ import { getGoogleRuntimeConfig } from "@/lib/google/config";
 import { parseBookings, parseMachines } from "@/lib/google/sheet-schema";
 import type { SheetBooking, SheetMachine } from "@/lib/google/sheet-types";
 import { createGoogleSheetsClient } from "@/lib/google/sheets-client";
+import { parseTimelockEvents } from "@/lib/timelock/sheet-records";
 
 export type PublicMachineOption = {
   id: string;
@@ -40,12 +41,32 @@ async function readBookingData() {
   return { machines: parseMachines(machineRows), bookings: parseBookings(bookingRows) };
 }
 
+async function readPublicBookingData() {
+  const client = sheets();
+  const [machineRows, bookingRows, eventRows] = await Promise.all([
+    client.readSheet("Machines"),
+    client.readSheet("Bookings"),
+    client.readSheet("Events"),
+  ]);
+  const startedBookingIds = new Set(
+    parseTimelockEvents(eventRows)
+      .filter((event) => event.eventType === "session_started")
+      .map((event) => event.bookingId),
+  );
+  return {
+    machines: parseMachines(machineRows),
+    bookings: parseBookings(bookingRows),
+    startedBookingIds,
+  };
+}
+
 function active(booking: SheetBooking) { return !["cancelled", "expired", "completed"].includes(booking.status); }
 
 export function buildPublicBookingOptions(input: {
   date: string;
   machines: SheetMachine[];
   bookings: SheetBooking[];
+  startedBookingIds: ReadonlySet<string>;
   viewerEmail: string;
   now: Date;
 }): PublicBookingOptions {
@@ -75,7 +96,12 @@ export function buildPublicBookingOptions(input: {
       machineName: machine.machineName,
       location: machine.location,
       ...(isCurrentDate
-        ? deriveMachineQueueOption({ machine, bookings: input.bookings, now: input.now })
+        ? deriveMachineQueueOption({
+            machine,
+            bookings: input.bookings,
+            startedBookingIds: input.startedBookingIds,
+            now: input.now,
+          })
         : {
             operationalStatus: "full_today" as const,
             bookable: false,
@@ -83,6 +109,7 @@ export function buildPublicBookingOptions(input: {
             nextEndAt: null,
             queueCount: 0,
             currentEndAt: null,
+            currentRemainingMinutes: null,
           }),
     })),
   };
@@ -90,8 +117,21 @@ export function buildPublicBookingOptions(input: {
 
 export async function getPublicBookingOptions(date: string): Promise<BookingActionResult<PublicBookingOptions>> {
   try {
-    const [identity, { machines, bookings }] = await Promise.all([requireGoogleIdentity(), readBookingData()]);
-    return { ok: true, data: buildPublicBookingOptions({ date, machines, bookings, viewerEmail: identity.email, now: new Date() }) };
+    const [identity, { machines, bookings, startedBookingIds }] = await Promise.all([
+      requireGoogleIdentity(),
+      readPublicBookingData(),
+    ]);
+    return {
+      ok: true,
+      data: buildPublicBookingOptions({
+        date,
+        machines,
+        bookings,
+        startedBookingIds,
+        viewerEmail: identity.email,
+        now: new Date(),
+      }),
+    };
   }
   catch (error) { return toBookingFailure(error); }
 }
