@@ -26,64 +26,74 @@ function atomicOptions(options: AtomicOptions) {
 }
 
 export async function createSheetBooking(
-  input: { machineId: string; startAt: string; endAt?: string; idempotencyKey: string },
+  input: { machineId: string; idempotencyKey: string },
   identity: GoogleIdentity,
   options: AtomicOptions = {},
 ) {
   const atomic = atomicOptions(options);
   const timelockPassword = randomBytes(9).toString("base64url");
+  const manageCode = randomBytes(6).toString("hex").toUpperCase();
   const passwordVerifier = await createPasswordVerifier(timelockPassword);
-  const allowedMinutes = input.endAt
-    ? Math.max(1, Math.round((new Date(input.endAt).getTime() - new Date(input.startAt).getTime()) / 60_000))
-    : 180;
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), atomic.timeoutMs);
-  let response: Response;
-  try {
-    response = await atomic.fetchImpl(atomic.url, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        operation: "create_booking",
-        secret: atomic.secret,
-        idempotencyKey: input.idempotencyKey,
-        payload: {
-          machineId: input.machineId,
-          startAt: input.startAt,
-          endAt: input.endAt,
-          email: identity.email,
-          name: identity.name,
-          hd: identity.hd,
-          emailPrefix: identity.emailPrefix,
-          account: {
-            username: identity.emailPrefix,
-            passwordAlgorithm: passwordVerifier.algorithm,
-            passwordIterations: passwordVerifier.iterations,
-            passwordSalt: passwordVerifier.salt,
-            passwordHash: passwordVerifier.hash,
-            allowedMinutes,
-          },
-        },
-      }),
-      cache: "no-store",
-      signal: controller.signal,
-    });
-  } catch (error) {
-    if (error instanceof Error && error.name === "AbortError") {
-      throw new Error("BOOKING_ATOMIC_TIMEOUT");
+  const body = JSON.stringify({
+    operation: "create_booking",
+    secret: atomic.secret,
+    idempotencyKey: input.idempotencyKey,
+    payload: {
+      machineId: input.machineId,
+      manageCode,
+      email: identity.email,
+      name: identity.name,
+      hd: identity.hd,
+      emailPrefix: identity.emailPrefix,
+      account: {
+        username: identity.emailPrefix,
+        passwordAlgorithm: passwordVerifier.algorithm,
+        passwordIterations: passwordVerifier.iterations,
+        passwordSalt: passwordVerifier.salt,
+        passwordHash: passwordVerifier.hash,
+        allowedMinutes: 180,
+      },
+    },
+  });
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), atomic.timeoutMs);
+    let response: Response;
+    try {
+      response = await atomic.fetchImpl(atomic.url, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body,
+        cache: "no-store",
+        signal: controller.signal,
+      });
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        if (attempt === 0) continue;
+        throw new Error("BOOKING_ATOMIC_TIMEOUT");
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
     }
-    throw error;
-  } finally {
-    clearTimeout(timeoutId);
+    if (!response.ok) throw new Error("BOOKING_ATOMIC_FAILED");
+    const result = (await response.json()) as { ok?: boolean; data?: unknown; code?: string };
+    if (!result.ok || result.data === undefined) {
+      if (result.code === "BOOKING_ATOMIC_BUSY" && attempt === 0) continue;
+      throw new Error(result.code || "BOOKING_ATOMIC_FAILED");
+    }
+    const data = result.data as Record<string, unknown>;
+    if (typeof data.startAt !== "string" || !data.startAt || typeof data.endAt !== "string" || !data.endAt) {
+      throw new Error("BOOKING_ATOMIC_FAILED");
+    }
+    return {
+      ...data,
+      timelockUsername: identity.emailPrefix,
+      timelockPassword,
+    };
   }
-  if (!response.ok) throw new Error("BOOKING_ATOMIC_FAILED");
-  const result = (await response.json()) as { ok?: boolean; data?: unknown; code?: string };
-  if (!result.ok || result.data === undefined) throw new Error(result.code || "BOOKING_ATOMIC_FAILED");
-  return {
-    ...(result.data as Record<string, unknown>),
-    timelockUsername: identity.emailPrefix,
-    timelockPassword,
-  };
+  throw new Error("BOOKING_ATOMIC_FAILED");
 }
 
 export async function cancelSheetBooking(
