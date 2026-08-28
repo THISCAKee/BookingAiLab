@@ -10,7 +10,13 @@ export default async function BookingPage() {
   const initial = await getPublicBookingOptions(dates[0].value);
   const options: PublicBookingOptions = initial.ok
     ? initial.data
-    : { date: dates[0].value, startAt: null, endAt: null, machines: [] };
+    : {
+        date: dates[0].value,
+        viewerCanBook: false,
+        viewerBlockReason: null,
+        viewerBookingEndAt: null,
+        machines: [],
+      };
 
   return (
     <main className="min-h-screen bg-white text-[#0b1324]">
@@ -29,7 +35,7 @@ export default async function BookingPage() {
             </h1>
           </div>
           <p className="max-w-xl text-sm leading-7 text-slate-600 sm:text-base">
-            เลือกเครื่องที่มีสถานะว่าง ระบบจะเริ่มจองทันที 3 ชั่วโมงจากเวลาปัจจุบัน และจะแสดงรหัสจัดการหลังยืนยันการจอง
+            เลือกเครื่องและตรวจสอบเวลาเข้าใช้จริง ระบบรองรับการจองต่อคิวโดยเว้น 15 นาที และแต่ละรอบใช้งานได้ 180 นาที
           </p>
         </header>
 

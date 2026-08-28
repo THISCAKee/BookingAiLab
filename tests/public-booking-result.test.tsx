@@ -36,6 +36,9 @@ describe("public booking result panel", () => {
     expect(html).toContain('class="timelock-password-value');
     expect(html).toContain("time-value-regular");
     expect(html).toContain("booking-time-section");
+    expect(html).toContain("เข้าใช้งาน TimeLock ได้ตั้งแต่");
+    expect(html).toContain("เข้าใช้ได้ตามช่วงเวลาที่ยืนยัน");
+    expect(html).not.toContain("เริ่มทันที");
     expect(html).not.toContain("border-amber-300");
     expect(html).not.toContain("bg-amber-50");
     expect(html).not.toContain("bg-amber-200");

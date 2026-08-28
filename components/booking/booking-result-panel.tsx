@@ -40,13 +40,13 @@ export function BookingResultPanel({
         ยืนยันการจองแล้ว
       </div>
       <div className="p-6 sm:p-9">
-        <p className="text-sm font-semibold text-emerald-700">{booking.machineCode} พร้อมใช้งานสำหรับช่วงเวลาที่เริ่มทันที</p>
+        <p className="text-sm font-semibold text-emerald-700">{booking.machineCode} เข้าใช้ได้ตามช่วงเวลาที่ยืนยัน</p>
         <h2 className="font-display mt-2 text-3xl font-semibold tracking-tight">บันทึกข้อมูลนี้ไว้ก่อนปิดหน้า</h2>
         <div className="mt-7 grid gap-4 sm:grid-cols-2">
           <div className="booking-time-section rounded-2xl border border-slate-200 bg-white p-6 sm:col-span-2">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">ช่วงเวลาที่จอง</p>
-              <span className="rounded-full bg-slate-200 px-3 py-1 text-xs font-bold text-slate-700">เริ่มทันที · 3 ชั่วโมง</span>
+              <span className="rounded-full bg-slate-200 px-3 py-1 text-xs font-bold text-slate-700">รอบใช้งาน 180 นาที</span>
             </div>
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <div className="rounded-xl bg-slate-50 px-4 py-3">
@@ -75,6 +75,9 @@ export function BookingResultPanel({
                 <p className="timelock-password-value mt-2 break-all text-3xl font-semibold leading-tight tracking-[0.04em] text-[#171717]">{booking.timelockPassword}</p>
               </div>
             </div>
+            <p className="mt-5 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800">
+              เข้าใช้งาน TimeLock ได้ตั้งแต่ {dateTime.format(new Date(booking.startAt))} เท่านั้น
+            </p>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-5">
