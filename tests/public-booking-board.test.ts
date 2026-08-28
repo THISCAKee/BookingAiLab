@@ -37,15 +37,18 @@ const options: PublicBookingOptions = {
 };
 
 describe("public booking queue board", () => {
-  it("renders machine status, scheduled window, current end, and queue count", () => {
+  it("renders machine status, duration, current end, and queue count without exposing time windows", () => {
     const html = renderToStaticMarkup(createElement(PublicBookingBoard, { initialOptions: options }));
 
     expect(html).toContain("ว่าง");
     expect(html).toContain("ใช้งานอยู่");
     expect(html).toContain("มีคิว");
     expect(html).toContain("คิวเต็มสำหรับวันนี้");
-    expect(html).toContain("เข้าใช้ได้");
-    expect(html).toContain("Session ปัจจุบันสิ้นสุด");
+    expect(html).toContain("ใช้งานได้ 3 ชั่วโมง");
+    expect(html).toContain("เวลาจะเริ่มนับเมื่อ login เข้า TimeLock");
+    expect(html).not.toContain("ช่วงเวลาที่แสดงเป็นเวลาโดยประมาณของคิว");
+    expect(html).not.toContain("เข้าใช้ได้ 03:00–06:00");
+    expect(html).not.toContain("Session ปัจจุบันสิ้นสุด");
     expect(html).toContain("คิวรอ 2 รายการ");
   });
 
@@ -58,6 +61,7 @@ describe("public booking queue board", () => {
     } }));
 
     expect(html).toContain("กรุณารอให้ Session หรือการจองปัจจุบันสิ้นสุดก่อนจองใหม่");
+    expect(html).not.toContain("สิ้นสุด 24 ส.ค. 2026 เวลา 13:00");
     expect(html.match(/name="machineId"/g)).toHaveLength(4);
     expect(html.match(/disabled=""/g)?.length).toBeGreaterThanOrEqual(5);
   });

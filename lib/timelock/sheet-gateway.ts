@@ -93,9 +93,19 @@ function matchesAccountBooking(account: TimelockSheetUser, booking: ReturnType<t
     && activeBookingStatus(booking.status);
 }
 
-function bookingIsUsableAt(booking: ReturnType<typeof parseBookings>[number], now: Date) {
-  const nowMs = now.getTime();
-  return new Date(booking.startAt).getTime() <= nowMs && nowMs < new Date(booking.endAt).getTime();
+function bookingIsEligible(booking: ReturnType<typeof parseBookings>[number]) {
+  return activeBookingStatus(booking.status);
+}
+
+function bangkokDateValue(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Bangkok",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+  return `${values.year}-${values.month}-${values.day}`;
 }
 
 export async function syncTimelockDevice(device: SheetDeviceContext, options: GatewayDependencies = {}) {
@@ -109,7 +119,7 @@ export async function syncTimelockDevice(device: SheetDeviceContext, options: Ga
   return accounts.flatMap((account) => {
     if (account.machineCode !== device.machineCode || !account.isActive) return [];
     const booking = bookings.find((row) => matchesAccountBooking(account, row, device));
-    if (!booking || !bookingIsUsableAt(booking, now)) return [];
+    if (!booking || !bookingIsEligible(booking)) return [];
     return [{
       ...buildOfflineAccount({ id: account.userId, username: account.emailPrefix || account.username, allowedMinutes: account.allowedMinutes, isActive: true, passwordAlgorithm: account.passwordAlgorithm, passwordIterations: account.passwordIterations, passwordSalt: account.passwordSalt, passwordHash: account.passwordHash }, now),
       expiresAt: booking.endAt,
@@ -128,11 +138,18 @@ export async function loginTimelockUser(device: SheetDeviceContext, input: { use
   const booking = parseBookings(bookingRows).find((row) => matchesAccountBooking(account, row, device));
   if (!booking) throw new Error("ACCOUNT_MACHINE_MISMATCH");
   const now = deps.now();
-  if (now.getTime() < new Date(booking.startAt).getTime()) throw new Error("BOOKING_NOT_STARTED");
-  if (now.getTime() >= new Date(booking.endAt).getTime()) throw new Error("BOOKING_EXPIRED");
+  const actualEnd = new Date(now.getTime() + account.allowedMinutes * 60_000);
+  if (bangkokDateValue(now) !== bangkokDateValue(actualEnd)) throw new Error("BOOKING_CROSSES_MIDNIGHT");
   const sessionId = deps.randomId();
   const eventId = deps.randomId();
   const startedAt = now.toISOString();
+  const endAt = actualEnd.toISOString();
+  await deps.sheets.updateSheetRow("Bookings", booking.sourceRow, updatedSheetRow(bookingRows, booking.sourceRow, {
+    startAt: startedAt,
+    endAt,
+    status: "active",
+    updatedAt: startedAt,
+  }));
   await deps.sheets.appendSheetRow("Events", [eventId, "session_started", sessionId, account.sourceBookingId, device.machineCode, account.username, "active", "{}", startedAt, startedAt]);
   return {
     sessionId,
@@ -141,7 +158,7 @@ export async function loginTimelockUser(device: SheetDeviceContext, input: { use
     username: input.username.toLowerCase(),
     machineCode: device.machineCode,
     startedAt,
-    endAt: booking.endAt,
+    endAt,
     allowedMinutes: account.allowedMinutes,
     extensionCount: booking.extensionCount,
     status: "active",

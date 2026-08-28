@@ -15,6 +15,15 @@ describe("booking result contract", () => {
     expect(toBookingFailure(new Error("BOOKING_ATOMIC_NOT_CONFIGURED")).retryable).toBe(false);
   });
 
+  it("returns an actionable retryable failure when the previous queue has not started", () => {
+    expect(toBookingFailure(new Error("BOOKING_PREVIOUS_NOT_STARTED"))).toEqual({
+      ok: false,
+      code: "BOOKING_PREVIOUS_NOT_STARTED",
+      message: "คิวก่อนหน้ายังไม่ได้ login เข้า TimeLock กรุณารอสักครู่แล้วลองใหม่",
+      retryable: true,
+    });
+  });
+
   it("hides unknown provider details behind a safe retry message", () => {
     expect(toBookingFailure(new Error("UNKNOWN_PROVIDER_ERROR: secret-value"))).toEqual({
       ok: false,

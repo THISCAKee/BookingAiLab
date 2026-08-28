@@ -29,7 +29,32 @@ function booking(
 }
 
 describe("TimeLock offline sync eligibility", () => {
-  it("returns only accounts whose matching booking is currently usable", async () => {
+  it("keeps an active account available after its provisional end", async () => {
+    const userRows = [
+      [...TIMELOCK_USER_HEADERS],
+      user("u-late", "late", "b-late"),
+    ];
+    const bookingRows = [
+      [...BOOKING_HEADERS],
+      booking("b-late", "late", "2026-08-24T01:00:00.000Z", "2026-08-24T03:00:00.000Z"),
+    ];
+    const sheets = {
+      readSheet: vi.fn(async (tab: string) => tab === "Users" ? userRows : bookingRows),
+      appendSheetRow: vi.fn().mockResolvedValue(undefined),
+      updateSheetRow: vi.fn().mockResolvedValue(undefined),
+    };
+
+    await expect(syncTimelockDevice(device, {
+      sheets,
+      now: () => new Date("2026-08-24T05:00:00.000Z"),
+    })).resolves.toEqual([expect.objectContaining({
+      id: "u-late",
+      username: "late",
+      expiresAt: "2026-08-24T03:00:00.000Z",
+    })]);
+  });
+
+  it("returns accounts whose matching booking is still non-terminal", async () => {
     const userRows = [
       [...TIMELOCK_USER_HEADERS],
       user("u-current", "current", "b-current"),
@@ -55,11 +80,10 @@ describe("TimeLock offline sync eligibility", () => {
     await expect(syncTimelockDevice(device, {
       sheets,
       now: () => new Date("2026-08-24T03:00:00.000Z"),
-    })).resolves.toEqual([expect.objectContaining({
-      id: "u-current",
-      username: "current",
-      issuedAt: "2026-08-24T03:00:00.000Z",
-      expiresAt: "2026-08-24T05:00:00.000Z",
-    })]);
+    })).resolves.toEqual([
+      expect.objectContaining({ id: "u-current", username: "current", expiresAt: "2026-08-24T05:00:00.000Z" }),
+      expect.objectContaining({ id: "u-future", username: "future", expiresAt: "2026-08-24T08:15:00.000Z" }),
+      expect.objectContaining({ id: "u-ended", username: "ended", expiresAt: "2026-08-24T03:00:00.000Z" }),
+    ]);
   });
 });

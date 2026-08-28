@@ -4,8 +4,6 @@ import { useActionState } from "react";
 import { cancelBookingAction, lookupBookingAction, type LookupState } from "@/app/my-bookings/actions";
 
 const initialState: LookupState = { ok: false };
-const dateTime = new Intl.DateTimeFormat("th-TH", { timeZone: "Asia/Bangkok", dateStyle: "long", timeStyle: "short" });
-
 export function ManageBookingForm() {
   const [state, lookupAction, isLooking] = useActionState(lookupBookingAction, initialState);
   const [cancelState, cancelAction, isCancelling] = useActionState(cancelBookingAction, initialState);
@@ -27,7 +25,7 @@ export function ManageBookingForm() {
               <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">{shown.booking.bookingNumber}</p><h2 className="mt-2 text-3xl font-semibold">{shown.booking.machineCode}</h2><p className="mt-1 text-slate-500">{shown.booking.machineName}</p></div>
               <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-bold text-amber-800">{shown.booking.status}</span>
             </div>
-            <dl className="mt-8 grid gap-5 border-t border-slate-100 pt-6 sm:grid-cols-2"><div><dt className="text-xs text-slate-400">เริ่มใช้งาน</dt><dd className="mt-1 font-semibold">{dateTime.format(new Date(shown.booking.startAt))}</dd></div><div><dt className="text-xs text-slate-400">สิ้นสุด</dt><dd className="mt-1 font-semibold">{dateTime.format(new Date(shown.booking.endAt))}</dd></div></dl>
+            <div className="mt-8 rounded-2xl border border-slate-100 bg-slate-50 px-5 py-4"><p className="text-xs text-slate-400">ระยะเวลาใช้งาน</p><p className="mt-1 text-lg font-semibold">ใช้งานได้ 3 ชั่วโมง</p><p className="mt-1 text-sm text-slate-500">เวลาจะเริ่มนับเมื่อ login เข้า TimeLock</p></div>
             {shown.booking.canCancel ? <form action={cancelAction} className="mt-8"><input type="hidden" name="bookingNumber" value={shown.bookingNumber} /><input type="hidden" name="manageCode" value={shown.manageCode} /><button disabled={isCancelling} className="rounded-xl border border-rose-200 bg-rose-50 px-5 py-3 font-semibold text-rose-700 hover:bg-rose-600 hover:text-white">{isCancelling ? "กำลังยกเลิก…" : "ยกเลิกการจอง"}</button></form> : <p className="mt-8 rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-600">รายการนี้ไม่สามารถยกเลิกได้แล้ว</p>}
             {cancelState.message ? <p className="mt-4 text-sm font-semibold text-emerald-700">{cancelState.message}</p> : null}
           </>

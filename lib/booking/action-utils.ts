@@ -24,6 +24,7 @@ const bookingErrorMessages: Record<string, string> = {
   BOOKING_ATOMIC_TIMEOUT: "ระบบใช้เวลาตอบกลับนานเกินกำหนด กรุณาลองใหม่อีกครั้ง",
   BOOKING_ATOMIC_BUSY: "กำลังมีผู้จองพร้อมกัน กรุณาลองยืนยันอีกครั้ง",
   BOOKING_ALREADY_ACTIVE: "คุณยังมีการจองที่ไม่สิ้นสุดอยู่ ไม่สามารถจองซ้ำได้",
+  BOOKING_PREVIOUS_NOT_STARTED: "คิวก่อนหน้ายังไม่ได้ login เข้า TimeLock กรุณารอสักครู่แล้วลองใหม่",
   BOOKING_CONFLICT: "มีผู้จองเครื่องนี้พร้อมกัน กรุณาเลือกเครื่องอื่น",
   BOOKING_REQUEST_NOT_ALLOWED: "ตรวจสอบรหัสนิสิตหรืออีเมล วัน เวลา และเครื่องที่เลือกอีกครั้ง",
   BOOKING_DATE_NOT_ALLOWED: "เลือกจองได้เฉพาะวันนี้",

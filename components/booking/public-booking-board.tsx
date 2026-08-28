@@ -17,18 +17,6 @@ function StepHeading({ number, title }: { number: string; title: string }) {
   );
 }
 
-const dateTime = new Intl.DateTimeFormat("th-TH", {
-  dateStyle: "medium",
-  timeStyle: "short",
-  timeZone: "Asia/Bangkok",
-});
-
-const timeOnly = new Intl.DateTimeFormat("th-TH", {
-  hour: "2-digit",
-  minute: "2-digit",
-  timeZone: "Asia/Bangkok",
-});
-
 const statusLabels: Record<QueueOperationalStatus, string> = {
   available: "ว่าง",
   in_use: "ใช้งานอยู่",
@@ -91,7 +79,7 @@ export function PublicBookingBoard({
             <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">รอบละ 180 นาที</p>
               <p className="mt-2 text-sm font-semibold leading-6 text-amber-950">ระบบจัดเวลาให้ต่อจากคิวล่าสุดโดยเว้น 15 นาที</p>
-              <p className="mt-2 text-xs leading-5 text-amber-800">ตรวจสอบช่วงเวลาเข้าใช้บนการ์ดแต่ละเครื่องก่อนยืนยัน</p>
+              <p className="mt-2 text-xs leading-5 text-amber-800">เวลาจะเริ่มนับเมื่อ login เข้า TimeLock และคิวถัดไปเปิดหลังผู้จองก่อนหน้าเริ่มใช้งาน</p>
             </div>
           </section>
         </aside>
@@ -108,7 +96,6 @@ export function PublicBookingBoard({
           {!initialOptions.viewerCanBook && initialOptions.viewerBlockReason === "BOOKING_ALREADY_ACTIVE" ? (
             <p role="alert" className="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold leading-6 text-amber-900">
               กรุณารอให้ Session หรือการจองปัจจุบันสิ้นสุดก่อนจองใหม่
-              {initialOptions.viewerBookingEndAt ? ` · สิ้นสุด ${dateTime.format(new Date(initialOptions.viewerBookingEndAt))}` : ""}
             </p>
           ) : null}
 
@@ -127,10 +114,9 @@ export function PublicBookingBoard({
                   <span className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold ${machine.bookable ? "bg-emerald-50 text-emerald-700 group-has-[:checked]:bg-white/10 group-has-[:checked]:text-emerald-200" : "bg-slate-200 text-slate-600"}`}>{statusLabels[machine.operationalStatus]}</span>
                 </div>
                 <div className="mt-5 border-t border-current/10 pt-4 text-xs leading-5">
-                  {machine.nextStartAt && machine.nextEndAt ? (
-                    <p className="font-semibold">เข้าใช้ได้ {timeOnly.format(new Date(machine.nextStartAt))}–{timeOnly.format(new Date(machine.nextEndAt))}</p>
+                  {machine.bookable ? (
+                    <p className="font-semibold">ใช้งานได้ 3 ชั่วโมง</p>
                   ) : <p className="font-semibold">ไม่มีช่วงเวลาว่างภายในวันนี้</p>}
-                  {machine.currentEndAt ? <p className="mt-1 opacity-75">Session ปัจจุบันสิ้นสุด {timeOnly.format(new Date(machine.currentEndAt))}</p> : null}
                   {machine.queueCount > 0 ? <p className="mt-1 opacity-75">คิวรอ {machine.queueCount} รายการ</p> : null}
                 </div>
                 <p className="font-display absolute bottom-4 right-5 text-4xl font-semibold leading-none tracking-[-0.08em] opacity-15">{String(index + 1).padStart(2, "0")}</p>

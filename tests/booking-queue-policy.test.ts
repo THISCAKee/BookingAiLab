@@ -42,6 +42,13 @@ function booking(overrides: Partial<SheetBooking> = {}): SheetBooking {
 }
 
 describe("machine booking queue policy", () => {
+  it("keeps an uncompleted booking effective after its provisional end", () => {
+    expect(isEffectiveBooking(
+      booking({ status: "confirmed", endAt: "2026-08-24T04:00:00.000Z" }),
+      new Date("2026-08-24T05:00:00.000Z"),
+    )).toBe(true);
+  });
+
   it("offers an empty machine immediately for exactly 180 minutes", () => {
     expect(deriveMachineQueueOption({
       machine,
@@ -99,20 +106,24 @@ describe("machine booking queue policy", () => {
     });
   });
 
-  it("ignores terminal, expired, and cancelled tail rows without shifting confirmed rows", () => {
+  it("ignores terminal and cancelled tail rows while retaining non-terminal rows", () => {
     const now = new Date("2026-08-24T03:00:00.000Z");
     const confirmed = booking({ endAt: "2026-08-24T05:00:00.000Z" });
     const ignored = [
       booking({ bookingId: "completed", status: "completed", endAt: "2026-08-24T12:00:00.000Z" }),
       booking({ bookingId: "cancelled", status: "cancelled", endAt: "2026-08-24T14:00:00.000Z" }),
       booking({ bookingId: "expired", status: "expired", endAt: "2026-08-24T15:00:00.000Z" }),
-      booking({ bookingId: "ended", endAt: now.toISOString() }),
     ];
 
     expect(ignored.every((row) => !isEffectiveBooking(row, now))).toBe(true);
     expect(deriveMachineQueueOption({ machine, bookings: [confirmed, ...ignored], now }))
       .toMatchObject({ nextStartAt: "2026-08-24T05:15:00.000Z" });
     expect(confirmed.endAt).toBe("2026-08-24T05:00:00.000Z");
+  });
+
+  it("retains a confirmed row after its provisional end", () => {
+    const now = new Date("2026-08-24T03:00:00.000Z");
+    expect(isEffectiveBooking(booking({ bookingId: "ended", endAt: "2026-08-24T00:30:00.000Z" }), now)).toBe(true);
   });
 
   it("marks a slot full when a new 180 minute window crosses Bangkok midnight", () => {
@@ -144,7 +155,7 @@ describe("machine booking queue policy", () => {
       now,
     })).toBe(false);
     expect(viewerHasEffectiveBooking({
-      bookings: [{ ...otherMachine, endAt: now.toISOString() }],
+      bookings: [{ ...otherMachine, status: "completed", endAt: now.toISOString() }],
       email: "student@msu.ac.th",
       now,
     })).toBe(false);

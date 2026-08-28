@@ -1,11 +1,5 @@
 import type { BookingFormState } from "@/app/booking/actions";
 
-const dateTime = new Intl.DateTimeFormat("th-TH", {
-  dateStyle: "medium",
-  timeStyle: "short",
-  timeZone: "Asia/Bangkok",
-});
-
 export function BookingResultPanel({
   state,
   onRetry,
@@ -40,24 +34,16 @@ export function BookingResultPanel({
         ยืนยันการจองแล้ว
       </div>
       <div className="p-6 sm:p-9">
-        <p className="text-sm font-semibold text-emerald-700">{booking.machineCode} เข้าใช้ได้ตามช่วงเวลาที่ยืนยัน</p>
+        <p className="text-sm font-semibold text-emerald-700">{booking.machineCode} จองคิวสำเร็จ</p>
         <h2 className="font-display mt-2 text-3xl font-semibold tracking-tight">บันทึกข้อมูลนี้ไว้ก่อนปิดหน้า</h2>
         <div className="mt-7 grid gap-4 sm:grid-cols-2">
-          <div className="booking-time-section rounded-2xl border border-slate-200 bg-white p-6 sm:col-span-2">
+          <div className="booking-duration-section rounded-2xl border border-slate-200 bg-white p-6 sm:col-span-2">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">ช่วงเวลาที่จอง</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">ระยะเวลาใช้งาน</p>
               <span className="rounded-full bg-slate-200 px-3 py-1 text-xs font-bold text-slate-700">รอบใช้งาน 180 นาที</span>
             </div>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-xl bg-slate-50 px-4 py-3">
-                <p className="text-xs font-medium text-slate-500">เริ่มใช้งาน</p>
-                <p className="time-value-regular mt-1 text-lg font-normal text-slate-900">{dateTime.format(new Date(booking.startAt))}</p>
-              </div>
-              <div className="rounded-xl bg-slate-50 px-4 py-3">
-                <p className="text-xs font-medium text-slate-500">สิ้นสุด</p>
-                <p className="time-value-regular mt-1 text-lg font-normal text-slate-900">{dateTime.format(new Date(booking.endAt))}</p>
-              </div>
-            </div>
+            <p className="mt-4 text-2xl font-semibold text-slate-900">ใช้งานได้ 3 ชั่วโมง</p>
+            <p className="mt-2 text-xs leading-5 text-slate-600">เวลาจะเริ่มนับเมื่อ login เข้า TimeLock</p>
           </div>
 
           <div className="timelock-highlight rounded-2xl border-2 border-slate-300 bg-slate-100 p-7 text-slate-900 shadow-[0_18px_45px_-32px_rgba(15,23,42,0.65)] sm:col-span-2 sm:p-8">
@@ -76,7 +62,7 @@ export function BookingResultPanel({
               </div>
             </div>
             <p className="mt-5 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800">
-              เข้าใช้งาน TimeLock ได้ตั้งแต่ {dateTime.format(new Date(booking.startAt))} เท่านั้น
+              เวลาจะเริ่มนับเมื่อ login เข้า TimeLock และได้รับเวลาใช้งานเต็ม 180 นาที
             </p>
           </div>
 

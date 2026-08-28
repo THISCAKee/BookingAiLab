@@ -237,9 +237,33 @@ describe("Google Apps Script authoritative booking queue", () => {
     expect(sheets.AuditLog.rows).toHaveLength(auditCountAfterCreate);
   });
 
-  it("serializes consecutive requests into queue slots separated by 15 minutes", () => {
+  it("blocks a second booking until the first user logs in", () => {
     const { context } = runtime([], false);
+    context.createBooking_(createBody, new Date("2026-08-24T00:30:00.000Z"));
+
+    expect(() => context.createBooking_({
+      ...createBody,
+      idempotencyKey: "create-other",
+      payload: {
+        ...createBody.payload,
+        email: "other@msu.ac.th",
+        emailPrefix: "other",
+        account: { ...createBody.payload.account, username: "other" },
+      },
+    }, new Date("2026-08-24T00:31:00.000Z"))).toThrow("BOOKING_PREVIOUS_NOT_STARTED");
+  });
+
+  it("starts the next booking after the predecessor's login-adjusted end", () => {
+    const { context, sheets } = runtime([], false);
     const first = JSON.parse(JSON.stringify(context.createBooking_(createBody, new Date("2026-08-24T00:30:00.000Z"))));
+    const firstBooking = sheets.Bookings.rows.find((row) => row[0] === first.data.bookingId) as unknown[];
+    firstBooking[BOOKING_HEADERS.indexOf("startAt")] = "2026-08-24T02:00:00.000Z";
+    firstBooking[BOOKING_HEADERS.indexOf("endAt")] = "2026-08-24T05:00:00.000Z";
+    sheets.Events.appendRow([
+      "login-event", "session_started", "session-1", first.data.bookingId, "PC-001", "new", "active", "{}",
+      "2026-08-24T02:00:00.000Z", "2026-08-24T02:00:00.000Z",
+    ]);
+
     const second = JSON.parse(JSON.stringify(context.createBooking_({
       ...createBody,
       idempotencyKey: "create-other",
@@ -249,15 +273,11 @@ describe("Google Apps Script authoritative booking queue", () => {
         emailPrefix: "other",
         account: { ...createBody.payload.account, username: "other" },
       },
-    }, new Date("2026-08-24T00:31:00.000Z"))));
+    }, new Date("2026-08-24T02:01:00.000Z"))));
 
-    expect(first.data).toMatchObject({
-      startAt: "2026-08-24T00:30:00.000Z",
-      endAt: "2026-08-24T03:30:00.000Z",
-    });
     expect(second.data).toMatchObject({
-      startAt: "2026-08-24T03:45:00.000Z",
-      endAt: "2026-08-24T06:45:00.000Z",
+      startAt: "2026-08-24T05:15:00.000Z",
+      endAt: "2026-08-24T08:15:00.000Z",
     });
   });
 
@@ -273,7 +293,7 @@ describe("Google Apps Script authoritative booking queue", () => {
       .toThrow("BOOKING_ALREADY_ACTIVE");
   });
 
-  it("ignores cancelled and ended tails but preserves later confirmed times", () => {
+  it("ignores cancelled tails and preserves a started predecessor's end", () => {
     const rows = [
       [
         "b-confirmed", "BK-CONFIRMED", "first@msu.ac.th", "First", "msu.ac.th", "first", "m-1", "PC-001",
@@ -292,6 +312,10 @@ describe("Google Apps Script authoritative booking queue", () => {
       ],
     ];
     const { context, sheets } = runtime(rows, false);
+    sheets.Events.appendRow([
+      "session-event", "session_started", "session-1", "b-confirmed", "PC-001", "first", "active", "{}",
+      "2026-08-24T01:00:00.000Z", "2026-08-24T01:00:00.000Z",
+    ]);
     const result = JSON.parse(JSON.stringify(context.createBooking_(createBody, new Date("2026-08-24T00:30:00.000Z"))));
 
     expect(result.data).toMatchObject({

@@ -21,13 +21,14 @@ Backend ส่ง Apps Script เฉพาะ machine reference, identity, one-t
 
 Apps Script ใช้ Script Lock แล้วอ่านแท็บ `Bookings` ใหม่ทุกครั้ง:
 
-- ถ้าเครื่องไม่มี Booking ที่ยังมีผล ช่วงใหม่เริ่มจากเวลาปัจจุบัน
-- ถ้ามีคิว ช่วงใหม่เริ่ม 15 นาทีหลัง `endAt` ล่าสุด
+- ถ้าเครื่องไม่มี Booking ที่ยังไม่จบ ช่วงใหม่เริ่มจากเวลาปัจจุบัน
+- ถ้ามี Booking ก่อนหน้า ระบบตรวจ `Events` และต้องพบ `session_started` ของ Booking ล่าสุดก่อนจึงสร้างคิวใหม่ได้ หากยังไม่พบจะตอบ `BOOKING_PREVIOUS_NOT_STARTED`
+- เมื่อ predecessor login แล้ว คิวใหม่เริ่ม 15 นาทีหลัง `endAt` จริงของ predecessor
 - ทุกช่วงยาว 180 นาที และต้องสิ้นสุดไม่เกินเที่ยงคืน `Asia/Bangkok`
 - ผู้ใช้ที่มี Booking ปัจจุบันหรืออนาคตบนเครื่องใดอยู่แล้วจะได้รับ `BOOKING_ALREADY_ACTIVE`
 - Booking ที่ยืนยันแล้วไม่เลื่อนเวลาเมื่อ Booking ก่อนหน้ายกเลิกหรือ logout เร็ว
 
-ผลสำเร็จคืน `startAt` และ `endAt` authoritative ที่หน้า confirmation ต้องใช้แทน preview เดิมทั้งหมด
+ผลสำเร็จคืน `startAt` และ `endAt` ของคิวโดยประมาณ หน้า confirmation ต้องสื่อสารว่าเวลาจริงจะเริ่มนับเมื่อผู้ใช้ login เข้า TimeLock และ Backend จะปรับ `startAt/endAt` เป็นเวลาจริงของ session ตอน login
 การ retry ภายใน request ใช้ `idempotencyKey`, password verifier และ manage code ชุดเดิม จึงไม่สร้าง
 Booking, User, Event หรือ Audit ซ้ำและรหัสที่แสดงยังตรงกับข้อมูลที่บันทึก
 
@@ -119,20 +120,18 @@ Request:
 }
 ```
 
-`endAt`, `allowedMinutes` และ `extensionCount` เป็นค่าจาก Server เท่านั้น WPF ห้ามคำนวณหรือรับค่าแทนจาก client
-และต้องใช้ `endAt` เป็นเวลาสิ้นสุด authoritative ก่อนเรียก extension check/confirm
+`startedAt` คือเวลาที่ login สำเร็จจริง และ `endAt` คือ `startedAt + allowedMinutes` จาก Server เท่านั้น WPF ห้ามคำนวณหรือรับค่าแทนจาก client และต้องใช้ `endAt` เป็นเวลาสิ้นสุด authoritative ก่อนเรียก extension check/confirm
 
-ระบบใช้ช่วงเวลาแบบ `startAt <= now < endAt` หากรหัสถูกต้องแต่ยังไม่ถึงเวลา จะตอบ HTTP 409:
+ระบบไม่บังคับให้ login ตรงกับ `Bookings.startAt/endAt` ที่เป็นเวลา provisional ตอนจอง ผู้ใช้ที่ login ช้ากว่าเวลาประมาณการยังได้รับเวลาเต็ม `allowedMinutes` จากเวลาที่ login หาก session ใหม่จะข้ามเที่ยงคืน ระบบตอบ HTTP 409:
 
 ```json
-{ "ok": false, "code": "BOOKING_NOT_STARTED" }
+{ "ok": false, "code": "BOOKING_CROSSES_MIDNIGHT" }
 ```
 
-ตั้งแต่ `endAt` เป็นต้นไปจะตอบ HTTP 409 ด้วย `BOOKING_EXPIRED` ทั้งสองกรณีต้องไม่สร้าง
-`session_started` และ response ห้ามมี password/verifier หรือข้อมูลภายใน
+ก่อน append `session_started` Backend จะปรับ Booking แถวเดิมเป็น `startAt = loginAt`, `endAt = loginAt + allowedMinutes` และสถานะ `active` response ห้ามมี password/verifier หรือข้อมูลภายใน
 
 ข้อผิดพลาดหลัก: `MACHINE_TOKEN_INVALID`, `LOGIN_INVALID`, `CREDENTIALS_INVALID`,
-`ACCOUNT_MACHINE_MISMATCH`, `BOOKING_NOT_STARTED`, `BOOKING_EXPIRED`
+`ACCOUNT_MACHINE_MISMATCH`, `BOOKING_CROSSES_MIDNIGHT`
 
 ### TimeLock offline sync
 
@@ -142,12 +141,12 @@ x-machine-code: PC-001
 x-device-token: <device-token>
 ```
 
-Backend ส่งเฉพาะบัญชีที่ User ยัง active, ผูกกับ Booking/เครื่องเดียวกัน และอยู่ในช่วง
-`startAt <= now < endAt` เท่านั้น บัญชีคิวอนาคต, Booking ที่ยกเลิก และ Booking ที่หมดเวลาจะไม่ถูกส่ง
-`expiresAt` ของ verifier เท่ากับ `Booking.endAt` ไม่ใช่ TTL 24 ชั่วโมง
+Backend ส่งเฉพาะบัญชีที่ User ยัง active และผูกกับ Booking/เครื่องเดียวกันที่ยังไม่เป็น terminal เท่านั้น
+เวลา `startAt/endAt` ก่อน login เป็นเวลา provisional จึงไม่ตัดบัญชีทิ้งเพียงเพราะเวลาประมาณการผ่านแล้ว
+หลัง login สำเร็จ `expiresAt` และ session window ต้องอ้างอิง `Booking.endAt` ที่ถูกปรับเป็นเวลาจริง
 
-WPF ต้อง Sync อีกครั้งเมื่อถึง `startAt` ที่แสดงแก่ผู้ใช้ และต้องลบ/ปฏิเสธ verifier เมื่อถึง `expiresAt`
-ห้ามใช้ Offline Cache เป็น fallback เพื่อข้าม `BOOKING_NOT_STARTED` หรือ `BOOKING_EXPIRED`
+WPF ต้อง Sync เพื่อรับข้อมูลล่าสุดก่อน login และต้องลบ/ปฏิเสธ verifier เมื่อ session จบหรือถึง `expiresAt`
+ห้ามใช้ Offline Cache เป็น fallback เพื่อสร้าง session ที่ไม่ผ่านการยืนยันของ TimeLock Backend
 
 ### TimeLock logout และหมดเวลา
 
@@ -246,17 +245,16 @@ MACHINE_NOT_REGISTERED
 MACHINE_TOKEN_INVALID
 BOOKING_NOT_FOUND
 BOOKING_ALREADY_ACTIVE
+BOOKING_PREVIOUS_NOT_STARTED
 BOOKING_CROSSES_MIDNIGHT
 BOOKING_MACHINE_UNAVAILABLE
 BOOKING_ATOMIC_BUSY
-BOOKING_NOT_STARTED
-BOOKING_EXPIRED
 EVENT_ALREADY_PROCESSED
 INVALID_STATUS_TRANSITION
 RATE_LIMITED
 ```
 
-`BOOKING_ATOMIC_BUSY` เป็น error ที่ retry ได้ โดย request เดิมต้องใช้ idempotency key และ credential
+`BOOKING_ATOMIC_BUSY` และ `BOOKING_PREVIOUS_NOT_STARTED` เป็น error ที่ retry ได้ โดย request เดิมต้องใช้ idempotency key และ credential
 payload ชุดเดิม ส่วน `BOOKING_ALREADY_ACTIVE` ต้องรอ Booking เดิมสิ้นสุดหรือยกเลิกก่อนจึงจองใหม่ได้
 
 ## ต่อเวลา TimeLock Session

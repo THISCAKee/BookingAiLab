@@ -99,11 +99,24 @@ function createBooking_(body, currentTime) {
   const machine = machine_(body.payload.machineId);
   if (!machine || machine.status !== 'available') throw new Error('BOOKING_MACHINE_UNAVAILABLE');
   const current = currentTime || new Date();
-  const effective = rows.filter(row => effectiveBooking_(row, index, current));
+  const eventSheet = SpreadsheetApp.getActive().getSheetByName(TABS.events);
+  const eventRows = eventSheet.getDataRange().getValues();
+  const eventHeaders = eventRows.shift().map(String);
+  const eventIndex = headerIndex_(eventHeaders);
+  const effective = rows.filter(row => nonTerminalBooking_(row, index));
   const activeForCustomer = effective.some(row => String(row[index.email]).toLowerCase() === String(body.payload.email).toLowerCase());
   if (activeForCustomer) throw new Error('BOOKING_ALREADY_ACTIVE');
   const machineQueue = effective.filter(row => String(row[index.machineId]) === String(body.payload.machineId));
-  const latestEnd = machineQueue.reduce((latest, row) => Math.max(latest, new Date(row[index.endAt]).getTime()), -Infinity);
+  const latestBooking = machineQueue.reduce((latest, row) => {
+    if (!latest) return row;
+    return new Date(row[index.endAt]).getTime() > new Date(latest[index.endAt]).getTime() ? row : latest;
+  }, null);
+  if (latestBooking && !eventRows.some(row =>
+    String(row[eventIndex.bookingId]) === String(latestBooking[index.bookingId])
+      && String(row[eventIndex.eventType]) === 'session_started')) {
+    throw new Error('BOOKING_PREVIOUS_NOT_STARTED');
+  }
+  const latestEnd = latestBooking ? new Date(latestBooking[index.endAt]).getTime() : -Infinity;
   const start = machineQueue.length === 0 ? new Date(current.getTime()) : new Date(latestEnd + 15 * 60 * 1000);
   const end = new Date(start.getTime() + 180 * 60 * 1000);
   if (bangkokDate_(start) !== bangkokDate_(current)) throw new Error('BOOKING_DATE_NOT_ALLOWED');
@@ -133,8 +146,6 @@ function createBooking_(body, currentTime) {
   sheet.appendRow(row);
   body.payload.account.allowedMinutes = 180;
   upsertUser_(body.payload, bookingId, machine.machineCode, now);
-  const eventSheet = SpreadsheetApp.getActive().getSheetByName(TABS.events);
-  const eventHeaders = eventSheet.getDataRange().getValues().shift().map(String);
   appendMappedRow_(eventSheet, eventHeaders, {
     eventId: Utilities.getUuid(),
     eventType: 'booking_confirmed',
@@ -359,9 +370,9 @@ function deactivateBookingUser_(bookingId) {
 }
 
 function active_(status) { return ['cancelled', 'expired', 'completed'].indexOf(status) < 0; }
-function effectiveBooking_(row, index, now) {
+function nonTerminalBooking_(row, index) {
   const end = new Date(row[index.endAt]);
-  return active_(String(row[index.status] || '')) && !isNaN(end.getTime()) && end.getTime() > now.getTime();
+  return active_(String(row[index.status] || '')) && !isNaN(end.getTime());
 }
 function bangkokDate_(date) { return new Date(date.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10); }
 function nextBangkokMidnight_(date) { return new Date(new Date(bangkokDate_(date) + 'T00:00:00+07:00').getTime() + 24 * 60 * 60 * 1000); }

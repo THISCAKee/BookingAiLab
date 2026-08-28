@@ -34,8 +34,10 @@ function nextBangkokMidnight(date: Date) {
 }
 
 export function isEffectiveBooking(booking: SheetBooking, now: Date) {
-  const endAt = new Date(booking.endAt).getTime();
-  return !TERMINAL.has(booking.status) && Number.isFinite(endAt) && endAt > now.getTime();
+  void now;
+  return !TERMINAL.has(booking.status)
+    && Number.isFinite(new Date(booking.startAt).getTime())
+    && Number.isFinite(new Date(booking.endAt).getTime());
 }
 
 export function viewerHasEffectiveBooking(input: {

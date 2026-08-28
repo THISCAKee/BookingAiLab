@@ -36,7 +36,47 @@ async function scheduledLoginSheets() {
 }
 
 describe("TimeLock Sheet gateway sessions", () => {
-  it("rejects login before the scheduled start without creating a session event", async () => {
+  it("starts the full allowance when login happens after the provisional end", async () => {
+    const sheets = await scheduledLoginSheets();
+    const ids = ["s-late", "e-late"];
+
+    const result = await loginTimelockUser(device, {
+      username: "student",
+      password: "secret-password",
+    }, {
+      sheets,
+      now: () => new Date("2026-08-24T05:00:00.000Z"),
+      randomId: () => ids.shift() ?? "unexpected",
+    });
+
+    expect(result).toMatchObject({
+      startedAt: "2026-08-24T05:00:00.000Z",
+      endAt: "2026-08-24T08:00:00.000Z",
+      allowedMinutes: 180,
+      status: "active",
+    });
+    expect(sheets.updateSheetRow).toHaveBeenCalledWith("Bookings", 2, expect.arrayContaining([
+      "2026-08-24T05:00:00.000Z",
+      "2026-08-24T08:00:00.000Z",
+      "active",
+    ]));
+  });
+
+  it("rejects a login when the full allowance would cross Bangkok midnight", async () => {
+    const sheets = await scheduledLoginSheets();
+
+    await expect(loginTimelockUser(device, {
+      username: "student",
+      password: "secret-password",
+    }, {
+      sheets,
+      now: () => new Date("2026-08-24T16:00:00.000Z"),
+    })).rejects.toThrow("BOOKING_CROSSES_MIDNIGHT");
+    expect(sheets.updateSheetRow).not.toHaveBeenCalled();
+    expect(sheets.appendSheetRow).not.toHaveBeenCalled();
+  });
+
+  it("allows login before the provisional start and starts timing at login", async () => {
     const sheets = await scheduledLoginSheets();
 
     await expect(loginTimelockUser(device, {
@@ -45,8 +85,12 @@ describe("TimeLock Sheet gateway sessions", () => {
     }, {
       sheets,
       now: () => new Date("2026-08-24T01:29:59.999Z"),
-    })).rejects.toThrow("BOOKING_NOT_STARTED");
-    expect(sheets.appendSheetRow).not.toHaveBeenCalled();
+    })).resolves.toMatchObject({
+      startedAt: "2026-08-24T01:29:59.999Z",
+      endAt: "2026-08-24T04:29:59.999Z",
+      status: "active",
+    });
+    expect(sheets.appendSheetRow).toHaveBeenCalledOnce();
   });
 
   it("allows login one millisecond before the scheduled end", async () => {
@@ -63,7 +107,7 @@ describe("TimeLock Sheet gateway sessions", () => {
     expect(sheets.appendSheetRow).toHaveBeenCalledOnce();
   });
 
-  it("rejects login at the scheduled end without creating a session event", async () => {
+  it("allows login at the provisional end and starts a fresh full allowance", async () => {
     const sheets = await scheduledLoginSheets();
 
     await expect(loginTimelockUser(device, {
@@ -72,8 +116,12 @@ describe("TimeLock Sheet gateway sessions", () => {
     }, {
       sheets,
       now: () => new Date("2026-08-24T04:30:00.000Z"),
-    })).rejects.toThrow("BOOKING_EXPIRED");
-    expect(sheets.appendSheetRow).not.toHaveBeenCalled();
+    })).resolves.toMatchObject({
+      startedAt: "2026-08-24T04:30:00.000Z",
+      endAt: "2026-08-24T07:30:00.000Z",
+      status: "active",
+    });
+    expect(sheets.appendSheetRow).toHaveBeenCalledOnce();
   });
 
   it("appends a session_started event after verifying login", async () => {

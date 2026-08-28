@@ -101,7 +101,7 @@ describe("offline account payload", () => {
 });
 
 describe("TimeLock booking window errors", () => {
-  it.each(["BOOKING_NOT_STARTED", "BOOKING_EXPIRED"])(
+  it.each(["BOOKING_NOT_STARTED", "BOOKING_EXPIRED", "BOOKING_PREVIOUS_NOT_STARTED", "BOOKING_CROSSES_MIDNIGHT"])(
     "returns a conflict response for %s without internal details",
     async (code) => {
       const response = timelockErrorResponse(new Error(code), "LOGIN_FAILED");
