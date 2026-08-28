@@ -180,31 +180,42 @@ const body = {
   },
 };
 
-describe("Google Apps Script booking extension", () => {
-  it("creates only a three-hour booking today with zero extensions", () => {
-    const { context, sheets } = runtime([], false);
-    const createBody = {
-      idempotencyKey: "create-new",
-      payload: {
-        machineId: "m-1",
-        startAt: "2026-08-24T01:30:00.000Z",
-        endAt: "2026-08-24T04:30:00.000Z",
-        email: "new@msu.ac.th",
-        name: "New Student",
-        hd: "msu.ac.th",
-        emailPrefix: "new",
-        account: {
-          username: "new",
-          passwordAlgorithm: "pbkdf2-sha256",
-          passwordIterations: 600000,
-          passwordSalt: "salt",
-          passwordHash: "hash",
-          allowedMinutes: 999,
-        },
+describe("Google Apps Script authoritative booking queue", () => {
+  const createBody = {
+    idempotencyKey: "create-new",
+    payload: {
+      machineId: "m-1",
+      manageCode: "QUEUECODE123",
+      email: "new@msu.ac.th",
+      name: "New Student",
+      hd: "msu.ac.th",
+      emailPrefix: "new",
+      account: {
+        username: "new",
+        passwordAlgorithm: "pbkdf2-sha256",
+        passwordIterations: 600000,
+        passwordSalt: "salt",
+        passwordHash: "hash",
+        allowedMinutes: 999,
       },
-    };
+    },
+  };
 
-    context.createBooking_(createBody, new Date("2026-08-24T00:30:00.000Z"));
+  it("ignores client time fields and creates an immediate authoritative 180 minute slot", () => {
+    const { context, sheets } = runtime([], false);
+    const result = JSON.parse(JSON.stringify(context.createBooking_({
+      ...createBody,
+      payload: {
+        ...createBody.payload,
+        startAt: "2030-01-01T00:00:00.000Z",
+        endAt: "2030-01-01T03:00:00.000Z",
+      },
+    }, new Date("2026-08-24T00:30:00.000Z"))));
+    expect(result.data).toMatchObject({
+      startAt: "2026-08-24T00:30:00.000Z",
+      endAt: "2026-08-24T03:30:00.000Z",
+      status: "confirmed",
+    });
     const created = sheets.Bookings.rows.at(-1);
     expect(created?.[BOOKING_HEADERS.indexOf("extensionCount")]).toBe(0);
     const createdUser = sheets.Users.rows.at(-1);
@@ -218,51 +229,92 @@ describe("Google Apps Script booking extension", () => {
 
     const eventCountAfterCreate = sheets.Events.rows.length;
     const auditCountAfterCreate = sheets.AuditLog.rows.length;
-    context.createBooking_(createBody, new Date("2026-08-24T00:30:00.000Z"));
+    const duplicate = JSON.parse(JSON.stringify(
+      context.createBooking_(createBody, new Date("2026-08-24T00:31:00.000Z")),
+    ));
+    expect(duplicate.data.manageCode).toBe("QUEUECODE123");
     expect(sheets.Events.rows).toHaveLength(eventCountAfterCreate);
     expect(sheets.AuditLog.rows).toHaveLength(auditCountAfterCreate);
+  });
 
-    expect(() => context.createBooking_({
+  it("serializes consecutive requests into queue slots separated by 15 minutes", () => {
+    const { context } = runtime([], false);
+    const first = JSON.parse(JSON.stringify(context.createBooking_(createBody, new Date("2026-08-24T00:30:00.000Z"))));
+    const second = JSON.parse(JSON.stringify(context.createBooking_({
       ...createBody,
-      idempotencyKey: "wrong-duration",
-      payload: { ...createBody.payload, endAt: "2026-08-24T03:30:00.000Z" },
-    }, new Date("2026-08-24T00:30:00.000Z"))).toThrow("BOOKING_DURATION_INVALID");
-    expect(() => context.createBooking_({
-      ...createBody,
-      idempotencyKey: "wrong-day",
+      idempotencyKey: "create-other",
       payload: {
         ...createBody.payload,
-        startAt: "2026-08-25T01:30:00.000Z",
-        endAt: "2026-08-25T04:30:00.000Z",
+        email: "other@msu.ac.th",
+        emailPrefix: "other",
+        account: { ...createBody.payload.account, username: "other" },
       },
-    }, new Date("2026-08-24T00:30:00.000Z"))).toThrow("BOOKING_DATE_NOT_ALLOWED");
+    }, new Date("2026-08-24T00:31:00.000Z"))));
+
+    expect(first.data).toMatchObject({
+      startAt: "2026-08-24T00:30:00.000Z",
+      endAt: "2026-08-24T03:30:00.000Z",
+    });
+    expect(second.data).toMatchObject({
+      startAt: "2026-08-24T03:45:00.000Z",
+      endAt: "2026-08-24T06:45:00.000Z",
+    });
   });
 
-  it("allows a late same-day booking but rejects a window crossing Bangkok midnight", () => {
-    const { context } = runtime([], false);
-    const lateBody = {
-      idempotencyKey: "late-create",
-      payload: {
-        machineId: "m-1",
-        startAt: "2026-08-24T13:00:00.000Z",
-        endAt: "2026-08-24T16:00:00.000Z",
-        email: "late@msu.ac.th",
-        name: "Late Student",
-        hd: "msu.ac.th",
-        emailPrefix: "late",
-        account: { username: "late", passwordAlgorithm: "pbkdf2-sha256", passwordIterations: 600000, passwordSalt: "salt", passwordHash: "hash", allowedMinutes: 180 },
-      },
-    };
+  it("rejects a viewer who has any effective booking on another machine", () => {
+    const otherMachineBooking = [
+      "b-other", "BK-OTHER", "new@msu.ac.th", "New Student", "msu.ac.th", "new", "m-2", "PC-002",
+      "2026-08-24T01:00:00.000Z", "2026-08-24T04:00:00.000Z", "confirmed", "hash-other",
+      "2026-08-24T00:00:00.000Z", "2026-08-24T00:00:00.000Z", "create-other", 0,
+    ];
+    const { context } = runtime([otherMachineBooking], false);
 
-    expect(() => context.createBooking_(lateBody, new Date("2026-08-24T12:00:00.000Z"))).not.toThrow();
-    expect(() => context.createBooking_({
-      ...lateBody,
-      idempotencyKey: "cross-midnight",
-      payload: { ...lateBody.payload, startAt: "2026-08-24T16:00:00.000Z", endAt: "2026-08-24T19:00:00.000Z" },
-    }, new Date("2026-08-24T15:00:00.000Z"))).toThrow("BOOKING_CROSSES_MIDNIGHT");
+    expect(() => context.createBooking_(createBody, new Date("2026-08-24T00:30:00.000Z")))
+      .toThrow("BOOKING_ALREADY_ACTIVE");
   });
 
-  it("updates Booking and User exactly once for a repeated idempotency key", () => {
+  it("ignores cancelled and ended tails but preserves later confirmed times", () => {
+    const rows = [
+      [
+        "b-confirmed", "BK-CONFIRMED", "first@msu.ac.th", "First", "msu.ac.th", "first", "m-1", "PC-001",
+        "2026-08-24T01:00:00.000Z", "2026-08-24T04:00:00.000Z", "confirmed", "hash-1",
+        "2026-08-24T00:00:00.000Z", "2026-08-24T00:00:00.000Z", "create-1", 0,
+      ],
+      [
+        "b-cancelled", "BK-CANCELLED", "second@msu.ac.th", "Second", "msu.ac.th", "second", "m-1", "PC-001",
+        "2026-08-24T04:15:00.000Z", "2026-08-24T09:00:00.000Z", "cancelled", "hash-2",
+        "2026-08-24T00:00:00.000Z", "2026-08-24T00:00:00.000Z", "create-2", 0,
+      ],
+      [
+        "b-ended", "BK-ENDED", "ended@msu.ac.th", "Ended", "msu.ac.th", "ended", "m-1", "PC-001",
+        "2026-08-23T21:00:00.000Z", "2026-08-24T00:30:00.000Z", "confirmed", "hash-3",
+        "2026-08-23T20:00:00.000Z", "2026-08-23T20:00:00.000Z", "create-3", 0,
+      ],
+    ];
+    const { context, sheets } = runtime(rows, false);
+    const result = JSON.parse(JSON.stringify(context.createBooking_(createBody, new Date("2026-08-24T00:30:00.000Z"))));
+
+    expect(result.data).toMatchObject({
+      startAt: "2026-08-24T04:15:00.000Z",
+      endAt: "2026-08-24T07:15:00.000Z",
+    });
+    expect(rowObject(sheets.Bookings, "b-confirmed").endAt).toBe("2026-08-24T04:00:00.000Z");
+  });
+
+  it("rejects a slot crossing Bangkok midnight and an unavailable machine", () => {
+    const late = runtime([], false);
+    expect(() => late.context.createBooking_(createBody, new Date("2026-08-24T16:00:00.000Z")))
+      .toThrow("BOOKING_CROSSES_MIDNIGHT");
+
+    const unavailable = runtime([], false);
+    unavailable.sheets.Machines.rows[1][4] = "maintenance";
+    expect(() => unavailable.context.createBooking_(createBody, new Date("2026-08-24T00:30:00.000Z")))
+      .toThrow("BOOKING_MACHINE_UNAVAILABLE");
+  });
+});
+
+describe("Google Apps Script booking extension", () => {
+  it("adds 180 minutes while keeping the per-extension allowance at 180", () => {
     const { context, sheets } = runtime();
     const first = JSON.parse(JSON.stringify(context.extendBooking_(body, new Date("2026-08-24T03:00:00.000Z"))));
     const repeated = JSON.parse(JSON.stringify(context.extendBooking_(body, new Date("2026-08-24T03:01:00.000Z"))));
@@ -273,7 +325,7 @@ describe("Google Apps Script booking extension", () => {
         bookingId: "b-1",
         endAt: "2026-08-24T07:30:00.000Z",
         extensionCount: 1,
-        allowedMinutes: 360,
+        allowedMinutes: 180,
       },
     });
     expect(repeated).toEqual(first);
@@ -281,7 +333,7 @@ describe("Google Apps Script booking extension", () => {
       endAt: "2026-08-24T07:30:00.000Z",
       extensionCount: 1,
     });
-    expect(rowObject(sheets.Users, "u-1")).toMatchObject({ allowedMinutes: 360 });
+    expect(rowObject(sheets.Users, "u-1")).toMatchObject({ allowedMinutes: 180 });
   });
 
   it("does not mutate rows when a next booking overlaps the extension", () => {

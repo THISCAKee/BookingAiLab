@@ -89,30 +89,28 @@ function createBooking_(body, currentTime) {
   const rows = sheet.getDataRange().getValues();
   const headers = rows.shift().map(String);
   const index = Object.fromEntries(headers.map((header, position) => [header, position]));
+  const manageCode = String(body.payload.manageCode || '').toUpperCase();
+  if (!/^[A-Z0-9_-]{12}$/.test(manageCode)) throw new Error('BOOKING_INPUT_INVALID');
+  const duplicate = rows.find(row => String(row[index.idempotencyKey] || '') === String(body.idempotencyKey));
+  if (duplicate) {
+    if (String(duplicate[index.manageCodeHash]) !== hash_(manageCode)) throw new Error('BOOKING_IDEMPOTENCY_CONFLICT');
+    return { ok: true, data: Object.assign(rowObject_(headers, duplicate), { manageCode: manageCode }) };
+  }
   const machine = machine_(body.payload.machineId);
   if (!machine || machine.status !== 'available') throw new Error('BOOKING_MACHINE_UNAVAILABLE');
-  const start = new Date(body.payload.startAt);
-  const end = new Date(body.payload.endAt);
-  if (isNaN(start.getTime()) || isNaN(end.getTime()) || start >= end) throw new Error('BOOKING_TIME_INVALID');
-  if (end.getTime() - start.getTime() !== 180 * 60 * 1000) throw new Error('BOOKING_DURATION_INVALID');
   const current = currentTime || new Date();
+  const effective = rows.filter(row => effectiveBooking_(row, index, current));
+  const activeForCustomer = effective.some(row => String(row[index.email]).toLowerCase() === String(body.payload.email).toLowerCase());
+  if (activeForCustomer) throw new Error('BOOKING_ALREADY_ACTIVE');
+  const machineQueue = effective.filter(row => String(row[index.machineId]) === String(body.payload.machineId));
+  const latestEnd = machineQueue.reduce((latest, row) => Math.max(latest, new Date(row[index.endAt]).getTime()), -Infinity);
+  const start = machineQueue.length === 0 ? new Date(current.getTime()) : new Date(latestEnd + 15 * 60 * 1000);
+  const end = new Date(start.getTime() + 180 * 60 * 1000);
   if (bangkokDate_(start) !== bangkokDate_(current)) throw new Error('BOOKING_DATE_NOT_ALLOWED');
   if (end.getTime() > nextBangkokMidnight_(start).getTime()) throw new Error('BOOKING_CROSSES_MIDNIGHT');
-  const duplicate = rows.find(row => String(row[index.idempotencyKey] || '') === String(body.idempotencyKey));
-  if (duplicate) return { ok: true, data: rowObject_(headers, duplicate) };
-  for (const row of rows) {
-    if (!active_(String(row[index.status] || ''))) continue;
-    const rowStart = new Date(row[index.startAt]);
-    const rowEnd = new Date(row[index.endAt]);
-    if (rowStart < end && start < rowEnd) {
-      if (String(row[index.machineId]) === body.payload.machineId) throw new Error('BOOKING_MACHINE_OVERLAP');
-      if (String(row[index.email]).toLowerCase() === String(body.payload.email).toLowerCase()) throw new Error('BOOKING_CUSTOMER_OVERLAP');
-    }
-  }
   const now = current.toISOString();
   const bookingId = Utilities.getUuid();
   const bookingNumber = 'BK-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd-HHmmss') + '-' + bookingId.slice(0, 6).toUpperCase();
-  const manageCode = randomCode_();
   const bookingValues = {
     bookingId: bookingId,
     bookingNumber: bookingNumber,
@@ -122,8 +120,8 @@ function createBooking_(body, currentTime) {
     emailPrefix: body.payload.emailPrefix,
     machineId: body.payload.machineId,
     machineCode: machine.machineCode,
-    startAt: body.payload.startAt,
-    endAt: body.payload.endAt,
+    startAt: start.toISOString(),
+    endAt: end.toISOString(),
     status: 'confirmed',
     manageCodeHash: hash_(manageCode),
     createdAt: now,
@@ -147,8 +145,8 @@ function createBooking_(body, currentTime) {
     status: 'confirmed',
     payload: JSON.stringify({
       bookingNumber: bookingNumber,
-      startAt: body.payload.startAt,
-      endAt: body.payload.endAt,
+      startAt: start.toISOString(),
+      endAt: end.toISOString(),
       allowedMinutes: 180,
     }),
     createdAt: now,
@@ -163,8 +161,8 @@ function createBooking_(body, currentTime) {
       bookingNumber: bookingNumber,
       machineCode: machine.machineCode,
       username: body.payload.account.username,
-      startAt: body.payload.startAt,
-      endAt: body.payload.endAt,
+      startAt: start.toISOString(),
+      endAt: end.toISOString(),
       allowedMinutes: 180,
     }),
     createdAt: now,
@@ -240,7 +238,7 @@ function extendBooking_(body, currentTime) {
   const userPosition = userValues.findIndex(row => String(row[userIndex.sourceBookingId]) === bookingId && String(row[userIndex.machineCode]).toUpperCase() === machineCode && String(row[userIndex.username]).toLowerCase() === username && String(row[userIndex.isActive]).toLowerCase() === 'true');
   if (userPosition < 0) throw new Error('EXTENSION_ACCOUNT_MISMATCH');
   const nextExtensionCount = extensionCount + 1;
-  const allowedMinutes = (nextExtensionCount + 1) * 180;
+  const allowedMinutes = 180;
   const updatedAt = nowDate.toISOString();
   booking[bookingIndex.endAt] = proposedEnd.toISOString();
   booking[bookingIndex.extensionCount] = nextExtensionCount;
@@ -361,6 +359,10 @@ function deactivateBookingUser_(bookingId) {
 }
 
 function active_(status) { return ['cancelled', 'expired', 'completed'].indexOf(status) < 0; }
+function effectiveBooking_(row, index, now) {
+  const end = new Date(row[index.endAt]);
+  return active_(String(row[index.status] || '')) && !isNaN(end.getTime()) && end.getTime() > now.getTime();
+}
 function bangkokDate_(date) { return new Date(date.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10); }
 function nextBangkokMidnight_(date) { return new Date(new Date(bangkokDate_(date) + 'T00:00:00+07:00').getTime() + 24 * 60 * 60 * 1000); }
 function headerIndex_(headers) { return Object.fromEntries(headers.map((header, position) => [header, position])); }
