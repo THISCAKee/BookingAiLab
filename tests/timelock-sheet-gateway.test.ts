@@ -10,7 +10,72 @@ import { createPasswordVerifier } from "@/lib/timelock/passwords";
 
 const device: SheetDeviceContext = { id: "m-1", machineCode: "PC-001" };
 
+async function scheduledLoginSheets() {
+  const password = await createPasswordVerifier("secret-password");
+  const userRows = [
+    [...TIMELOCK_USER_HEADERS],
+    [
+      "u-1", "student@msu.ac.th", "Student", "student", "student", "user", "PC-001",
+      password.algorithm, String(password.iterations), password.salt, password.hash,
+      "180", "TRUE", "b-1", "2026-08-24T00:00:00.000Z",
+    ],
+  ];
+  const bookingRows = [
+    [...BOOKING_HEADERS],
+    [
+      "b-1", "BK-1", "student@msu.ac.th", "Student", "msu.ac.th", "student", "m-1",
+      "PC-001", "2026-08-24T01:30:00.000Z", "2026-08-24T04:30:00.000Z", "confirmed",
+      "manage-hash", "2026-08-24T00:00:00.000Z", "2026-08-24T00:00:00.000Z", "create-1", "0",
+    ],
+  ];
+  return {
+    appendSheetRow: vi.fn().mockResolvedValue(undefined),
+    updateSheetRow: vi.fn().mockResolvedValue(undefined),
+    readSheet: vi.fn(async (tab: string) => tab === "Users" ? userRows : bookingRows),
+  };
+}
+
 describe("TimeLock Sheet gateway sessions", () => {
+  it("rejects login before the scheduled start without creating a session event", async () => {
+    const sheets = await scheduledLoginSheets();
+
+    await expect(loginTimelockUser(device, {
+      username: "student",
+      password: "secret-password",
+    }, {
+      sheets,
+      now: () => new Date("2026-08-24T01:29:59.999Z"),
+    })).rejects.toThrow("BOOKING_NOT_STARTED");
+    expect(sheets.appendSheetRow).not.toHaveBeenCalled();
+  });
+
+  it("allows login one millisecond before the scheduled end", async () => {
+    const sheets = await scheduledLoginSheets();
+
+    await expect(loginTimelockUser(device, {
+      username: "student",
+      password: "secret-password",
+    }, {
+      sheets,
+      now: () => new Date("2026-08-24T04:29:59.999Z"),
+      randomId: () => "generated-id",
+    })).resolves.toMatchObject({ bookingId: "b-1" });
+    expect(sheets.appendSheetRow).toHaveBeenCalledOnce();
+  });
+
+  it("rejects login at the scheduled end without creating a session event", async () => {
+    const sheets = await scheduledLoginSheets();
+
+    await expect(loginTimelockUser(device, {
+      username: "student",
+      password: "secret-password",
+    }, {
+      sheets,
+      now: () => new Date("2026-08-24T04:30:00.000Z"),
+    })).rejects.toThrow("BOOKING_EXPIRED");
+    expect(sheets.appendSheetRow).not.toHaveBeenCalled();
+  });
+
   it("appends a session_started event after verifying login", async () => {
     const verifier = await createPasswordVerifier("secret-password");
     const userRows = [

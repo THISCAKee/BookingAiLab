@@ -8,6 +8,7 @@ import {
   parseOfflineSessionRequest,
 } from "@/lib/timelock/requests";
 import { buildOfflineAccount } from "@/lib/timelock/offline-cache";
+import { timelockErrorResponse } from "@/lib/timelock/http";
 
 describe("TimeLock API request contracts", () => {
   it("normalizes machine credentials from headers", () => {
@@ -97,4 +98,15 @@ describe("offline account payload", () => {
     });
     expect(JSON.stringify(result)).not.toContain("Password");
   });
+});
+
+describe("TimeLock booking window errors", () => {
+  it.each(["BOOKING_NOT_STARTED", "BOOKING_EXPIRED"])(
+    "returns a conflict response for %s without internal details",
+    async (code) => {
+      const response = timelockErrorResponse(new Error(code), "LOGIN_FAILED");
+      expect(response.status).toBe(409);
+      expect(await response.json()).toEqual({ ok: false, code });
+    },
+  );
 });

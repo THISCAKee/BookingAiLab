@@ -82,10 +82,39 @@ function updatedSheetRow(rows: string[][], sourceRow: number, values: Record<str
   return row;
 }
 
-export async function syncTimelockDevice(device: SheetDeviceContext) {
-  const rows = await users(client());
-  const now = new Date();
-  return rows.filter((row) => row.machineCode === device.machineCode && row.isActive).map((row) => buildOfflineAccount({ id: row.userId, username: row.emailPrefix || row.username, allowedMinutes: row.allowedMinutes, isActive: true, passwordAlgorithm: row.passwordAlgorithm, passwordIterations: row.passwordIterations, passwordSalt: row.passwordSalt, passwordHash: row.passwordHash }, now));
+function activeBookingStatus(status: string) {
+  return !["cancelled", "expired", "completed"].includes(status);
+}
+
+function matchesAccountBooking(account: TimelockSheetUser, booking: ReturnType<typeof parseBookings>[number], device: SheetDeviceContext) {
+  return booking.bookingId === account.sourceBookingId
+    && booking.machineCode === device.machineCode
+    && booking.emailPrefix === (account.emailPrefix || account.username)
+    && activeBookingStatus(booking.status);
+}
+
+function bookingIsUsableAt(booking: ReturnType<typeof parseBookings>[number], now: Date) {
+  const nowMs = now.getTime();
+  return new Date(booking.startAt).getTime() <= nowMs && nowMs < new Date(booking.endAt).getTime();
+}
+
+export async function syncTimelockDevice(device: SheetDeviceContext, options: GatewayDependencies = {}) {
+  const deps = dependencies(options);
+  const [accounts, bookingRows] = await Promise.all([
+    users(deps.sheets),
+    deps.sheets.readSheet("Bookings"),
+  ]);
+  const bookings = parseBookings(bookingRows);
+  const now = deps.now();
+  return accounts.flatMap((account) => {
+    if (account.machineCode !== device.machineCode || !account.isActive) return [];
+    const booking = bookings.find((row) => matchesAccountBooking(account, row, device));
+    if (!booking || !bookingIsUsableAt(booking, now)) return [];
+    return [{
+      ...buildOfflineAccount({ id: account.userId, username: account.emailPrefix || account.username, allowedMinutes: account.allowedMinutes, isActive: true, passwordAlgorithm: account.passwordAlgorithm, passwordIterations: account.passwordIterations, passwordSalt: account.passwordSalt, passwordHash: account.passwordHash }, now),
+      expiresAt: booking.endAt,
+    }];
+  });
 }
 
 export async function loginTimelockUser(device: SheetDeviceContext, input: { username: string; password: string }, options: GatewayDependencies = {}) {
@@ -96,16 +125,14 @@ export async function loginTimelockUser(device: SheetDeviceContext, input: { use
   ]);
   const account = accounts.find((row) => (row.emailPrefix || row.username) === input.username.toLowerCase() && row.machineCode === device.machineCode && row.isActive);
   if (!account || !(await verifyPassword(input.password, verifier(account)))) throw new Error("CREDENTIALS_INVALID");
-  const booking = parseBookings(bookingRows).find((row) =>
-    row.bookingId === account.sourceBookingId
-    && row.machineCode === device.machineCode
-    && row.emailPrefix === (account.emailPrefix || account.username)
-    && !["cancelled", "expired", "completed"].includes(row.status),
-  );
+  const booking = parseBookings(bookingRows).find((row) => matchesAccountBooking(account, row, device));
   if (!booking) throw new Error("ACCOUNT_MACHINE_MISMATCH");
+  const now = deps.now();
+  if (now.getTime() < new Date(booking.startAt).getTime()) throw new Error("BOOKING_NOT_STARTED");
+  if (now.getTime() >= new Date(booking.endAt).getTime()) throw new Error("BOOKING_EXPIRED");
   const sessionId = deps.randomId();
   const eventId = deps.randomId();
-  const startedAt = deps.now().toISOString();
+  const startedAt = now.toISOString();
   await deps.sheets.appendSheetRow("Events", [eventId, "session_started", sessionId, account.sourceBookingId, device.machineCode, account.username, "active", "{}", startedAt, startedAt]);
   return {
     sessionId,
