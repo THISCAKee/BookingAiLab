@@ -48,9 +48,18 @@ describe("booking action utilities", () => {
     expect(getBookingErrorMessage({ message: "BOOKING_ATOMIC_TIMEOUT" })).toContain(
       "ใช้เวลาตอบกลับนานเกินกำหนด",
     );
+    expect(getBookingErrorMessage({ message: "BOOKING_ATOMIC_BUSY" })).toContain(
+      "กำลังมีผู้จองพร้อมกัน",
+    );
     expect(getBookingErrorMessage({ message: "UNKNOWN_DATABASE_ERROR" })).toBe(
       "ไม่สามารถทำรายการจองได้ กรุณาลองใหม่อีกครั้ง",
     );
+  });
+
+  it("marks an existing booking as non-retryable but allows retry after atomic contention", async () => {
+    const { toBookingFailure } = await import("@/lib/booking/action-utils");
+    expect(toBookingFailure(new Error("BOOKING_ALREADY_ACTIVE")).retryable).toBe(false);
+    expect(toBookingFailure(new Error("BOOKING_ATOMIC_BUSY")).retryable).toBe(true);
   });
 
   it("normalizes booking management credentials without revealing account data", () => {

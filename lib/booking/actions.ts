@@ -2,15 +2,32 @@ import { createHash, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { requireGoogleIdentity } from "@/lib/auth/identity";
 import { toBookingFailure, type BookingFailure } from "@/lib/booking/action-utils";
-import { getImmediateBookingWindow } from "@/lib/booking/schedule";
+import {
+  deriveMachineQueueOption,
+  isEffectiveBooking,
+  viewerHasEffectiveBooking,
+  type QueueMachineOption,
+} from "@/lib/booking/queue-policy";
+import { getSelectableBookingDates } from "@/lib/booking/schedule";
 import { cancelSheetBooking, createSheetBooking } from "@/lib/booking/sheet-repository";
 import { getGoogleRuntimeConfig } from "@/lib/google/config";
-import { parseBookings, parseMachines, parseSettings } from "@/lib/google/sheet-schema";
-import type { SheetBooking, SheetMachine, SheetSettings } from "@/lib/google/sheet-types";
+import { parseBookings, parseMachines } from "@/lib/google/sheet-schema";
+import type { SheetBooking, SheetMachine } from "@/lib/google/sheet-types";
 import { createGoogleSheetsClient } from "@/lib/google/sheets-client";
 
-export type PublicMachineOption = { id: string; machineCode: string; machineName: string; location: string | null; available: boolean };
-export type PublicBookingOptions = { date: string; startAt: string | null; endAt: string | null; machines: PublicMachineOption[] };
+export type PublicMachineOption = {
+  id: string;
+  machineCode: string;
+  machineName: string;
+  location: string | null;
+} & QueueMachineOption;
+export type PublicBookingOptions = {
+  date: string;
+  viewerCanBook: boolean;
+  viewerBlockReason: "BOOKING_ALREADY_ACTIVE" | "BOOKING_DATE_NOT_ALLOWED" | null;
+  viewerBookingEndAt: string | null;
+  machines: PublicMachineOption[];
+};
 export type CreatedBooking = { bookingId: string; bookingNumber: string; manageCode: string; timelockUsername: string; timelockPassword: string; machineCode: string; startAt: string; endAt: string; status: string };
 export type ManagedBooking = { bookingId: string; bookingNumber: string; machineCode: string; machineName: string; location: string | null; startAt: string; endAt: string; status: string; canCancel: boolean };
 export type BookingActionResult<T = undefined> = { ok: true; data: T; message?: string } | BookingFailure;
@@ -19,42 +36,71 @@ function sheets() { return createGoogleSheetsClient({ spreadsheetId: getGoogleRu
 
 async function readBookingData() {
   const client = sheets();
-  const [settingsRows, machineRows, bookingRows] = await Promise.all([client.readSheet("Settings"), client.readSheet("Machines"), client.readSheet("Bookings")]);
-  return { settings: parseSettings(settingsRows), machines: parseMachines(machineRows), bookings: parseBookings(bookingRows) };
+  const [machineRows, bookingRows] = await Promise.all([client.readSheet("Machines"), client.readSheet("Bookings")]);
+  return { machines: parseMachines(machineRows), bookings: parseBookings(bookingRows) };
 }
 
 function active(booking: SheetBooking) { return !["cancelled", "expired", "completed"].includes(booking.status); }
-function overlaps(booking: SheetBooking, startAt: string, endAt: string) { return active(booking) && new Date(booking.startAt).getTime() < new Date(endAt).getTime() && new Date(startAt).getTime() < new Date(booking.endAt).getTime(); }
 
-function bookingOptions(date: string, machines: SheetMachine[], bookings: SheetBooking[], now = new Date()): PublicBookingOptions {
-  const window = getImmediateBookingWindow(now);
-  const isCurrentDate = window?.date === date;
+export function buildPublicBookingOptions(input: {
+  date: string;
+  machines: SheetMachine[];
+  bookings: SheetBooking[];
+  viewerEmail: string;
+  now: Date;
+}): PublicBookingOptions {
+  const isCurrentDate = getSelectableBookingDates(input.now)[0].value === input.date;
+  const viewerBookings = input.bookings.filter((booking) =>
+    booking.email.trim().toLowerCase() === input.viewerEmail.trim().toLowerCase()
+    && isEffectiveBooking(booking, input.now));
+  const viewerHasBooking = viewerHasEffectiveBooking({
+    bookings: input.bookings,
+    email: input.viewerEmail,
+    now: input.now,
+  });
   return {
-    date,
-    startAt: isCurrentDate ? window.startAt : null,
-    endAt: isCurrentDate ? window.endAt : null,
-    machines: machines.map((machine) => ({
+    date: input.date,
+    viewerCanBook: isCurrentDate && !viewerHasBooking,
+    viewerBlockReason: !isCurrentDate
+      ? "BOOKING_DATE_NOT_ALLOWED"
+      : viewerHasBooking ? "BOOKING_ALREADY_ACTIVE" : null,
+    viewerBookingEndAt: viewerBookings.length > 0
+      ? viewerBookings.reduce((latest, booking) =>
+        new Date(booking.endAt).getTime() > new Date(latest).getTime() ? booking.endAt : latest,
+      viewerBookings[0].endAt)
+      : null,
+    machines: input.machines.map((machine) => ({
       id: machine.machineId,
       machineCode: machine.machineCode,
       machineName: machine.machineName,
       location: machine.location,
-      available: machine.status === "available" && isCurrentDate && !bookings.some((booking) => booking.machineId === machine.machineId && overlaps(booking, window.startAt, window.endAt)),
+      ...(isCurrentDate
+        ? deriveMachineQueueOption({ machine, bookings: input.bookings, now: input.now })
+        : {
+            operationalStatus: "full_today" as const,
+            bookable: false,
+            nextStartAt: null,
+            nextEndAt: null,
+            queueCount: 0,
+            currentEndAt: null,
+          }),
     })),
   };
 }
 
 export async function getPublicBookingOptions(date: string): Promise<BookingActionResult<PublicBookingOptions>> {
-  try { const { machines, bookings } = await readBookingData(); return { ok: true, data: bookingOptions(date, machines, bookings) }; }
+  try {
+    const [identity, { machines, bookings }] = await Promise.all([requireGoogleIdentity(), readBookingData()]);
+    return { ok: true, data: buildPublicBookingOptions({ date, machines, bookings, viewerEmail: identity.email, now: new Date() }) };
+  }
   catch (error) { return toBookingFailure(error); }
 }
 
 export async function createImmediateBooking(input: { machineId: string }): Promise<BookingActionResult<CreatedBooking>> {
   try {
     const identity = await requireGoogleIdentity();
-    const window = getImmediateBookingWindow(new Date(), 180);
-    if (!window) return toBookingFailure(new Error("BOOKING_CROSSES_MIDNIGHT"));
-    const data = await createSheetBooking({ machineId: input.machineId, startAt: window.startAt, endAt: window.endAt, idempotencyKey: randomUUID() }, identity);
-    return { ok: true, data: { ...(data as CreatedBooking), startAt: window.startAt, endAt: window.endAt, status: "confirmed" }, message: "จองเครื่องสำเร็จ" };
+    const data = await createSheetBooking({ machineId: input.machineId, idempotencyKey: randomUUID() }, identity);
+    return { ok: true, data: data as CreatedBooking, message: "จองเครื่องสำเร็จ" };
   } catch (error) { return toBookingFailure(error); }
 }
 
