@@ -1,4 +1,4 @@
-# BookingAiLab — WPF API Contract Draft
+# BookingAiLab — Booking และ WPF API Contract
 
 เอกสารนี้เป็นข้อตกลงเบื้องต้นระหว่าง Booking Web และ WPF TimeLockApp ก่อนเริ่ม Implement จริง ทั้งสองโปรเจกต์ต้องใช้ชื่อ Field, Status และ Timezone ให้ตรงกัน
 
@@ -12,6 +12,24 @@
 - WPF ต้องตอบกลับด้วย `event_id` เดิมเพื่อป้องกันการประมวลผลซ้ำ
 
 ## Endpoints
+
+### สร้าง Booking และคิวเครื่อง
+
+หน้า Booking ส่งให้ Backend เฉพาะ `machineId` ส่วน Google identity มาจาก session ที่ Server ยืนยันแล้ว
+Backend ส่ง Apps Script เฉพาะ machine reference, identity, one-time credential verifier และ idempotency key
+โดยไม่มี `startAt` หรือ `endAt` จาก browser
+
+Apps Script ใช้ Script Lock แล้วอ่านแท็บ `Bookings` ใหม่ทุกครั้ง:
+
+- ถ้าเครื่องไม่มี Booking ที่ยังมีผล ช่วงใหม่เริ่มจากเวลาปัจจุบัน
+- ถ้ามีคิว ช่วงใหม่เริ่ม 15 นาทีหลัง `endAt` ล่าสุด
+- ทุกช่วงยาว 180 นาที และต้องสิ้นสุดไม่เกินเที่ยงคืน `Asia/Bangkok`
+- ผู้ใช้ที่มี Booking ปัจจุบันหรืออนาคตบนเครื่องใดอยู่แล้วจะได้รับ `BOOKING_ALREADY_ACTIVE`
+- Booking ที่ยืนยันแล้วไม่เลื่อนเวลาเมื่อ Booking ก่อนหน้ายกเลิกหรือ logout เร็ว
+
+ผลสำเร็จคืน `startAt` และ `endAt` authoritative ที่หน้า confirmation ต้องใช้แทน preview เดิมทั้งหมด
+การ retry ภายใน request ใช้ `idempotencyKey`, password verifier และ manage code ชุดเดิม จึงไม่สร้าง
+Booking, User, Event หรือ Audit ซ้ำและรหัสที่แสดงยังตรงกับข้อมูลที่บันทึก
 
 ### Register Machine
 
@@ -104,7 +122,32 @@ Request:
 `endAt`, `allowedMinutes` และ `extensionCount` เป็นค่าจาก Server เท่านั้น WPF ห้ามคำนวณหรือรับค่าแทนจาก client
 และต้องใช้ `endAt` เป็นเวลาสิ้นสุด authoritative ก่อนเรียก extension check/confirm
 
-ข้อผิดพลาดหลัก: `MACHINE_TOKEN_INVALID`, `LOGIN_INVALID`, `CREDENTIALS_INVALID`, `ACCOUNT_MACHINE_MISMATCH`
+ระบบใช้ช่วงเวลาแบบ `startAt <= now < endAt` หากรหัสถูกต้องแต่ยังไม่ถึงเวลา จะตอบ HTTP 409:
+
+```json
+{ "ok": false, "code": "BOOKING_NOT_STARTED" }
+```
+
+ตั้งแต่ `endAt` เป็นต้นไปจะตอบ HTTP 409 ด้วย `BOOKING_EXPIRED` ทั้งสองกรณีต้องไม่สร้าง
+`session_started` และ response ห้ามมี password/verifier หรือข้อมูลภายใน
+
+ข้อผิดพลาดหลัก: `MACHINE_TOKEN_INVALID`, `LOGIN_INVALID`, `CREDENTIALS_INVALID`,
+`ACCOUNT_MACHINE_MISMATCH`, `BOOKING_NOT_STARTED`, `BOOKING_EXPIRED`
+
+### TimeLock offline sync
+
+```http
+POST /api/timelock/sync
+x-machine-code: PC-001
+x-device-token: <device-token>
+```
+
+Backend ส่งเฉพาะบัญชีที่ User ยัง active, ผูกกับ Booking/เครื่องเดียวกัน และอยู่ในช่วง
+`startAt <= now < endAt` เท่านั้น บัญชีคิวอนาคต, Booking ที่ยกเลิก และ Booking ที่หมดเวลาจะไม่ถูกส่ง
+`expiresAt` ของ verifier เท่ากับ `Booking.endAt` ไม่ใช่ TTL 24 ชั่วโมง
+
+WPF ต้อง Sync อีกครั้งเมื่อถึง `startAt` ที่แสดงแก่ผู้ใช้ และต้องลบ/ปฏิเสธ verifier เมื่อถึง `expiresAt`
+ห้ามใช้ Offline Cache เป็น fallback เพื่อข้าม `BOOKING_NOT_STARTED` หรือ `BOOKING_EXPIRED`
 
 ### TimeLock logout และหมดเวลา
 
@@ -202,11 +245,19 @@ Request:
 MACHINE_NOT_REGISTERED
 MACHINE_TOKEN_INVALID
 BOOKING_NOT_FOUND
-EVENT_ALREADY_PROCESSED
+BOOKING_ALREADY_ACTIVE
+BOOKING_CROSSES_MIDNIGHT
+BOOKING_MACHINE_UNAVAILABLE
+BOOKING_ATOMIC_BUSY
+BOOKING_NOT_STARTED
 BOOKING_EXPIRED
+EVENT_ALREADY_PROCESSED
 INVALID_STATUS_TRANSITION
 RATE_LIMITED
 ```
+
+`BOOKING_ATOMIC_BUSY` เป็น error ที่ retry ได้ โดย request เดิมต้องใช้ idempotency key และ credential
+payload ชุดเดิม ส่วน `BOOKING_ALREADY_ACTIVE` ต้องรอ Booking เดิมสิ้นสุดหรือยกเลิกก่อนจึงจองใหม่ได้
 
 ## ต่อเวลา TimeLock Session
 
@@ -276,14 +327,21 @@ Response สำเร็จ:
     "bookingId": "booking-id",
     "endAt": "2026-08-24T07:30:00.000Z",
     "extensionCount": 1,
-    "allowedMinutes": 360
+    "allowedMinutes": 180
   }
 }
 ```
 
+`allowedMinutes` คือจำนวนนาทีที่อนุญาตสำหรับช่วงที่เพิ่งต่อ จึงมีค่า `180` ทุกครั้งและไม่สะสมเป็น 360 หรือ 540 นาที
+WPF ต้องใช้ `endAt` เป็นเวลาสิ้นสุดรวมที่ authoritative
+
 WPF ต้องใช้ `idempotencyKey` เดิมเมื่อ retry request เดิม ห้ามสร้างค่าใหม่จนกว่าจะเป็นการกดต่อเวลาครั้งถัดไป Server จะคำนวณเวลาใหม่เองและไม่รับ `endAt`, `allowedMinutes`, `bookingId` หรือ `machineCode` จาก body
 
-เมื่อครบเวลา WPF ต้องบังการใช้งานเครื่องและแสดง popup 60 วินาที มีปุ่ม “ต่อเวลา 3 ชั่วโมง” กับ “ออกจากระบบ” หากไม่เลือกภายในเวลาให้ forced logout เมื่อผู้ใช้กดต่อเวลา ห้ามเพิ่มเวลาที่ client จนกว่า confirm จะสำเร็จ หาก confirm ถูกปฏิเสธเพราะมีคิวใหม่ ให้ปิด popup และจบ session ตามเวลาเดิม
+เมื่อครบเวลา WPF ต้องบังการใช้งานเครื่องและแสดง popup 60 วินาที มีปุ่ม “ต่อเวลา 180 นาที” กับ “ออกจากระบบ” หากไม่เลือกภายในเวลาให้ forced logout เมื่อผู้ใช้กดต่อเวลา ห้ามเพิ่มเวลาที่ client จนกว่า confirm จะสำเร็จ หาก confirm ถูกปฏิเสธเพราะมีคิวใหม่ ให้ปิด popup และจบ session ตามเวลาเดิม
+
+ช่วงพัก 15 นาทีก่อน Booking ถัดไปไม่ใช่เวลาที่ Session ปัจจุบันนำไปใช้หรือต่อเวลาได้ หากการต่อ
+180 นาทีทับ `startAt` ของคิวถัดไป Server จะคืน `EXTENSION_NEXT_BOOKING_CONFLICT` โดยไม่เปลี่ยน
+Booking, User, Event หรือ Audit
 
 ## ข้อกำหนดด้านความปลอดภัย
 

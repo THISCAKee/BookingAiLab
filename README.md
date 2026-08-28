@@ -59,10 +59,13 @@
 
 กติกาการใช้งาน:
 
-- จองได้ตลอด 24 ชั่วโมงทุกวัน เฉพาะวันปัจจุบัน โดยเริ่มจับเวลาทันที 180 นาทีหลังเลือกเครื่อง
-- ถ้าเวลาเหลือก่อนเที่ยงคืนไม่ครบ 3 ชั่วโมง ระบบจะไม่รับการจองที่ข้ามวัน
+- จองได้เฉพาะวันปัจจุบัน เครื่องหนึ่งมีคิวต่อกันได้หลายรายการ
+- เครื่องว่างเริ่มจากเวลาปัจจุบัน ส่วนคิวใหม่เริ่ม 15 นาทีหลัง Booking สุดท้ายและใช้ได้ 180 นาที
+- ผู้ใช้มี Booking ที่ยังมีผลได้เพียงหนึ่งรายการทั้งระบบ จึงจองเครื่องอื่นเพิ่มไม่ได้จนกว่ารายการเดิมจะจบหรือถูกยกเลิก
+- ถ้าช่วงใหม่สิ้นสุดหลังเที่ยงคืนกรุงเทพฯ ระบบจะไม่รับการจอง
+- เวลาของคิวที่ยืนยันแล้วคงที่ การยกเลิกหรือ logout ก่อนเวลาไม่เลื่อนรายการอื่น
 - รอบแรกนับเป็นช่วงที่ 1 ต่อได้อีกไม่เกิน 2 ครั้ง รวมสูงสุด 540 นาที
-- ต่อเวลาได้เฉพาะเมื่อไม่มีคิวถัดไปของเครื่องเดียวกันและเวลาใหม่ไม่เกิน 00:00
+- แต่ละการต่อเวลาเพิ่ม `endAt` 180 นาทีและคืน `allowedMinutes: 180`; ต่อไม่ได้เมื่อทับคิวถัดไปหรือเกิน 00:00
 - เวลาเปลี่ยนวัน Apps Script จะลบ data rows ใน `Bookings` และ `Users` โดยคง header, Events, Audit และ Identities
 
 ก่อน deploy TimeLockApp:
@@ -72,10 +75,21 @@
 3. ตั้ง Environment Variables ตาม `.env.example` ใน Vercel
 4. สร้าง/หมุน Device Token ที่หน้า `/admin/machines` แล้วกรอก Token ครั้งเดียวตอนเปิด TimeLockApp ครั้งแรก
 5. ให้ WPF เรียก extension check เมื่อครบเวลา แสดง popup แบบบังการใช้งาน 60 วินาที และเพิ่มเวลาเฉพาะหลัง confirm สำเร็จ
+6. ให้ WPF schedule `/api/timelock/sync` ซ้ำเมื่อถึง `startAt` ของคิว และลบ offline verifier เมื่อถึง `endAt`
 
 เมื่อผู้ใช้จองสำเร็จ หน้าเว็บจะแสดงเลขที่จอง, เครื่อง, ช่วงเวลา และ TimeLock username/password แบบใช้ครั้งเดียว
 WPF ต้องใช้ username/password นั้นเรียก `POST /api/timelock/login` พร้อม `x-machine-code` และ `x-device-token`
 จากนั้นใช้ `endAt` ใน response เป็นเวลาสิ้นสุดของ session ห้ามอ่าน Google Sheet หรือใช้เวลาที่คำนวณจาก client
 
 TimeLockApp ส่ง heartbeat ทุก 15 วินาที หน้า Dashboard ถือว่า Offline เมื่อขาด heartbeat เกิน 45 วินาที
-บัญชี offline cache ใช้ได้ 24 ชั่วโมง ผูกกับ MachineCode และถูกป้องกันด้วย Windows DPAPI
+บัญชี offline cache ผูกกับ MachineCode, ถูกป้องกันด้วย Windows DPAPI และใช้ได้ไม่เกิน `Booking.endAt`
+
+## ลำดับ Deploy ระบบคิว
+
+1. Deploy `scripts/google-apps-script/Code.gs` เป็น Apps Script Web app version ใหม่ก่อน
+2. Deploy BookingAiLab Backend/UI และตรวจ environment ของ Vercel
+3. อัปเดต WPF ให้รองรับ `BOOKING_NOT_STARTED`, `BOOKING_EXPIRED`, scheduled sync และ expiry ตาม `endAt`
+4. ทดสอบ end-to-end ด้วยเครื่องหนึ่งเครื่องและผู้ใช้สองบัญชี: ผู้ใช้ B ต้องเข้าไม่ได้ก่อนเวลา,
+   Sync/Login ได้เมื่อถึงเวลาคงที่ของตน และผู้ใช้ A ต้องจองเครื่องใดเพิ่มไม่ได้จนกว่า Booking เดิมจบ
+
+ห้ามเปิด queue ใน production ก่อนยืนยันข้อ 3 เพราะ Backend จงใจไม่ส่งบัญชีอนาคตเข้า Offline Cache

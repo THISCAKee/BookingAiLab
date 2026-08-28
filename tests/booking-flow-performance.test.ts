@@ -15,11 +15,7 @@ vi.mock("@/lib/google/config", () => ({
 }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
 vi.mock("@/lib/booking/schedule", () => ({
-  getImmediateBookingWindow: vi.fn(() => ({
-    date: "2026-08-26",
-    startAt: "2026-08-26T06:00:00.000Z",
-    endAt: "2026-08-26T09:00:00.000Z",
-  })),
+  getSelectableBookingDates: vi.fn(() => [{ value: "2026-08-26" }]),
 }));
 
 const { createImmediateBooking } = await import("@/lib/booking/actions");
@@ -52,13 +48,13 @@ describe("booking flow performance", () => {
     expect(result.ok).toBe(true);
     expect(mocks.createGoogleSheetsClient).not.toHaveBeenCalled();
     expect(mocks.revalidatePath).not.toHaveBeenCalled();
-    expect(mocks.createSheetBooking).toHaveBeenCalledWith(
-      expect.objectContaining({
-        machineId: "m-1",
-        startAt: "2026-08-26T06:00:00.000Z",
-        endAt: "2026-08-26T09:00:00.000Z",
-      }),
-      expect.objectContaining({ email: "student@msu.ac.th" }),
-    );
+    const request = mocks.createSheetBooking.mock.calls[0][0];
+    expect(request).toEqual({ machineId: "m-1", idempotencyKey: expect.any(String) });
+    expect(request).not.toHaveProperty("startAt");
+    expect(request).not.toHaveProperty("endAt");
+    expect(result.ok && result.data).toMatchObject({
+      startAt: "2026-08-26T06:00:00.000Z",
+      endAt: "2026-08-26T09:00:00.000Z",
+    });
   });
 });
