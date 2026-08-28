@@ -69,7 +69,7 @@ describe("TimeLock extension gateway", () => {
         bookingId: "b-1",
         endAt: "2026-08-24T07:30:00.000Z",
         extensionCount: 1,
-        allowedMinutes: 360,
+        allowedMinutes: 180,
       },
     }), { status: 200 }));
 
@@ -84,7 +84,7 @@ describe("TimeLock extension gateway", () => {
       bookingId: "b-1",
       endAt: "2026-08-24T07:30:00.000Z",
       extensionCount: 1,
-      allowedMinutes: 360,
+      allowedMinutes: 180,
     });
 
     const body = JSON.parse(fetchImpl.mock.calls[0][1].body as string);

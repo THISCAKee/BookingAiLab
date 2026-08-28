@@ -65,6 +65,21 @@ describe("booking extension policy", () => {
     });
   });
 
+  it("preserves the 15 minute turnaround before a queued booking", () => {
+    expect(evaluateBookingExtension({
+      booking: current,
+      bookings: [current, nextBooking({
+        startAt: "2026-08-24T04:45:00.000Z",
+        endAt: "2026-08-24T07:45:00.000Z",
+      })],
+      now,
+    })).toMatchObject({
+      canExtend: false,
+      reason: "EXTENSION_NEXT_BOOKING_CONFLICT",
+      proposedEndAt: null,
+    });
+  });
+
   it("allows a queue that starts exactly when the proposed extension ends", () => {
     expect(evaluateBookingExtension({
       booking: current,

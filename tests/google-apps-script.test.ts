@@ -336,18 +336,28 @@ describe("Google Apps Script booking extension", () => {
     expect(rowObject(sheets.Users, "u-1")).toMatchObject({ allowedMinutes: 180 });
   });
 
-  it("does not mutate rows when a next booking overlaps the extension", () => {
+  it("does not consume the 15 minute turnaround or mutate rows before the next queue", () => {
     const nextBooking = [
       "b-2", "BK-2", "other@msu.ac.th", "Other", "msu.ac.th", "other", "m-1", "PC-001",
-      "2026-08-24T04:30:00.000Z", "2026-08-24T07:30:00.000Z", "confirmed", "hash-2",
+      "2026-08-24T04:45:00.000Z", "2026-08-24T07:45:00.000Z", "confirmed", "hash-2",
       "2026-08-24T00:00:00.000Z", "2026-08-24T00:00:00.000Z", "create-2", 0,
     ];
     const { context, sheets } = runtime([nextBooking]);
-    const before = structuredClone({ bookings: sheets.Bookings.rows, users: sheets.Users.rows });
+    const before = structuredClone({
+      bookings: sheets.Bookings.rows,
+      users: sheets.Users.rows,
+      events: sheets.Events.rows,
+      audit: sheets.AuditLog.rows,
+    });
 
     expect(() => context.extendBooking_(body, new Date("2026-08-24T03:00:00.000Z")))
       .toThrow("EXTENSION_NEXT_BOOKING_CONFLICT");
-    expect({ bookings: sheets.Bookings.rows, users: sheets.Users.rows }).toEqual(before);
+    expect({
+      bookings: sheets.Bookings.rows,
+      users: sheets.Users.rows,
+      events: sheets.Events.rows,
+      audit: sheets.AuditLog.rows,
+    }).toEqual(before);
   });
 });
 
