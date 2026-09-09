@@ -31,6 +31,8 @@ describe("Sheet booking repository", () => {
     expect(body.payload.account.allowedMinutes).toBe(180);
     expect(body.payload.account.passwordHash).toBeTruthy();
     expect(body.payload.account.passwordSalt).toBeTruthy();
+    expect(body.payload.account.passwordCiphertext).toBeTruthy();
+    expect(body.payload.account.passwordCiphertext).not.toContain(result.timelockPassword);
   });
 
   it("retries a busy atomic mutation with the same idempotency key and password verifier", async () => {

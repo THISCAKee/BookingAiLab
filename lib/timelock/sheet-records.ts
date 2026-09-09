@@ -3,8 +3,9 @@ import type { SheetBooking } from "@/lib/google/sheet-types";
 export const TIMELOCK_USER_HEADERS = [
   "userId", "email", "name", "emailPrefix", "username", "role", "machineCode",
   "passwordAlgorithm", "passwordIterations", "passwordSalt", "passwordHash",
-  "allowedMinutes", "isActive", "sourceBookingId", "updatedAt",
+  "allowedMinutes", "isActive", "sourceBookingId", "updatedAt", "passwordCiphertext",
 ] as const;
+const TIMELOCK_USER_REQUIRED_HEADERS = TIMELOCK_USER_HEADERS.filter((header) => header !== "passwordCiphertext");
 
 export const TIMELOCK_EVENT_HEADERS = [
   "eventId", "eventType", "sessionId", "bookingId", "machineCode", "username",
@@ -24,6 +25,7 @@ export type TimelockSheetUser = {
   passwordIterations: number;
   passwordSalt: string;
   passwordHash: string;
+  passwordCiphertext: string | null;
   allowedMinutes: number;
   isActive: boolean;
   sourceBookingId: string;
@@ -60,7 +62,7 @@ function validDate(input: string) {
 
 export function parseTimelockUsers(rows: readonly (readonly string[])[]): TimelockSheetUser[] {
   if (rows.length === 0) return [];
-  const index = positions(rows, TIMELOCK_USER_HEADERS, "Users");
+  const index = positions(rows, TIMELOCK_USER_REQUIRED_HEADERS, "Users");
   return rows.slice(1).flatMap((row, offset) => {
     if (row.every((item) => !String(item ?? "").trim())) return [];
     const activeValue = value(row, index, "isActive").toLowerCase();
@@ -77,6 +79,7 @@ export function parseTimelockUsers(rows: readonly (readonly string[])[]): Timelo
       passwordIterations: Number(value(row, index, "passwordIterations")),
       passwordSalt: value(row, index, "passwordSalt"),
       passwordHash: value(row, index, "passwordHash"),
+      passwordCiphertext: value(row, index, "passwordCiphertext") || null,
       allowedMinutes: Number(value(row, index, "allowedMinutes")),
       isActive: activeValue === "true",
       sourceBookingId: value(row, index, "sourceBookingId"),

@@ -2,6 +2,8 @@
 
 import {
   cancelManagedBooking,
+  getViewerBookings,
+  cancelViewerBooking,
   getManagedBooking,
   type ManagedBooking,
 } from "@/lib/booking/actions";
@@ -10,6 +12,14 @@ import { normalizeManagementCredentials } from "@/lib/booking/action-utils";
 export type LookupState =
   | { ok: false; message?: string }
   | { ok: true; message?: string; booking: ManagedBooking; bookingNumber: string; manageCode: string };
+
+export async function loadMyBookingsAction() {
+  return getViewerBookings();
+}
+
+export async function cancelMyBookingAction(bookingId: string) {
+  return cancelViewerBooking(bookingId);
+}
 
 export async function lookupBookingAction(
   _previousState: LookupState,

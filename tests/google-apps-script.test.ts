@@ -11,7 +11,7 @@ const BOOKING_HEADERS = [
 const USER_HEADERS = [
   "userId", "email", "name", "emailPrefix", "username", "role", "machineCode",
   "passwordAlgorithm", "passwordIterations", "passwordSalt", "passwordHash", "allowedMinutes",
-  "isActive", "sourceBookingId", "updatedAt",
+  "isActive", "sourceBookingId", "updatedAt", "passwordCiphertext",
 ];
 const EVENT_HEADERS = [
   "eventId", "eventType", "sessionId", "bookingId", "machineCode", "username", "status",
@@ -34,6 +34,12 @@ class FakeSheet {
 
   getRange(row: number, column: number, rowCount: number, columnCount: number) {
     return {
+      setValue: (value: unknown) => {
+        const target = this.rows[row - 1] ?? [];
+        target[column - 1] = value;
+        this.rows[row - 1] = target;
+        return this;
+      },
       setValues: (values: unknown[][]) => {
         values.forEach((source, rowOffset) => {
           const target = this.rows[row - 1 + rowOffset] ?? [];

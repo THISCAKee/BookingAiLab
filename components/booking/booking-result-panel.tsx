@@ -3,9 +3,19 @@ import type { BookingFormState } from "@/app/booking/actions";
 export function BookingResultPanel({
   state,
   onRetry,
+  actionHref = "/my-bookings",
+  actionLabel = "ข้อมูลการจองนี้",
+  onCancel,
+  isCancelling = false,
+  cancelMessage,
 }: {
   state: BookingFormState;
   onRetry?: () => void;
+  actionHref?: string;
+  actionLabel?: string;
+  onCancel?: () => void;
+  isCancelling?: boolean;
+  cancelMessage?: string;
 }) {
   if (!state.ok) {
     return (
@@ -27,11 +37,15 @@ export function BookingResultPanel({
   }
 
   const booking = state.booking;
+  const isActive = booking.status === "active";
+  const canShowCodes = !isActive && Boolean(booking.bookingNumber && booking.manageCode);
+  const statusLabel = isActive ? "กำลังใช้งาน" : booking.status === "cancelled" ? "ยกเลิกแล้ว" : "ยืนยันแล้ว";
   return (
     <section className="mt-8 overflow-hidden rounded-3xl border border-emerald-200 bg-white shadow-[0_24px_70px_-45px_rgba(11,19,36,0.45)]">
       <div className="flex items-center gap-3 border-b border-emerald-100 bg-emerald-50 px-6 py-4 text-sm font-semibold text-emerald-800">
         <span className="grid h-7 w-7 place-items-center rounded-full bg-emerald-500 text-white" aria-hidden="true">✓</span>
         ยืนยันการจองแล้ว
+        <span className="ml-auto rounded-full bg-white/70 px-3 py-1 text-xs font-bold text-emerald-800">สถานะการจอง: {statusLabel}</span>
       </div>
       <div className="p-6 sm:p-9">
         <p className="text-sm font-semibold text-emerald-700">{booking.machineCode} จองคิวสำเร็จ</p>
@@ -66,19 +80,25 @@ export function BookingResultPanel({
             </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">เลขที่การจอง</p>
-            <p className="font-display mt-3 break-all text-lg font-semibold text-[#171717]">{booking.bookingNumber}</p>
-            <p className="mt-3 text-xs leading-5 text-slate-500">ใช้สำหรับตรวจสอบรายละเอียดการจองของคุณ</p>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">รหัสจัดการ · แสดงครั้งเดียว</p>
-            <p className="font-display mt-3 break-all text-lg font-bold tracking-[0.1em] text-[#171717]">{booking.manageCode}</p>
-            <p className="mt-3 text-xs leading-5 text-slate-500">ใช้คู่กับเลขที่การจองเมื่อต้องการดูรายละเอียดหรือยกเลิกการจอง</p>
-          </div>
+          {canShowCodes ? <>
+            <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">เลขที่การจอง</p>
+              <p className="font-display mt-3 break-all text-lg font-semibold text-[#171717]">{booking.bookingNumber}</p>
+              <p className="mt-3 text-xs leading-5 text-slate-500">ใช้สำหรับตรวจสอบรายละเอียดการจองของคุณ</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">รหัสจัดการ · แสดงครั้งเดียว</p>
+              <p className="font-display mt-3 break-all text-lg font-bold tracking-[0.1em] text-[#171717]">{booking.manageCode}</p>
+              <p className="mt-3 text-xs leading-5 text-slate-500">ใช้คู่กับเลขที่การจองเมื่อต้องการดูรายละเอียดหรือยกเลิกการจอง</p>
+            </div>
+          </> : null}
         </div>
-        <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-600">ใช้ Username และ Password TimeLock เพื่อเข้าเครื่องที่จอง โปรดบันทึกรหัสจัดการและรหัสผ่านก่อนปิดหน้า เพราะระบบจะแสดง password เพียงครั้งเดียว</p>
-        <a href="/my-bookings" className="mt-6 inline-flex rounded-xl bg-[#171717] px-5 py-3 font-semibold text-white transition hover:bg-amber-400 hover:text-[#171717] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200">จัดการการจองนี้</a>
+        <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-600">ใช้ Username และ Password TimeLock เพื่อเข้าเครื่องที่จอง{isActive ? " ขณะนี้กำลังใช้งานอยู่" : " โปรดบันทึกรหัสจัดการและรหัสผ่านก่อนปิดหน้า เพราะระบบจะแสดง password เพียงครั้งเดียว"}</p>
+        <div className="mt-7 flex flex-col gap-4 sm:flex-row sm:items-center">
+          {onCancel && !isActive && booking.status !== "cancelled" && booking.status !== "completed" && booking.status !== "expired" ? <button type="button" onClick={onCancel} disabled={isCancelling} className="w-full rounded-xl border border-rose-200 bg-rose-50 px-5 py-3 font-semibold text-rose-700 transition hover:bg-rose-600 hover:text-white disabled:cursor-wait disabled:opacity-60 sm:w-auto">{isCancelling ? "กำลังยกเลิก…" : "ยกเลิกการจอง"}</button> : null}
+          <a href={actionHref} className="inline-flex w-full justify-center rounded-xl bg-[#171717] px-5 py-3 font-semibold text-white transition hover:bg-amber-400 hover:text-[#171717] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200 sm:w-auto">{actionLabel}</a>
+        </div>
+        {cancelMessage ? <p role="alert" className="mt-3 text-sm font-semibold text-rose-700">{cancelMessage}</p> : null}
       </div>
     </section>
   );

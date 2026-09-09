@@ -15,6 +15,7 @@ export default async function BookingPage() {
         viewerCanBook: false,
         viewerBlockReason: null,
         viewerBookingEndAt: null,
+        viewerBookingStarted: false,
         machines: [],
       };
 

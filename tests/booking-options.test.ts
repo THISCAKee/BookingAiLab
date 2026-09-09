@@ -77,6 +77,7 @@ describe("public booking queue options", () => {
       viewerCanBook: false,
       viewerBlockReason: "BOOKING_ALREADY_ACTIVE",
       viewerBookingEndAt: "2026-08-24T05:00:00.000Z",
+      viewerBookingStarted: true,
       machines: [
         {
           id: "m-1",

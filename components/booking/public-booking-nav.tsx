@@ -18,7 +18,7 @@ export function PublicBookingNav() {
         href="/my-bookings"
         className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 shadow-sm transition hover:border-amber-300 hover:text-amber-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-100"
       >
-        จัดการการจอง
+        ข้อมูลการจอง
       </Link>
     </nav>
   );

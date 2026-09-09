@@ -25,6 +25,8 @@ describe("public booking result panel", () => {
     const html = renderToStaticMarkup(<BookingResultPanel state={state} onRetry={() => undefined} />);
 
     expect(html).toContain("ยืนยันการจองแล้ว");
+    expect(html).toContain("สถานะการจอง");
+    expect(html).toContain("ยืนยันแล้ว");
     expect(html).toContain("ชื่อผู้ใช้ TimeLock");
     expect(html).toContain("รหัสผ่าน TimeLock");
     expect(html).toContain("one-time-password");
@@ -48,6 +50,55 @@ describe("public booking result panel", () => {
     expect(html).not.toContain("text-amber-950");
     expect(html).not.toContain("bg-[#242424]");
     expect(html).not.toContain("bg-[#0b1324]");
+  });
+
+  it("keeps the user's machine credentials and status while hiding booking codes after TimeLock login", () => {
+    const state: BookingFormState = {
+      ok: true,
+      code: "BOOKING_CONFIRMED",
+      message: "จองเครื่องสำเร็จ",
+      booking: {
+        bookingId: "b-1",
+        bookingNumber: "BK-1",
+        manageCode: "MANAGE-1",
+        timelockUsername: "student",
+        timelockPassword: "one-time-password",
+        machineCode: "PC-001",
+        startAt: "2026-08-25T01:30:00.000Z",
+        endAt: "2026-08-25T04:30:00.000Z",
+        status: "active",
+      },
+    };
+
+    const html = renderToStaticMarkup(<BookingResultPanel state={state} />);
+
+    expect(html).toContain("PC-001");
+    expect(html).toContain("student");
+    expect(html).toContain("one-time-password");
+    expect(html).toContain("กำลังใช้งาน");
+    expect(html).not.toContain("BK-1");
+    expect(html).not.toContain("MANAGE-1");
+  });
+
+  it("renders a cancellation button for an unstarted booking", () => {
+    const state: BookingFormState = {
+      ok: true,
+      code: "BOOKING_CONFIRMED",
+      message: "จองเครื่องสำเร็จ",
+      booking: {
+        bookingId: "b-1",
+        bookingNumber: "BK-1",
+        manageCode: "MANAGE-1",
+        timelockUsername: "student",
+        timelockPassword: "one-time-password",
+        machineCode: "PC-001",
+        startAt: "2026-08-25T01:30:00.000Z",
+        endAt: "2026-08-25T04:30:00.000Z",
+        status: "confirmed",
+      },
+    };
+
+    expect(renderToStaticMarkup(<BookingResultPanel state={state} onCancel={() => undefined} />)).toContain("ยกเลิกการจอง");
   });
 
   it("renders an actionable failure without exposing any TimeLock password", () => {

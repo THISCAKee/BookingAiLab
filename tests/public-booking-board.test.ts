@@ -12,7 +12,8 @@ const options: PublicBookingOptions = {
   date: "2026-08-24",
   viewerCanBook: true,
   viewerBlockReason: null,
-  viewerBookingEndAt: null,
+    viewerBookingEndAt: null,
+    viewerBookingStarted: false,
   machines: [
     {
       id: "m-1", machineCode: "PC-001", machineName: "Workstation 1", location: "AI Lab",

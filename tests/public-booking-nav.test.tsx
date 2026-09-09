@@ -8,6 +8,7 @@ describe("public booking navigation", () => {
 
     expect(html).toContain('href="/booking"');
     expect(html).toContain('href="/my-bookings"');
+    expect(html).toContain("ข้อมูลการจอง");
     expect(html).not.toContain('href="/admin"');
     expect(html).not.toContain("ผู้ดูแลระบบ");
   });

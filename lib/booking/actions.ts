@@ -9,12 +9,14 @@ import {
   type QueueMachineOption,
 } from "@/lib/booking/queue-policy";
 import { getSelectableBookingDates } from "@/lib/booking/schedule";
-import { cancelSheetBooking, createSheetBooking } from "@/lib/booking/sheet-repository";
+import { cancelSheetBooking, cancelSheetBookingByOwner, createSheetBooking } from "@/lib/booking/sheet-repository";
 import { getGoogleRuntimeConfig } from "@/lib/google/config";
 import { parseBookings, parseMachines } from "@/lib/google/sheet-schema";
 import type { SheetBooking, SheetMachine } from "@/lib/google/sheet-types";
 import { createGoogleSheetsClient } from "@/lib/google/sheets-client";
 import { parseTimelockEvents } from "@/lib/timelock/sheet-records";
+import { parseTimelockUsers } from "@/lib/timelock/sheet-records";
+import { decryptTimelockPassword } from "@/lib/timelock/password-vault";
 
 export type PublicMachineOption = {
   id: string;
@@ -27,10 +29,12 @@ export type PublicBookingOptions = {
   viewerCanBook: boolean;
   viewerBlockReason: "BOOKING_ALREADY_ACTIVE" | "BOOKING_DATE_NOT_ALLOWED" | null;
   viewerBookingEndAt: string | null;
+  viewerBookingStarted: boolean;
   machines: PublicMachineOption[];
 };
 export type CreatedBooking = { bookingId: string; bookingNumber: string; manageCode: string; timelockUsername: string; timelockPassword: string; machineCode: string; startAt: string; endAt: string; status: string };
 export type ManagedBooking = { bookingId: string; bookingNumber: string; machineCode: string; machineName: string; location: string | null; startAt: string; endAt: string; status: string; canCancel: boolean };
+export type ViewerBooking = ManagedBooking & { timelockUsername: string; timelockPassword: string | null };
 export type BookingActionResult<T = undefined> = { ok: true; data: T; message?: string } | BookingFailure;
 
 function sheets() { return createGoogleSheetsClient({ spreadsheetId: getGoogleRuntimeConfig().spreadsheetId }); }
@@ -90,6 +94,7 @@ export function buildPublicBookingOptions(input: {
         new Date(booking.endAt).getTime() > new Date(latest).getTime() ? booking.endAt : latest,
       viewerBookings[0].endAt)
       : null,
+    viewerBookingStarted: viewerBookings.some((booking) => input.startedBookingIds.has(booking.bookingId)),
     machines: input.machines.map((machine) => ({
       id: machine.machineId,
       machineCode: machine.machineCode,
@@ -156,7 +161,60 @@ export async function getManagedBooking(bookingNumber: string, manageCode: strin
   } catch (error) { return toBookingFailure(error); }
 }
 
+export async function getViewerBookings(): Promise<BookingActionResult<ViewerBooking[]>> {
+  try {
+    const identity = await requireGoogleIdentity();
+    const client = sheets();
+    const [machineRows, bookingRows, userRows] = await Promise.all([
+      client.readSheet("Machines"),
+      client.readSheet("Bookings"),
+      client.readSheet("Users"),
+    ]);
+    const machines = parseMachines(machineRows);
+    const bookings = parseBookings(bookingRows);
+    const users = parseTimelockUsers(userRows);
+    const viewerBookings = bookings
+      .filter((booking) => booking.email.toLowerCase() === identity.email.toLowerCase() && active(booking))
+      .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
+      .map((booking) => {
+        const machine = machines.find((row) => row.machineId === booking.machineId);
+        return {
+          bookingId: booking.bookingId,
+          bookingNumber: booking.bookingNumber,
+          machineCode: booking.machineCode,
+          machineName: machine?.machineName ?? booking.machineCode,
+          location: machine?.location ?? null,
+          startAt: booking.startAt,
+          endAt: booking.endAt,
+          status: booking.status,
+          canCancel: active(booking),
+          timelockUsername: booking.emailPrefix,
+          timelockPassword: (() => {
+            const user = users.find((row) => row.sourceBookingId === booking.bookingId && row.email.toLowerCase() === identity.email.toLowerCase());
+            if (!user?.passwordCiphertext) return null;
+            try { return decryptTimelockPassword(user.passwordCiphertext); } catch { return null; }
+          })(),
+        };
+      });
+    return { ok: true, data: viewerBookings };
+  } catch (error) { return toBookingFailure(error); }
+}
+
 export async function cancelManagedBooking(bookingNumber: string, manageCode: string): Promise<BookingActionResult<undefined>> {
   try { const identity = await requireGoogleIdentity(); await cancelSheetBooking({ bookingNumber, manageCode, idempotencyKey: randomUUID() }, identity); revalidatePath("/booking"); revalidatePath("/my-bookings"); return { ok: true, data: undefined, message: "ยกเลิกการจองแล้ว" }; }
   catch (error) { return toBookingFailure(error); }
+}
+
+export async function cancelViewerBooking(bookingId: string): Promise<BookingActionResult<undefined>> {
+  try {
+    const identity = await requireGoogleIdentity();
+    const { bookings } = await readBookingData();
+    const booking = bookings.find((row) => row.bookingId === bookingId && row.email.toLowerCase() === identity.email.toLowerCase());
+    if (!booking) return toBookingFailure(new Error("BOOKING_ACCESS_DENIED"));
+    if (!active(booking)) return toBookingFailure(new Error("BOOKING_CANCELLATION_NOT_ALLOWED"));
+    await cancelSheetBookingByOwner({ bookingId, idempotencyKey: randomUUID() }, identity);
+    revalidatePath("/booking");
+    revalidatePath("/my-bookings");
+    return { ok: true, data: undefined, message: "ยกเลิกการจองแล้ว" };
+  } catch (error) { return toBookingFailure(error); }
 }

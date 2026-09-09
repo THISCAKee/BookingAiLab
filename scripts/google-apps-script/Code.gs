@@ -13,7 +13,7 @@ const SHEET_HEADERS = {
   Settings: ['Key', 'Value', 'UpdatedAt'],
   Machines: ['machineId', 'machineCode', 'machineName', 'location', 'status', 'deviceTokenHash', 'lastSeenAt', 'updatedAt'],
   Bookings: ['bookingId', 'bookingNumber', 'email', 'name', 'hd', 'emailPrefix', 'machineId', 'machineCode', 'startAt', 'endAt', 'status', 'manageCodeHash', 'createdAt', 'updatedAt', 'idempotencyKey', 'extensionCount'],
-  Users: ['userId', 'email', 'name', 'emailPrefix', 'username', 'role', 'machineCode', 'passwordAlgorithm', 'passwordIterations', 'passwordSalt', 'passwordHash', 'allowedMinutes', 'isActive', 'sourceBookingId', 'updatedAt'],
+  Users: ['userId', 'email', 'name', 'emailPrefix', 'username', 'role', 'machineCode', 'passwordAlgorithm', 'passwordIterations', 'passwordSalt', 'passwordHash', 'allowedMinutes', 'isActive', 'sourceBookingId', 'updatedAt', 'passwordCiphertext'],
   Identities: ['identityId', 'email', 'name', 'hd', 'emailPrefix', 'lastLoginAt', 'updatedAt'],
   Events: ['eventId', 'eventType', 'sessionId', 'bookingId', 'machineCode', 'username', 'status', 'payload', 'createdAt', 'updatedAt'],
   AuditLog: ['auditId', 'actorEmail', 'action', 'entityType', 'entityId', 'metadata', 'createdAt'],
@@ -75,6 +75,7 @@ function doPost(e) {
   try {
     if (body.operation === 'create_booking') return json_(createBooking_(body));
     if (body.operation === 'cancel_booking') return json_(cancelBooking_(body));
+    if (body.operation === 'cancel_booking_by_owner') return json_(cancelBookingByOwner_(body));
     if (body.operation === 'extend_booking') return json_(extendBooking_(body));
     return json_({ ok: false, code: 'BOOKING_OPERATION_INVALID' });
   } catch (error) {
@@ -328,10 +329,31 @@ function cancelBooking_(body) {
   return { ok: true };
 }
 
+function cancelBookingByOwner_(body) {
+  const sheet = SpreadsheetApp.getActive().getSheetByName(TABS.bookings);
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows.shift().map(String);
+  const index = Object.fromEntries(headers.map((header, position) => [header, position]));
+  const rowNumber = rows.findIndex(row => String(row[index.bookingId]) === String(body.payload.bookingId));
+  if (rowNumber < 0) throw new Error('BOOKING_NOT_FOUND');
+  const row = rows[rowNumber];
+  if (String(row[index.email]).toLowerCase() !== String(body.payload.email).toLowerCase()) throw new Error('BOOKING_ACCESS_DENIED');
+  if (!active_(String(row[index.status] || ''))) throw new Error('BOOKING_CANCELLATION_NOT_ALLOWED');
+  row[index.status] = 'cancelled';
+  row[index.updatedAt] = new Date().toISOString();
+  sheet.getRange(rowNumber + 2, 1, 1, headers.length).setValues([row]);
+  deactivateBookingUser_(String(row[index.bookingId]));
+  return { ok: true };
+}
+
 function upsertUser_(payload, bookingId, machineCode, now) {
   const sheet = SpreadsheetApp.getActive().getSheetByName(TABS.users);
   const rows = sheet.getDataRange().getValues();
   const headers = rows.shift().map(String);
+  if (!headers.includes('passwordCiphertext')) {
+    sheet.getRange(1, headers.length + 1).setValue('passwordCiphertext');
+    headers.push('passwordCiphertext');
+  }
   const index = Object.fromEntries(headers.map((header, position) => [header, position]));
   const existingIndex = rows.findIndex(row => String(row[index.emailPrefix] || '').toLowerCase() === String(payload.emailPrefix).toLowerCase());
   const current = existingIndex >= 0 ? rows[existingIndex] : [];
@@ -347,6 +369,7 @@ function upsertUser_(payload, bookingId, machineCode, now) {
     passwordIterations: payload.account.passwordIterations,
     passwordSalt: payload.account.passwordSalt,
     passwordHash: payload.account.passwordHash,
+    passwordCiphertext: payload.account.passwordCiphertext,
     allowedMinutes: payload.account.allowedMinutes,
     isActive: true,
     sourceBookingId: bookingId,

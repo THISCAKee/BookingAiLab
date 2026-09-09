@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import type { GoogleIdentity } from "@/lib/auth/google-claims";
 import { createPasswordVerifier } from "@/lib/timelock/passwords";
+import { encryptTimelockPassword } from "@/lib/timelock/password-vault";
 
 type FetchImpl = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
@@ -51,6 +52,7 @@ export async function createSheetBooking(
         passwordIterations: passwordVerifier.iterations,
         passwordSalt: passwordVerifier.salt,
         passwordHash: passwordVerifier.hash,
+        passwordCiphertext: encryptTimelockPassword(timelockPassword, process.env.TIMELOCK_PASSWORD_ENCRYPTION_KEY ?? atomic.secret),
         allowedMinutes: 180,
       },
     },
@@ -107,6 +109,28 @@ export async function cancelSheetBooking(
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
       operation: "cancel_booking",
+      secret: atomic.secret,
+      idempotencyKey: input.idempotencyKey,
+      payload: { ...input, email: identity.email, hd: identity.hd, emailPrefix: identity.emailPrefix },
+    }),
+    cache: "no-store",
+  });
+  if (!response.ok) throw new Error("BOOKING_ATOMIC_FAILED");
+  const result = (await response.json()) as { ok?: boolean; code?: string };
+  if (!result.ok) throw new Error(result.code || "BOOKING_ATOMIC_FAILED");
+}
+
+export async function cancelSheetBookingByOwner(
+  input: { bookingId: string; idempotencyKey: string },
+  identity: GoogleIdentity,
+  options: AtomicOptions = {},
+) {
+  const atomic = atomicOptions(options);
+  const response = await atomic.fetchImpl(atomic.url, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      operation: "cancel_booking_by_owner",
       secret: atomic.secret,
       idempotencyKey: input.idempotencyKey,
       payload: { ...input, email: identity.email, hd: identity.hd, emailPrefix: identity.emailPrefix },

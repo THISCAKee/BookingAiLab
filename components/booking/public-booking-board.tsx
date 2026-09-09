@@ -6,6 +6,7 @@ import { bookMachineAction, type BookingFormState } from "@/app/booking/actions"
 import { BookingResultPanel } from "@/components/booking/booking-result-panel";
 import type { PublicBookingOptions } from "@/lib/booking/actions";
 import type { QueueOperationalStatus } from "@/lib/booking/queue-policy";
+import { clearStoredBooking, loadStoredBooking, storeBooking } from "@/lib/booking/client-storage";
 
 const initialState: BookingFormState = { ok: false, code: "", message: "", retryable: true };
 
@@ -50,12 +51,32 @@ export function PublicBookingBoard({
 }) {
   const router = useRouter();
   const [selectedMachine, setSelectedMachine] = useState("");
+  const [storedState, setStoredState] = useState<BookingFormState | null>(null);
   const [state, formAction, isPending] = useActionState(bookMachineAction, initialState);
   const hasBookableMachine = initialOptions.machines.some((machine) => machine.bookable);
   const selectedMachineBookable = initialOptions.machines.some(
     (machine) => machine.id === selectedMachine && machine.bookable,
   );
   const loadMessage = initialMessage ?? "";
+
+  useEffect(() => {
+    setStoredState(loadStoredBooking(window.localStorage));
+  }, []);
+
+  useEffect(() => {
+    if (state.ok) storeBooking(window.localStorage, state);
+  }, [state]);
+
+  useEffect(() => {
+    if (initialOptions.viewerBookingStarted) {
+      clearStoredBooking(window.localStorage);
+      setStoredState(null);
+    }
+    if (initialOptions.viewerCanBook && initialOptions.viewerBookingEndAt === null) {
+      clearStoredBooking(window.localStorage);
+      setStoredState(null);
+    }
+  }, [initialOptions.viewerBookingStarted, initialOptions.viewerCanBook, initialOptions.viewerBookingEndAt]);
 
   useEffect(() => {
     const refresh = () => router.refresh();
@@ -71,9 +92,9 @@ export function PublicBookingBoard({
     if (selectedMachine && !selectedMachineBookable) setSelectedMachine("");
   }, [selectedMachine, selectedMachineBookable]);
 
-  if (state.ok) {
-    return <BookingResultPanel state={state} />;
-  }
+  const visibleState = initialOptions.viewerBookingStarted
+    ? initialState
+    : state.ok ? state : storedState ?? state;
 
   const machines = initialOptions.machines;
 
@@ -99,8 +120,8 @@ export function PublicBookingBoard({
           </div>
         </div>
       ) : null}
-      {state.code ? (
-        <BookingResultPanel state={state} onRetry={() => setSelectedMachine("")} />
+      {visibleState.code ? (
+        <BookingResultPanel state={visibleState} onRetry={() => setSelectedMachine("")} />
       ) : null}
       <form action={formAction} className="mt-8 grid gap-5 lg:grid-cols-[330px_1fr] lg:items-start">
         <aside className="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_22px_60px_-48px_rgba(11,19,36,0.55)] sm:p-6 lg:sticky lg:top-5">
