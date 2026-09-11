@@ -77,7 +77,7 @@
 5. ให้ WPF เรียก extension check เมื่อครบเวลา แสดง popup แบบบังการใช้งาน 60 วินาที และเพิ่มเวลาเฉพาะหลัง confirm สำเร็จ
 6. ให้ WPF schedule `/api/timelock/sync` ซ้ำเมื่อถึง `startAt` ของคิว และลบ offline verifier เมื่อถึง `endAt`
 
-เมื่อผู้ใช้จองสำเร็จ หน้าเว็บจะแสดงเลขที่จอง, เครื่อง, ช่วงเวลา และ TimeLock username/password 4 หลักแบบใช้ครั้งเดียว โดยไม่สร้างรหัสจัดการการจอง
+เมื่อผู้ใช้จองสำเร็จ หน้าเว็บจะแสดงชื่อผู้ใช้งาน, เครื่อง, ช่วงเวลา และ TimeLock User/Password 4 หลักแบบใช้ครั้งเดียว โดยไม่สร้างรหัสจัดการการจองหรือแสดงเลขที่จองแก่ผู้ใช้
 WPF ต้องใช้ username/password นั้นเรียก `POST /api/timelock/login` พร้อม `x-machine-code` และ `x-device-token`
 จากนั้นใช้ `endAt` ใน response เป็นเวลาสิ้นสุดของ session ห้ามอ่าน Google Sheet หรือใช้เวลาที่คำนวณจาก client
 

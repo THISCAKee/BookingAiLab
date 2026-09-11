@@ -32,8 +32,8 @@ export type PublicBookingOptions = {
   viewerBookingStarted: boolean;
   machines: PublicMachineOption[];
 };
-export type CreatedBooking = { bookingId: string; bookingNumber: string; timelockUsername: string; timelockPassword: string; machineCode: string; startAt: string; endAt: string; status: string };
-export type ManagedBooking = { bookingId: string; bookingNumber: string; machineCode: string; machineName: string; location: string | null; startAt: string; endAt: string; status: string; canCancel: boolean };
+export type CreatedBooking = { bookingId: string; bookingNumber: string; name: string; timelockUsername: string; timelockPassword: string; machineCode: string; startAt: string; endAt: string; status: string };
+export type ManagedBooking = { bookingId: string; bookingNumber: string; name: string; machineCode: string; machineName: string; location: string | null; startAt: string; endAt: string; status: string; canCancel: boolean };
 export type ViewerBooking = ManagedBooking & { timelockUsername: string; timelockPassword: string | null };
 export type BookingActionResult<T = undefined> = { ok: true; data: T; message?: string } | BookingFailure;
 
@@ -169,6 +169,7 @@ export async function getViewerBookings(): Promise<BookingActionResult<ViewerBoo
         return {
           bookingId: booking.bookingId,
           bookingNumber: booking.bookingNumber,
+          name: booking.name,
           machineCode: booking.machineCode,
           machineName: machine?.machineName ?? booking.machineCode,
           location: machine?.location ?? null,

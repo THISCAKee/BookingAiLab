@@ -13,6 +13,7 @@ const bookingState: BookingFormState = {
   booking: {
     bookingId: "b-1",
     bookingNumber: "BK-1",
+    name: "Student User",
     timelockUsername: "student",
     timelockPassword: "password",
     machineCode: "PC-001",

@@ -38,7 +38,6 @@ export function BookingResultPanel({
 
   const booking = state.booking;
   const isActive = booking.status === "active";
-  const canShowBookingNumber = !isActive && Boolean(booking.bookingNumber);
   const statusLabel = isActive ? "กำลังใช้งาน" : booking.status === "cancelled" ? "ยกเลิกแล้ว" : "ยืนยันแล้ว";
   return (
     <section className="mt-8 overflow-hidden rounded-3xl border border-emerald-200 bg-white shadow-[0_24px_70px_-45px_rgba(11,19,36,0.45)]">
@@ -66,12 +65,16 @@ export function BookingResultPanel({
               <span className="rounded-full bg-slate-200 px-3 py-1 text-xs font-bold text-slate-800">ใช้สำหรับเข้าเครื่องที่จอง</span>
             </div>
             <div className="mt-5 grid gap-5 sm:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 sm:col-span-2">
+                <p className="text-sm font-medium text-slate-600">ชื่อผู้ใช้งาน</p>
+                <p className="mt-2 break-words text-2xl font-semibold leading-tight text-[#171717]">{booking.name}</p>
+              </div>
               <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4">
-                <p className="text-sm font-medium text-slate-600">ชื่อผู้ใช้ TimeLock</p>
+                <p className="text-sm font-medium text-slate-600">User</p>
                 <p className="timelock-username-value mt-2 break-all text-3xl font-semibold leading-tight text-[#171717]">{booking.timelockUsername}</p>
               </div>
               <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4">
-                <p className="text-sm font-medium text-slate-600">รหัสผ่าน TimeLock · แสดงครั้งเดียว</p>
+                <p className="text-sm font-medium text-slate-600">Password · แสดงครั้งเดียว</p>
                 <p className="timelock-password-value mt-2 break-all text-3xl font-semibold leading-tight tracking-[0.04em] text-[#171717]">{booking.timelockPassword}</p>
               </div>
             </div>
@@ -80,15 +83,8 @@ export function BookingResultPanel({
             </p>
           </div>
 
-          {canShowBookingNumber ? <>
-            <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">เลขที่การจอง</p>
-              <p className="font-display mt-3 break-all text-lg font-semibold text-[#171717]">{booking.bookingNumber}</p>
-              <p className="mt-3 text-xs leading-5 text-slate-500">ใช้สำหรับตรวจสอบรายละเอียดการจองของคุณ</p>
-            </div>
-          </> : null}
         </div>
-        <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-600">ใช้ Username และ Password TimeLock เพื่อเข้าเครื่องที่จอง{isActive ? " ขณะนี้กำลังใช้งานอยู่" : " โปรดบันทึกรหัสผ่านก่อนปิดหน้า เพราะระบบจะแสดง password เพียงครั้งเดียว"}</p>
+        <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-600">ใช้ User และ Password เพื่อเข้าเครื่องที่จอง{isActive ? " ขณะนี้กำลังใช้งานอยู่" : " โปรดบันทึกรหัสผ่านก่อนปิดหน้า เพราะระบบจะแสดง password เพียงครั้งเดียว"}</p>
         <div className="mt-7 flex flex-col gap-4 sm:flex-row sm:items-center">
           {onCancel && !isActive && booking.status !== "cancelled" && booking.status !== "completed" && booking.status !== "expired" ? <button type="button" onClick={onCancel} disabled={isCancelling} className="w-full rounded-xl border border-rose-200 bg-rose-50 px-5 py-3 font-semibold text-rose-700 transition hover:bg-rose-600 hover:text-white disabled:cursor-wait disabled:opacity-60 sm:w-auto">{isCancelling ? "กำลังยกเลิก…" : "ยกเลิกการจอง"}</button> : null}
           <a href={actionHref} className="inline-flex w-full justify-center rounded-xl bg-[#171717] px-5 py-3 font-semibold text-white transition hover:bg-amber-400 hover:text-[#171717] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200 sm:w-auto">{actionLabel}</a>

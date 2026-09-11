@@ -90,6 +90,7 @@ export async function createSheetBooking(
     return {
       bookingId: data.bookingId,
       bookingNumber: data.bookingNumber,
+      name: identity.name,
       machineCode: data.machineCode,
       startAt: data.startAt,
       endAt: data.endAt,

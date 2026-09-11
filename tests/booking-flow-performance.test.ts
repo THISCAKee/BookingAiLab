@@ -32,6 +32,7 @@ describe("booking flow performance", () => {
     mocks.createSheetBooking.mockResolvedValue({
       bookingId: "b-1",
       bookingNumber: "BK-1",
+      name: "Student",
       timelockUsername: "student",
       timelockPassword: "1234",
       machineCode: "PC-001",

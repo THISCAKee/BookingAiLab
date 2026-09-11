@@ -19,7 +19,7 @@ describe("Sheet booking repository", () => {
       url: "https://script.example.test/exec", secret: "secret", fetchImpl,
     });
 
-    expect(result).toMatchObject({ ...data, timelockUsername: "student" });
+    expect(result).toMatchObject({ ...data, name: "Student", timelockUsername: "student" });
     expect(result.timelockPassword).toMatch(/^\d{4}$/);
     expect(result).not.toHaveProperty("manageCode");
     expect(fetchImpl).toHaveBeenCalledWith("https://script.example.test/exec", expect.objectContaining({ method: "POST", cache: "no-store" }));

@@ -12,6 +12,7 @@ describe("public booking result panel", () => {
       booking: {
         bookingId: "b-1",
         bookingNumber: "BK-1",
+        name: "Student User",
         timelockUsername: "student",
         timelockPassword: "1234",
         machineCode: "PC-001",
@@ -26,11 +27,14 @@ describe("public booking result panel", () => {
     expect(html).toContain("ยืนยันการจองแล้ว");
     expect(html).toContain("สถานะการจอง");
     expect(html).toContain("ยืนยันแล้ว");
-    expect(html).toContain("ชื่อผู้ใช้ TimeLock");
-    expect(html).toContain("รหัสผ่าน TimeLock");
+    expect(html).toContain("ชื่อผู้ใช้งาน");
+    expect(html).toContain("Student User");
+    expect(html).toContain("User");
+    expect(html).toContain("Password");
     expect(html).toContain("1234");
-    expect(html).toContain("BK-1");
-    expect(html).toContain("ใช้สำหรับตรวจสอบรายละเอียดการจองของคุณ");
+    expect(html).not.toContain("BK-1");
+    expect(html).not.toContain("ชื่อผู้ใช้ TimeLock");
+    expect(html).not.toContain("รหัสผ่าน TimeLock");
     expect(html).not.toContain("รหัสจัดการ");
     expect(html).toContain("timelock-highlight");
     expect(html).toContain('class="timelock-username-value');
@@ -59,6 +63,7 @@ describe("public booking result panel", () => {
       booking: {
         bookingId: "b-1",
         bookingNumber: "BK-1",
+        name: "Student User",
         timelockUsername: "student",
         timelockPassword: "1234",
         machineCode: "PC-001",
@@ -86,6 +91,7 @@ describe("public booking result panel", () => {
       booking: {
         bookingId: "b-1",
         bookingNumber: "BK-1",
+        name: "Student User",
         timelockUsername: "student",
         timelockPassword: "1234",
         machineCode: "PC-001",

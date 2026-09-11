@@ -28,6 +28,7 @@ export function ManageBookingForm() {
         booking: {
           bookingId: latest.bookingId,
           bookingNumber: latest.bookingNumber,
+          name: latest.name,
           timelockUsername: latest.timelockUsername,
           timelockPassword: latest.timelockPassword ?? matchingStored?.timelockPassword ?? "ไม่สามารถแสดงซ้ำได้",
           machineCode: latest.machineCode,
