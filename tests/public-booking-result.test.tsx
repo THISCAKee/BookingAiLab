@@ -12,9 +12,8 @@ describe("public booking result panel", () => {
       booking: {
         bookingId: "b-1",
         bookingNumber: "BK-1",
-        manageCode: "MANAGE-1",
         timelockUsername: "student",
-        timelockPassword: "one-time-password",
+        timelockPassword: "1234",
         machineCode: "PC-001",
         startAt: "2026-08-25T01:30:00.000Z",
         endAt: "2026-08-25T04:30:00.000Z",
@@ -29,10 +28,10 @@ describe("public booking result panel", () => {
     expect(html).toContain("ยืนยันแล้ว");
     expect(html).toContain("ชื่อผู้ใช้ TimeLock");
     expect(html).toContain("รหัสผ่าน TimeLock");
-    expect(html).toContain("one-time-password");
+    expect(html).toContain("1234");
     expect(html).toContain("BK-1");
     expect(html).toContain("ใช้สำหรับตรวจสอบรายละเอียดการจองของคุณ");
-    expect(html).toContain("ใช้คู่กับเลขที่การจองเมื่อต้องการดูรายละเอียดหรือยกเลิกการจอง");
+    expect(html).not.toContain("รหัสจัดการ");
     expect(html).toContain("timelock-highlight");
     expect(html).toContain('class="timelock-username-value');
     expect(html).toContain('class="timelock-password-value');
@@ -60,9 +59,8 @@ describe("public booking result panel", () => {
       booking: {
         bookingId: "b-1",
         bookingNumber: "BK-1",
-        manageCode: "MANAGE-1",
         timelockUsername: "student",
-        timelockPassword: "one-time-password",
+        timelockPassword: "1234",
         machineCode: "PC-001",
         startAt: "2026-08-25T01:30:00.000Z",
         endAt: "2026-08-25T04:30:00.000Z",
@@ -74,7 +72,7 @@ describe("public booking result panel", () => {
 
     expect(html).toContain("PC-001");
     expect(html).toContain("student");
-    expect(html).toContain("one-time-password");
+    expect(html).toContain("1234");
     expect(html).toContain("กำลังใช้งาน");
     expect(html).not.toContain("BK-1");
     expect(html).not.toContain("MANAGE-1");
@@ -88,9 +86,8 @@ describe("public booking result panel", () => {
       booking: {
         bookingId: "b-1",
         bookingNumber: "BK-1",
-        manageCode: "MANAGE-1",
         timelockUsername: "student",
-        timelockPassword: "one-time-password",
+        timelockPassword: "1234",
         machineCode: "PC-001",
         startAt: "2026-08-25T01:30:00.000Z",
         endAt: "2026-08-25T04:30:00.000Z",

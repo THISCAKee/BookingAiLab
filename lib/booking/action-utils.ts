@@ -29,7 +29,7 @@ const bookingErrorMessages: Record<string, string> = {
   BOOKING_REQUEST_NOT_ALLOWED: "ตรวจสอบรหัสนิสิตหรืออีเมล วัน เวลา และเครื่องที่เลือกอีกครั้ง",
   BOOKING_DATE_NOT_ALLOWED: "เลือกจองได้เฉพาะวันนี้",
   BOOKING_DURATION_INVALID: "รอบการจองต้องมีระยะเวลา 3 ชั่วโมง",
-  BOOKING_ACCESS_DENIED: "ไม่พบรายการจองหรือรหัสจัดการไม่ถูกต้อง",
+  BOOKING_ACCESS_DENIED: "ไม่พบรายการจองหรือคุณไม่มีสิทธิ์ดำเนินการ",
   BOOKING_NOT_FOUND: "ไม่พบรายการจองนี้",
   BOOKING_CANCELLATION_NOT_ALLOWED: "รายการนี้ไม่สามารถยกเลิกได้แล้ว",
   ADMIN_REQUIRED: "บัญชีนี้ไม่มีสิทธิ์ผู้ดูแลระบบ",
@@ -55,19 +55,6 @@ export function validateMachineId(input: unknown) {
   }
 
   return input.trim();
-}
-
-export function normalizeManagementCredentials(
-  bookingNumberInput: unknown,
-  manageCodeInput: unknown,
-) {
-  const bookingNumber =
-    typeof bookingNumberInput === "string" ? bookingNumberInput.trim().toUpperCase() : "";
-  const manageCode =
-    typeof manageCodeInput === "string" ? manageCodeInput.trim().toUpperCase() : "";
-
-  if (!bookingNumber || !manageCode) return null;
-  return { bookingNumber, manageCode };
 }
 
 export function getBookingErrorMessage(error: unknown) {

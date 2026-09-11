@@ -15,7 +15,6 @@ const current: SheetBooking = {
   startAt: "2026-08-24T01:30:00.000Z",
   endAt: "2026-08-24T04:30:00.000Z",
   status: "active",
-  manageCodeHash: "hash",
   createdAt: "2026-08-24T00:00:00.000Z",
   updatedAt: "2026-08-24T00:00:00.000Z",
   idempotencyKey: "create-1",

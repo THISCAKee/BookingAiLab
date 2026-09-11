@@ -13,7 +13,6 @@ describe("Sheet booking repository", () => {
       startAt: "2026-08-24T05:15:00.000Z",
       endAt: "2026-08-24T08:15:00.000Z",
       status: "confirmed",
-      manageCode: "ABCD-1234",
     };
     const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, data }), { status: 200 }));
     const result = await createSheetBooking({ machineId: "m-1", idempotencyKey: "request-1" }, identity, {
@@ -21,13 +20,14 @@ describe("Sheet booking repository", () => {
     });
 
     expect(result).toMatchObject({ ...data, timelockUsername: "student" });
-    expect(result.timelockPassword).toMatch(/^[A-Za-z0-9_-]{12}$/);
+    expect(result.timelockPassword).toMatch(/^\d{4}$/);
+    expect(result).not.toHaveProperty("manageCode");
     expect(fetchImpl).toHaveBeenCalledWith("https://script.example.test/exec", expect.objectContaining({ method: "POST", cache: "no-store" }));
     const body = JSON.parse(fetchImpl.mock.calls[0][1].body as string);
     expect(body).toMatchObject({ operation: "create_booking", idempotencyKey: "request-1", secret: "secret", payload: { machineId: "m-1", email: identity.email, hd: identity.hd, emailPrefix: identity.emailPrefix, account: { username: "student", passwordAlgorithm: "pbkdf2-sha256", passwordIterations: 600_000 } } });
     expect(body.payload).not.toHaveProperty("startAt");
     expect(body.payload).not.toHaveProperty("endAt");
-    expect(body.payload.manageCode).toMatch(/^[A-Z0-9_-]{12}$/);
+    expect(body.payload).not.toHaveProperty("manageCode");
     expect(body.payload.account.allowedMinutes).toBe(180);
     expect(body.payload.account.passwordHash).toBeTruthy();
     expect(body.payload.account.passwordSalt).toBeTruthy();
@@ -57,7 +57,8 @@ describe("Sheet booking repository", () => {
     const first = JSON.parse(fetchImpl.mock.calls[0][1].body as string);
     const second = JSON.parse(fetchImpl.mock.calls[1][1].body as string);
     expect(second.idempotencyKey).toBe("request-1");
-    expect(second.payload.manageCode).toBe(first.payload.manageCode);
+    expect(first.payload).not.toHaveProperty("manageCode");
+    expect(second.payload).not.toHaveProperty("manageCode");
     expect(second.payload.account.passwordSalt).toBe(first.payload.account.passwordSalt);
     expect(second.payload.account.passwordHash).toBe(first.payload.account.passwordHash);
   });

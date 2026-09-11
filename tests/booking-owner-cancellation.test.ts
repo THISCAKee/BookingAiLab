@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { cancelSheetBookingByOwner } from "@/lib/booking/sheet-repository";
 
 describe("owner booking cancellation", () => {
-  it("sends an owner-scoped cancellation request without exposing the management code", async () => {
+  it("sends an owner-scoped cancellation request", async () => {
     const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }));
 
     await cancelSheetBookingByOwner(

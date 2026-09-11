@@ -12,7 +12,7 @@ const TABS = {
 const SHEET_HEADERS = {
   Settings: ['Key', 'Value', 'UpdatedAt'],
   Machines: ['machineId', 'machineCode', 'machineName', 'location', 'status', 'deviceTokenHash', 'lastSeenAt', 'updatedAt'],
-  Bookings: ['bookingId', 'bookingNumber', 'email', 'name', 'hd', 'emailPrefix', 'machineId', 'machineCode', 'startAt', 'endAt', 'status', 'manageCodeHash', 'createdAt', 'updatedAt', 'idempotencyKey', 'extensionCount'],
+  Bookings: ['bookingId', 'bookingNumber', 'email', 'name', 'hd', 'emailPrefix', 'machineId', 'machineCode', 'startAt', 'endAt', 'status', 'createdAt', 'updatedAt', 'idempotencyKey', 'extensionCount'],
   Users: ['userId', 'email', 'name', 'emailPrefix', 'username', 'role', 'machineCode', 'passwordAlgorithm', 'passwordIterations', 'passwordSalt', 'passwordHash', 'allowedMinutes', 'isActive', 'sourceBookingId', 'updatedAt', 'passwordCiphertext'],
   Identities: ['identityId', 'email', 'name', 'hd', 'emailPrefix', 'lastLoginAt', 'updatedAt'],
   Events: ['eventId', 'eventType', 'sessionId', 'bookingId', 'machineCode', 'username', 'status', 'payload', 'createdAt', 'updatedAt'],
@@ -74,7 +74,6 @@ function doPost(e) {
   if (!lock.tryLock(10000)) return json_({ ok: false, code: 'BOOKING_ATOMIC_BUSY' });
   try {
     if (body.operation === 'create_booking') return json_(createBooking_(body));
-    if (body.operation === 'cancel_booking') return json_(cancelBooking_(body));
     if (body.operation === 'cancel_booking_by_owner') return json_(cancelBookingByOwner_(body));
     if (body.operation === 'extend_booking') return json_(extendBooking_(body));
     return json_({ ok: false, code: 'BOOKING_OPERATION_INVALID' });
@@ -90,12 +89,9 @@ function createBooking_(body, currentTime) {
   const rows = sheet.getDataRange().getValues();
   const headers = rows.shift().map(String);
   const index = Object.fromEntries(headers.map((header, position) => [header, position]));
-  const manageCode = String(body.payload.manageCode || '').toUpperCase();
-  if (!/^[A-Z0-9_-]{12}$/.test(manageCode)) throw new Error('BOOKING_INPUT_INVALID');
   const duplicate = rows.find(row => String(row[index.idempotencyKey] || '') === String(body.idempotencyKey));
   if (duplicate) {
-    if (String(duplicate[index.manageCodeHash]) !== hash_(manageCode)) throw new Error('BOOKING_IDEMPOTENCY_CONFLICT');
-    return { ok: true, data: Object.assign(rowObject_(headers, duplicate), { manageCode: manageCode }) };
+    return { ok: true, data: bookingResult_(headers, duplicate) };
   }
   const machine = machine_(body.payload.machineId);
   if (!machine || machine.status !== 'available') throw new Error('BOOKING_MACHINE_UNAVAILABLE');
@@ -137,7 +133,6 @@ function createBooking_(body, currentTime) {
     startAt: start.toISOString(),
     endAt: end.toISOString(),
     status: 'confirmed',
-    manageCodeHash: hash_(manageCode),
     createdAt: now,
     updatedAt: now,
     idempotencyKey: body.idempotencyKey,
@@ -179,7 +174,7 @@ function createBooking_(body, currentTime) {
     }),
     createdAt: now,
   });
-  return { ok: true, data: Object.assign(rowObject_(headers, row), { manageCode: manageCode }) };
+  return { ok: true, data: bookingResult_(headers, row) };
 }
 
 function extendBooking_(body, currentTime) {
@@ -311,24 +306,6 @@ function dailyCleanupTick_(currentTime) {
   }
 }
 
-function cancelBooking_(body) {
-  const sheet = SpreadsheetApp.getActive().getSheetByName(TABS.bookings);
-  const rows = sheet.getDataRange().getValues();
-  const headers = rows.shift().map(String);
-  const index = Object.fromEntries(headers.map((header, position) => [header, position]));
-  const rowNumber = rows.findIndex(row => String(row[index.bookingNumber]) === String(body.payload.bookingNumber));
-  if (rowNumber < 0) throw new Error('BOOKING_NOT_FOUND');
-  const row = rows[rowNumber];
-  if (String(row[index.manageCodeHash]) !== hash_(String(body.payload.manageCode))) throw new Error('BOOKING_ACCESS_DENIED');
-  if (String(row[index.email]).toLowerCase() !== String(body.payload.email).toLowerCase()) throw new Error('BOOKING_ACCESS_DENIED');
-  if (!active_(String(row[index.status] || ''))) throw new Error('BOOKING_CANCELLATION_NOT_ALLOWED');
-  row[index.status] = 'cancelled';
-  row[index.updatedAt] = new Date().toISOString();
-  sheet.getRange(rowNumber + 2, 1, 1, headers.length).setValues([row]);
-  deactivateBookingUser_(String(row[index.bookingId]));
-  return { ok: true };
-}
-
 function cancelBookingByOwner_(body) {
   const sheet = SpreadsheetApp.getActive().getSheetByName(TABS.bookings);
   const rows = sheet.getDataRange().getValues();
@@ -408,8 +385,6 @@ function appendAudit_(values) {
   const headers = rows.shift().map(String);
   appendMappedRow_(sheet, headers, Object.assign({ auditId: Utilities.getUuid() }, values));
 }
-function hash_(value) { return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, value).map(function(byte) { return ('0' + (byte & 0xFF).toString(16)).slice(-2); }).join(''); }
-function randomCode_() { return Utilities.getUuid().replace(/-/g, '').slice(0, 12).toUpperCase(); }
 function machine_(machineId) {
   const rows = SpreadsheetApp.getActive().getSheetByName('Machines').getDataRange().getValues();
   const headers = rows.shift().map(String);
@@ -419,4 +394,15 @@ function machine_(machineId) {
 }
 function rowObject_(headers, row) {
   return Object.fromEntries(headers.map((header, index) => [header, row[index]]));
+}
+function bookingResult_(headers, row) {
+  const booking = rowObject_(headers, row);
+  return {
+    bookingId: booking.bookingId,
+    bookingNumber: booking.bookingNumber,
+    machineCode: booking.machineCode,
+    startAt: booking.startAt,
+    endAt: booking.endAt,
+    status: booking.status,
+  };
 }

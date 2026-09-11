@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 const BOOKING_HEADERS = [
   "bookingId", "bookingNumber", "email", "name", "hd", "emailPrefix", "machineId",
-  "machineCode", "startAt", "endAt", "status", "manageCodeHash", "createdAt", "updatedAt",
+  "machineCode", "startAt", "endAt", "status", "createdAt", "updatedAt",
   "idempotencyKey", "extensionCount",
 ];
 const USER_HEADERS = [
@@ -93,7 +93,7 @@ function runtime(extraBookings: unknown[][] = [], includeCurrentBooking = true) 
       ...(includeCurrentBooking ? [[
         "b-1", "BK-1", "student@msu.ac.th", "Student", "msu.ac.th", "student", "m-1",
         "PC-001", "2026-08-24T01:30:00.000Z", "2026-08-24T04:30:00.000Z", "active",
-        "manage-hash", "2026-08-24T00:00:00.000Z", "2026-08-24T00:00:00.000Z", "create-1", 0,
+        "2026-08-24T00:00:00.000Z", "2026-08-24T00:00:00.000Z", "create-1", 0,
       ]] : []),
       ...extraBookings,
     ]),
@@ -191,7 +191,6 @@ describe("Google Apps Script authoritative booking queue", () => {
     idempotencyKey: "create-new",
     payload: {
       machineId: "m-1",
-      manageCode: "QUEUECODE123",
       email: "new@msu.ac.th",
       name: "New Student",
       hd: "msu.ac.th",
@@ -222,6 +221,7 @@ describe("Google Apps Script authoritative booking queue", () => {
       endAt: "2026-08-24T03:30:00.000Z",
       status: "confirmed",
     });
+    expect(result.data).not.toHaveProperty("manageCode");
     const created = sheets.Bookings.rows.at(-1);
     expect(created?.[BOOKING_HEADERS.indexOf("extensionCount")]).toBe(0);
     const createdUser = sheets.Users.rows.at(-1);
@@ -238,7 +238,7 @@ describe("Google Apps Script authoritative booking queue", () => {
     const duplicate = JSON.parse(JSON.stringify(
       context.createBooking_(createBody, new Date("2026-08-24T00:31:00.000Z")),
     ));
-    expect(duplicate.data.manageCode).toBe("QUEUECODE123");
+    expect(duplicate.data).not.toHaveProperty("manageCode");
     expect(sheets.Events.rows).toHaveLength(eventCountAfterCreate);
     expect(sheets.AuditLog.rows).toHaveLength(auditCountAfterCreate);
   });

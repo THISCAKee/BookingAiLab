@@ -18,7 +18,7 @@
 - Derive `emailPrefix` from the verified session email; never accept identity fields from browser form data.
 - Keep the spreadsheet private and expose no Google credentials to browser or TimeLockApp.
 - All writes that can race use idempotency keys and Apps Script locking; fail closed if the atomic mutation service is unavailable.
-- Do not log passwords, device tokens, OAuth tokens, session secrets, or management codes.
+- Do not log passwords, device tokens, OAuth tokens, or session secrets.
 - Use `cache: "no-store"` for Sheet reads and revalidate affected pages after mutations.
 
 ---
@@ -210,7 +210,7 @@ git commit -m "feat: add typed private Google Sheets repository"
 **Interfaces:**
 - Produces `getBookingOptions(date: string): Promise<PublicBookingOptions>`.
 - Produces `createSheetBooking(input: { machineId: string; startAt: string; idempotencyKey: string }, identity: GoogleIdentity): Promise<CreatedBooking>`.
-- Produces `cancelSheetBooking(bookingNumber: string, manageCode: string, identity: GoogleIdentity): Promise<void>`.
+- Produces `cancelSheetBookingByOwner(bookingId: string, identity: GoogleIdentity): Promise<void>`.
 - Apps Script accepts `{ operation, payload, idempotencyKey, secret }` and returns `{ ok, data?, code? }`.
 
 - [ ] **Step 1: Write failing overlap and identity tests**

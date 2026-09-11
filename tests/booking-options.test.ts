@@ -31,7 +31,6 @@ function booking(overrides: Partial<SheetBooking> = {}): SheetBooking {
     startAt: "2026-08-24T02:00:00.000Z",
     endAt: "2026-08-24T05:00:00.000Z",
     status: "confirmed",
-    manageCodeHash: "hash",
     createdAt: "2026-08-24T00:00:00.000Z",
     updatedAt: "2026-08-24T00:00:00.000Z",
     idempotencyKey: "create-1",

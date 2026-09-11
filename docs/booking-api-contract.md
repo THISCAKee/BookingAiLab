@@ -30,8 +30,8 @@ Apps Script ใช้ Script Lock แล้วอ่านแท็บ `Bookings
 - Booking ที่ยืนยันแล้วไม่เลื่อนเวลาเมื่อ Booking ก่อนหน้ายกเลิกหรือ logout เร็ว
 
 ผลสำเร็จคืน `startAt` และ `endAt` ของคิวโดยประมาณ หน้า confirmation ต้องสื่อสารว่าเวลาจริงจะเริ่มนับเมื่อผู้ใช้ login เข้า TimeLock และ Backend จะปรับ `startAt/endAt` เป็นเวลาจริงของ session ตอน login
-การ retry ภายใน request ใช้ `idempotencyKey`, password verifier และ manage code ชุดเดิม จึงไม่สร้าง
-Booking, User, Event หรือ Audit ซ้ำและรหัสที่แสดงยังตรงกับข้อมูลที่บันทึก
+การ retry ภายใน request ใช้ `idempotencyKey` และ password verifier ชุดเดิม จึงไม่สร้าง
+Booking, User, Event หรือ Audit ซ้ำ และรหัสผ่าน 4 หลักที่แสดงยังตรงกับข้อมูลที่บันทึก
 
 ### Register Machine
 
@@ -96,9 +96,11 @@ Request:
 ```json
 {
   "username": "student",
-  "password": "one-time-password"
+  "password": "1234"
 }
 ```
+
+`password` เป็นรหัสตัวเลข 4 หลักที่สร้างใหม่ต่อ Booking และแสดงแก่ผู้ใช้ครั้งเดียว ไม่มี management code สำหรับการจอง
 
 เมื่อ login สำเร็จ Backend จะตรวจ `Users`, `Bookings` และ machine ให้สัมพันธ์กันก่อนสร้าง
 `session_started` ใน `Events` แล้วคืนข้อมูล session ที่ WPF ใช้ตั้ง timer:

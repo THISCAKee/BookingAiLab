@@ -44,13 +44,13 @@
 
 - `Settings`: `Key`, `Value`, `UpdatedAt`
 - `Machines`: `machineId`, `machineCode`, `machineName`, `location`, `status`, `deviceTokenHash`, `lastSeenAt`, `updatedAt`
-- `Bookings`: `bookingId`, `bookingNumber`, `email`, `name`, `hd`, `emailPrefix`, `machineId`, `machineCode`, `startAt`, `endAt`, `status`, `manageCodeHash`, `createdAt`, `updatedAt`, `idempotencyKey`, `extensionCount`
+- `Bookings`: `bookingId`, `bookingNumber`, `email`, `name`, `hd`, `emailPrefix`, `machineId`, `machineCode`, `startAt`, `endAt`, `status`, `createdAt`, `updatedAt`, `idempotencyKey`, `extensionCount`
 - `Users`: `userId`, `email`, `name`, `emailPrefix`, `username`, `role`, `machineCode`, `passwordAlgorithm`, `passwordIterations`, `passwordSalt`, `passwordHash`, `allowedMinutes`, `isActive`, `sourceBookingId`, `updatedAt`
 - `Identities`: `identityId`, `email`, `name`, `hd`, `emailPrefix`, `lastLoginAt`, `updatedAt`
 - `Events`: `eventId`, `eventType`, `sessionId`, `bookingId`, `machineCode`, `username`, `status`, `payload`, `createdAt`, `updatedAt`
 - `AuditLog`: `auditId`, `actorEmail`, `action`, `entityType`, `entityId`, `metadata`, `createdAt`
 
-`emailPrefix` เป็น username สำหรับ TimeLock ส่วน password จะถูกสร้างใหม่เมื่อจอง เก็บใน Sheet เฉพาะ PBKDF2 verifier และแสดงรหัสจริงแก่ผู้ใช้ครั้งเดียว
+`emailPrefix` เป็น username สำหรับ TimeLock ส่วน password จะถูกสร้างใหม่เป็นตัวเลข 4 หลักเมื่อจอง เก็บใน Sheet เฉพาะ PBKDF2 verifier และแสดงรหัสจริงแก่ผู้ใช้ครั้งเดียว
 
 ## TimeLock Gateway
 
@@ -77,7 +77,7 @@
 5. ให้ WPF เรียก extension check เมื่อครบเวลา แสดง popup แบบบังการใช้งาน 60 วินาที และเพิ่มเวลาเฉพาะหลัง confirm สำเร็จ
 6. ให้ WPF schedule `/api/timelock/sync` ซ้ำเมื่อถึง `startAt` ของคิว และลบ offline verifier เมื่อถึง `endAt`
 
-เมื่อผู้ใช้จองสำเร็จ หน้าเว็บจะแสดงเลขที่จอง, เครื่อง, ช่วงเวลา และ TimeLock username/password แบบใช้ครั้งเดียว
+เมื่อผู้ใช้จองสำเร็จ หน้าเว็บจะแสดงเลขที่จอง, เครื่อง, ช่วงเวลา และ TimeLock username/password 4 หลักแบบใช้ครั้งเดียว โดยไม่สร้างรหัสจัดการการจอง
 WPF ต้องใช้ username/password นั้นเรียก `POST /api/timelock/login` พร้อม `x-machine-code` และ `x-device-token`
 จากนั้นใช้ `endAt` ใน response เป็นเวลาสิ้นสุดของ session ห้ามอ่าน Google Sheet หรือใช้เวลาที่คำนวณจาก client
 

@@ -152,7 +152,6 @@ const responseData = {
   startAt: "2026-08-24T05:15:00.000Z",
   endAt: "2026-08-24T08:15:00.000Z",
   status: "confirmed",
-  manageCode: "ABCD-1234",
 };
 const result = await createSheetBooking(
   { machineId: "m-1", idempotencyKey: "request-1" },

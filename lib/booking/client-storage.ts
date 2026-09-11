@@ -6,10 +6,11 @@ type BrowserStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
 function isStoredBooking(value: unknown): value is Extract<BookingFormState, { ok: true }> {
   if (!value || typeof value !== "object") return false;
-  const candidate = value as { ok?: unknown; booking?: { bookingNumber?: unknown; manageCode?: unknown } };
+  const candidate = value as { ok?: unknown; booking?: { bookingNumber?: unknown } };
+  const booking = candidate.booking as Record<string, unknown> | undefined;
   return candidate.ok === true
     && typeof candidate.booking?.bookingNumber === "string"
-    && typeof candidate.booking?.manageCode === "string";
+    && !Object.prototype.hasOwnProperty.call(booking ?? {}, "manageCode");
 }
 
 export function storeBooking(storage: BrowserStorage, state: Extract<BookingFormState, { ok: true }>) {

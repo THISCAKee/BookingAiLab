@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { randomInt } from "node:crypto";
 import type { GoogleIdentity } from "@/lib/auth/google-claims";
 import { createPasswordVerifier } from "@/lib/timelock/passwords";
 import { encryptTimelockPassword } from "@/lib/timelock/password-vault";
@@ -32,8 +32,7 @@ export async function createSheetBooking(
   options: AtomicOptions = {},
 ) {
   const atomic = atomicOptions(options);
-  const timelockPassword = randomBytes(9).toString("base64url");
-  const manageCode = randomBytes(6).toString("hex").toUpperCase();
+  const timelockPassword = randomInt(0, 10_000).toString().padStart(4, "0");
   const passwordVerifier = await createPasswordVerifier(timelockPassword);
   const body = JSON.stringify({
     operation: "create_booking",
@@ -41,7 +40,6 @@ export async function createSheetBooking(
     idempotencyKey: input.idempotencyKey,
     payload: {
       machineId: input.machineId,
-      manageCode,
       email: identity.email,
       name: identity.name,
       hd: identity.hd,
@@ -90,34 +88,17 @@ export async function createSheetBooking(
       throw new Error("BOOKING_ATOMIC_FAILED");
     }
     return {
-      ...data,
+      bookingId: data.bookingId,
+      bookingNumber: data.bookingNumber,
+      machineCode: data.machineCode,
+      startAt: data.startAt,
+      endAt: data.endAt,
+      status: data.status,
       timelockUsername: identity.emailPrefix,
       timelockPassword,
     };
   }
   throw new Error("BOOKING_ATOMIC_FAILED");
-}
-
-export async function cancelSheetBooking(
-  input: { bookingNumber: string; manageCode: string; idempotencyKey: string },
-  identity: GoogleIdentity,
-  options: AtomicOptions = {},
-) {
-  const atomic = atomicOptions(options);
-  const response = await atomic.fetchImpl(atomic.url, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      operation: "cancel_booking",
-      secret: atomic.secret,
-      idempotencyKey: input.idempotencyKey,
-      payload: { ...input, email: identity.email, hd: identity.hd, emailPrefix: identity.emailPrefix },
-    }),
-    cache: "no-store",
-  });
-  if (!response.ok) throw new Error("BOOKING_ATOMIC_FAILED");
-  const result = (await response.json()) as { ok?: boolean; code?: string };
-  if (!result.ok) throw new Error(result.code || "BOOKING_ATOMIC_FAILED");
 }
 
 export async function cancelSheetBookingByOwner(

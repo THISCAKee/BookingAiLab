@@ -8,7 +8,7 @@ const machine: SheetMachine = {
 };
 const baseBooking: SheetBooking = {
   sourceRow: 2, bookingId: "b-1", bookingNumber: "BK-1", email: "other@msu.ac.th", name: "Other", hd: "msu.ac.th", emailPrefix: "other",
-  machineId: "m-1", machineCode: "PC-001", startAt: "2026-08-21T03:00:00.000Z", endAt: "2026-08-21T06:00:00.000Z", status: "confirmed", manageCodeHash: "hash", createdAt: "2026-08-20T00:00:00.000Z", updatedAt: "2026-08-20T00:00:00.000Z",
+  machineId: "m-1", machineCode: "PC-001", startAt: "2026-08-21T03:00:00.000Z", endAt: "2026-08-21T06:00:00.000Z", status: "confirmed", createdAt: "2026-08-20T00:00:00.000Z", updatedAt: "2026-08-20T00:00:00.000Z",
   extensionCount: 0,
 };
 

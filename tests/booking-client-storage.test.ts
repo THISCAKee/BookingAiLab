@@ -13,7 +13,6 @@ const bookingState: BookingFormState = {
   booking: {
     bookingId: "b-1",
     bookingNumber: "BK-1",
-    manageCode: "MANAGE-1",
     timelockUsername: "student",
     timelockPassword: "password",
     machineCode: "PC-001",
@@ -33,7 +32,7 @@ function storage() {
 }
 
 describe("stored booking handoff", () => {
-  it("restores a successful booking so its code remains available after navigation", () => {
+  it("restores a successful booking so its credentials remain available after navigation", () => {
     const browserStorage = storage();
 
     storeBooking(browserStorage, bookingState);
@@ -53,6 +52,16 @@ describe("stored booking handoff", () => {
   it("ignores malformed stored data instead of exposing an invalid code", () => {
     const browserStorage = storage();
     browserStorage.setItem("booking-ai-lab:last-booking", "not-json");
+
+    expect(loadStoredBooking(browserStorage)).toBeNull();
+  });
+
+  it("ignores legacy stored bookings that still contain a management code", () => {
+    const browserStorage = storage();
+    browserStorage.setItem("booking-ai-lab:last-booking", JSON.stringify({
+      ...bookingState,
+      booking: { ...bookingState.booking, manageCode: "LEGACY-CODE" },
+    }));
 
     expect(loadStoredBooking(browserStorage)).toBeNull();
   });

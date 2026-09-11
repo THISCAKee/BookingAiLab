@@ -25,7 +25,7 @@ async function scheduledLoginSheets() {
     [
       "b-1", "BK-1", "student@msu.ac.th", "Student", "msu.ac.th", "student", "m-1",
       "PC-001", "2026-08-24T01:30:00.000Z", "2026-08-24T04:30:00.000Z", "confirmed",
-      "manage-hash", "2026-08-24T00:00:00.000Z", "2026-08-24T00:00:00.000Z", "create-1", "0",
+      "2026-08-24T00:00:00.000Z", "2026-08-24T00:00:00.000Z", "create-1", "0",
     ],
   ];
   return {
@@ -139,7 +139,7 @@ describe("TimeLock Sheet gateway sessions", () => {
       [
         "b-1", "BK-1", "student@msu.ac.th", "Student", "msu.ac.th", "student", "m-1",
         "PC-001", "2026-08-24T01:30:00.000Z", "2026-08-24T04:30:00.000Z", "confirmed",
-        "manage-hash", "2026-08-24T00:00:00.000Z", "2026-08-24T00:00:00.000Z", "create-1", "0",
+        "2026-08-24T00:00:00.000Z", "2026-08-24T00:00:00.000Z", "create-1", "0",
       ],
     ];
     const sheets = {
@@ -214,7 +214,7 @@ describe("TimeLock Sheet gateway sessions", () => {
         [
           "b-1", "BK-1", "student@msu.ac.th", "Student", "msu.ac.th", "student", "m-1",
           "PC-001", "2026-08-24T01:30:00.000Z", "2026-08-24T04:30:00.000Z", "confirmed",
-          "manage-hash", "2026-08-24T00:00:00.000Z", "2026-08-24T00:00:00.000Z", "create-1", "0",
+          "2026-08-24T00:00:00.000Z", "2026-08-24T00:00:00.000Z", "create-1", "0",
         ],
       ];
       const eventRows = [

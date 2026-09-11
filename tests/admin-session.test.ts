@@ -26,9 +26,10 @@ describe("admin session", () => {
   });
 
   it("allows protected admin code to use only a valid admin session cookie", async () => {
+    const now = new Date();
     const cookie = await createAdminSessionCookie(
       { email: "admin@msu.ac.th", name: "Administrator", hd: "msu.ac.th", emailPrefix: "admin" },
-      new Date("2026-08-25T00:00:00.000Z"),
+      now,
       "admin-session-secret",
     );
 

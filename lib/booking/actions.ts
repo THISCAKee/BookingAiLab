@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { requireGoogleIdentity } from "@/lib/auth/identity";
 import { toBookingFailure, type BookingFailure } from "@/lib/booking/action-utils";
@@ -9,7 +9,7 @@ import {
   type QueueMachineOption,
 } from "@/lib/booking/queue-policy";
 import { getSelectableBookingDates } from "@/lib/booking/schedule";
-import { cancelSheetBooking, cancelSheetBookingByOwner, createSheetBooking } from "@/lib/booking/sheet-repository";
+import { cancelSheetBookingByOwner, createSheetBooking } from "@/lib/booking/sheet-repository";
 import { getGoogleRuntimeConfig } from "@/lib/google/config";
 import { parseBookings, parseMachines } from "@/lib/google/sheet-schema";
 import type { SheetBooking, SheetMachine } from "@/lib/google/sheet-types";
@@ -32,7 +32,7 @@ export type PublicBookingOptions = {
   viewerBookingStarted: boolean;
   machines: PublicMachineOption[];
 };
-export type CreatedBooking = { bookingId: string; bookingNumber: string; manageCode: string; timelockUsername: string; timelockPassword: string; machineCode: string; startAt: string; endAt: string; status: string };
+export type CreatedBooking = { bookingId: string; bookingNumber: string; timelockUsername: string; timelockPassword: string; machineCode: string; startAt: string; endAt: string; status: string };
 export type ManagedBooking = { bookingId: string; bookingNumber: string; machineCode: string; machineName: string; location: string | null; startAt: string; endAt: string; status: string; canCancel: boolean };
 export type ViewerBooking = ManagedBooking & { timelockUsername: string; timelockPassword: string | null };
 export type BookingActionResult<T = undefined> = { ok: true; data: T; message?: string } | BookingFailure;
@@ -149,18 +149,6 @@ export async function createImmediateBooking(input: { machineId: string }): Prom
   } catch (error) { return toBookingFailure(error); }
 }
 
-function managementHash(code: string) { return createHash("sha256").update(code).digest("hex"); }
-
-export async function getManagedBooking(bookingNumber: string, manageCode: string): Promise<BookingActionResult<ManagedBooking>> {
-  try {
-    const { machines, bookings } = await readBookingData();
-    const booking = bookings.find((row) => row.bookingNumber === bookingNumber && row.manageCodeHash === managementHash(manageCode));
-    if (!booking) return toBookingFailure(new Error("BOOKING_ACCESS_DENIED"));
-    const machine = machines.find((row) => row.machineId === booking.machineId);
-    return { ok: true, data: { bookingId: booking.bookingId, bookingNumber: booking.bookingNumber, machineCode: booking.machineCode, machineName: machine?.machineName ?? booking.machineCode, location: machine?.location ?? null, startAt: booking.startAt, endAt: booking.endAt, status: booking.status, canCancel: active(booking) } };
-  } catch (error) { return toBookingFailure(error); }
-}
-
 export async function getViewerBookings(): Promise<BookingActionResult<ViewerBooking[]>> {
   try {
     const identity = await requireGoogleIdentity();
@@ -198,11 +186,6 @@ export async function getViewerBookings(): Promise<BookingActionResult<ViewerBoo
       });
     return { ok: true, data: viewerBookings };
   } catch (error) { return toBookingFailure(error); }
-}
-
-export async function cancelManagedBooking(bookingNumber: string, manageCode: string): Promise<BookingActionResult<undefined>> {
-  try { const identity = await requireGoogleIdentity(); await cancelSheetBooking({ bookingNumber, manageCode, idempotencyKey: randomUUID() }, identity); revalidatePath("/booking"); revalidatePath("/my-bookings"); return { ok: true, data: undefined, message: "ยกเลิกการจองแล้ว" }; }
-  catch (error) { return toBookingFailure(error); }
 }
 
 export async function cancelViewerBooking(bookingId: string): Promise<BookingActionResult<undefined>> {

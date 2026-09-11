@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { cancelMyBookingAction, loadMyBookingsAction, lookupBookingAction, type LookupState } from "@/app/my-bookings/actions";
+import { cancelMyBookingAction, loadMyBookingsAction } from "@/app/my-bookings/actions";
 import type { BookingFormState } from "@/app/booking/actions";
 import { BookingResultPanel } from "@/components/booking/booking-result-panel";
 import { clearStoredBooking, loadStoredBooking, storeBooking } from "@/lib/booking/client-storage";
 
-const initialState: LookupState = { ok: false };
 export function ManageBookingForm() {
   const [storedBooking, setStoredBooking] = useState<BookingFormState | null>(null);
   const [cancelMessage, setCancelMessage] = useState("");
@@ -29,7 +28,6 @@ export function ManageBookingForm() {
         booking: {
           bookingId: latest.bookingId,
           bookingNumber: latest.bookingNumber,
-          manageCode: matchingStored?.manageCode ?? "",
           timelockUsername: latest.timelockUsername,
           timelockPassword: latest.timelockPassword ?? matchingStored?.timelockPassword ?? "ไม่สามารถแสดงซ้ำได้",
           machineCode: latest.machineCode,
@@ -43,24 +41,6 @@ export function ManageBookingForm() {
     }).catch(() => {
       if (stored) setStoredBooking(stored);
     });
-
-    if (!stored) return;
-
-    const credentials = new FormData();
-    credentials.set("bookingNumber", stored.booking.bookingNumber);
-    credentials.set("manageCode", stored.booking.manageCode);
-    void lookupBookingAction(initialState, credentials).then((result) => {
-      if (result.ok && result.booking.status === "active") {
-        const activeBooking: BookingFormState = {
-          ...stored,
-          booking: { ...stored.booking, status: "active", bookingNumber: "", manageCode: "" },
-        };
-        storeBooking(window.localStorage, activeBooking);
-        setStoredBooking(activeBooking);
-        return;
-      }
-      setStoredBooking(stored);
-    }).catch(() => setStoredBooking(stored));
   }, []);
 
   useEffect(() => {

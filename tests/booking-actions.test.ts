@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   getBookingErrorMessage,
-  normalizeManagementCredentials,
   normalizeDisplayName,
   validateMachineId,
 } from "@/lib/booking/action-utils";
@@ -60,13 +59,5 @@ describe("booking action utilities", () => {
     const { toBookingFailure } = await import("@/lib/booking/action-utils");
     expect(toBookingFailure(new Error("BOOKING_ALREADY_ACTIVE")).retryable).toBe(false);
     expect(toBookingFailure(new Error("BOOKING_ATOMIC_BUSY")).retryable).toBe(true);
-  });
-
-  it("normalizes booking management credentials without revealing account data", () => {
-    expect(normalizeManagementCredentials(" bk-123 ", " abcd-2345 ")).toEqual({
-      bookingNumber: "BK-123",
-      manageCode: "ABCD-2345",
-    });
-    expect(normalizeManagementCredentials("", "secret")).toBeNull();
   });
 });

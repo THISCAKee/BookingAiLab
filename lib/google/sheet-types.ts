@@ -33,7 +33,6 @@ export type SheetBooking = {
   startAt: string;
   endAt: string;
   status: BookingStatus;
-  manageCodeHash: string;
   createdAt: string;
   updatedAt: string;
   idempotencyKey?: string;

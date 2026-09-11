@@ -24,7 +24,7 @@ function booking(
   return [
     id, `BK-${id}`, `${username}@msu.ac.th`, username, "msu.ac.th", username,
     machineCode === "PC-001" ? "m-1" : "m-2", machineCode, startAt, endAt, status,
-    `manage-${id}`, "2026-08-24T00:00:00.000Z", "2026-08-24T00:00:00.000Z", `create-${id}`, "0",
+    "2026-08-24T00:00:00.000Z", "2026-08-24T00:00:00.000Z", `create-${id}`, "0",
   ];
 }
 

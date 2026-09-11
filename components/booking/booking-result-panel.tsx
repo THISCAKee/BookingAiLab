@@ -38,7 +38,7 @@ export function BookingResultPanel({
 
   const booking = state.booking;
   const isActive = booking.status === "active";
-  const canShowCodes = !isActive && Boolean(booking.bookingNumber && booking.manageCode);
+  const canShowBookingNumber = !isActive && Boolean(booking.bookingNumber);
   const statusLabel = isActive ? "กำลังใช้งาน" : booking.status === "cancelled" ? "ยกเลิกแล้ว" : "ยืนยันแล้ว";
   return (
     <section className="mt-8 overflow-hidden rounded-3xl border border-emerald-200 bg-white shadow-[0_24px_70px_-45px_rgba(11,19,36,0.45)]">
@@ -80,20 +80,15 @@ export function BookingResultPanel({
             </p>
           </div>
 
-          {canShowCodes ? <>
+          {canShowBookingNumber ? <>
             <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">เลขที่การจอง</p>
               <p className="font-display mt-3 break-all text-lg font-semibold text-[#171717]">{booking.bookingNumber}</p>
               <p className="mt-3 text-xs leading-5 text-slate-500">ใช้สำหรับตรวจสอบรายละเอียดการจองของคุณ</p>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-[#f8fafc] p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">รหัสจัดการ · แสดงครั้งเดียว</p>
-              <p className="font-display mt-3 break-all text-lg font-bold tracking-[0.1em] text-[#171717]">{booking.manageCode}</p>
-              <p className="mt-3 text-xs leading-5 text-slate-500">ใช้คู่กับเลขที่การจองเมื่อต้องการดูรายละเอียดหรือยกเลิกการจอง</p>
-            </div>
           </> : null}
         </div>
-        <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-600">ใช้ Username และ Password TimeLock เพื่อเข้าเครื่องที่จอง{isActive ? " ขณะนี้กำลังใช้งานอยู่" : " โปรดบันทึกรหัสจัดการและรหัสผ่านก่อนปิดหน้า เพราะระบบจะแสดง password เพียงครั้งเดียว"}</p>
+        <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-600">ใช้ Username และ Password TimeLock เพื่อเข้าเครื่องที่จอง{isActive ? " ขณะนี้กำลังใช้งานอยู่" : " โปรดบันทึกรหัสผ่านก่อนปิดหน้า เพราะระบบจะแสดง password เพียงครั้งเดียว"}</p>
         <div className="mt-7 flex flex-col gap-4 sm:flex-row sm:items-center">
           {onCancel && !isActive && booking.status !== "cancelled" && booking.status !== "completed" && booking.status !== "expired" ? <button type="button" onClick={onCancel} disabled={isCancelling} className="w-full rounded-xl border border-rose-200 bg-rose-50 px-5 py-3 font-semibold text-rose-700 transition hover:bg-rose-600 hover:text-white disabled:cursor-wait disabled:opacity-60 sm:w-auto">{isCancelling ? "กำลังยกเลิก…" : "ยกเลิกการจอง"}</button> : null}
           <a href={actionHref} className="inline-flex w-full justify-center rounded-xl bg-[#171717] px-5 py-3 font-semibold text-white transition hover:bg-amber-400 hover:text-[#171717] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200 sm:w-auto">{actionLabel}</a>

@@ -12,7 +12,7 @@ Replace Supabase completely with a Google OAuth + Google Sheets backend. Google 
 
 - No Supabase Auth, Supabase database, Supabase RPC, Supabase middleware client, or Supabase service key.
 - No Google Sheet credentials exposed to the browser or TimeLock desktop client.
-- No plain-text storage of passwords or management codes.
+- No plain-text storage of passwords.
 
 ## Architecture
 
@@ -71,7 +71,7 @@ The backend owns stable header names and validates headers before reading or wri
 
 ### `Bookings`
 
-`bookingId`, `bookingNumber`, `email`, `name`, `hd`, `emailPrefix`, `machineId`, `machineCode`, `startAt`, `endAt`, `status`, `manageCodeHash`, `createdAt`, `updatedAt`
+`bookingId`, `bookingNumber`, `email`, `name`, `hd`, `emailPrefix`, `machineId`, `machineCode`, `startAt`, `endAt`, `status`, `createdAt`, `updatedAt`
 
 ### `Users`
 
@@ -92,7 +92,7 @@ These sheets store TimeLock delivery/session events, administrative audit entrie
 5. The atomic mutation checks settings, machine availability, customer overlap, machine overlap, and duplicate request ID while holding a lock.
 6. It appends the booking and creates/updates the corresponding TimeLock user using the email prefix.
 7. It records an audit row and returns a safe confirmation payload.
-8. Cancellation uses the booking number plus a one-time management code, re-reads ownership from the session or validated code, updates status, and records an audit row.
+8. Cancellation uses the authenticated owner's booking ID, re-reads ownership from the session, updates status, and records an audit row.
 
 Booking status values remain `confirmed`, `app_pending`, `app_received`, `active`, `completed`, `cancelled`, and `expired` so the existing TimeLock contract can be migrated without changing its user-visible semantics.
 
@@ -100,7 +100,7 @@ Booking status values remain `confirmed`, `app_pending`, `app_received`, `active
 
 Existing route handlers keep their external request/response shapes where practical, but replace Supabase lookups with the Sheets repository. Device authentication hashes the supplied device token and compares it with the `Machines` sheet. Account login reads the matching `Users` row, verifies the password hash, enforces `LoginLocks`, and records session state in `Events`.
 
-The API must scope every read/write by the authenticated machine code and token. Passwords, device tokens, and management codes must not appear in logs or API error responses.
+The API must scope every read/write by the authenticated machine code and token. Passwords and device tokens must not appear in logs or API error responses.
 
 ## Error handling and consistency
 
