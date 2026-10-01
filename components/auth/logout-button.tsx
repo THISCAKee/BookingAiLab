@@ -21,7 +21,7 @@ export function LogoutButton({ redirectTo = "/login" }: { redirectTo?: string })
         type="button"
         onClick={handleLogout}
         disabled={isPending}
-        className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-rose-100 disabled:cursor-wait disabled:opacity-60 sm:px-4 sm:text-sm"
+        className="rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-rose-100 disabled:cursor-wait disabled:opacity-60 sm:px-4 sm:text-sm"
       >
         {isPending ? "กำลังออก..." : "ออกจากระบบ"}
       </button>

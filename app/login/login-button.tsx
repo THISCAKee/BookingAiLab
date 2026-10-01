@@ -17,7 +17,7 @@ export function LoginButton() {
       disabled={isLoading}
       aria-label="เข้าสู่ระบบด้วย Google"
       aria-busy={isLoading}
-      className="login-google-button flex w-full items-center justify-center gap-3 rounded-2xl bg-[#facc15] px-5 py-4 font-semibold text-[#1f2937] transition hover:bg-[#fde047] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-yellow-200/50 disabled:cursor-wait disabled:opacity-70"
+      className="login-google-button flex w-full items-center justify-center gap-3 rounded-xl bg-[#facc15] px-5 py-3.5 font-semibold text-[#1f2937] transition hover:bg-[#eab308] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-yellow-200/50 disabled:cursor-wait disabled:opacity-70"
     >
       {isLoading ? (
         <span className="flex items-center gap-3">

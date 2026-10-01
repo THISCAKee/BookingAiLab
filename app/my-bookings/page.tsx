@@ -1,12 +1,17 @@
-import Link from "next/link";
 import { ManageBookingForm } from "@/components/booking/manage-booking-form";
+import { PublicBookingNav } from "@/components/booking/public-booking-nav";
+import { PageHeader } from "@/components/ui/page-header";
 
 export default function MyBookingsPage() {
   return (
-    <main className="min-h-screen bg-white text-slate-950">
-      <div className="mx-auto max-w-5xl px-5 py-8 sm:px-8 sm:py-12">
-        <nav className="flex items-center justify-between"><Link href="/booking" className="text-sm font-bold tracking-[0.2em]">BOOKING<span className="text-amber-500">AI</span>LAB</Link><Link href="/booking" className="text-sm font-semibold text-slate-500 hover:text-slate-950">กลับไปจองเครื่อง</Link></nav>
-        <header className="mt-16 max-w-3xl"><p className="text-xs font-bold uppercase tracking-[0.28em] text-amber-600">BOOKING INFORMATION</p><h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-6xl">ข้อมูลการจอง</h1><p className="mt-5 leading-8 text-slate-600">ดูข้อมูลการจองล่าสุดและยกเลิกการจองของคุณได้ทันที</p></header>
+    <main className="min-h-screen bg-white text-[#171717]">
+      <div className="mx-auto max-w-4xl px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
+        <PublicBookingNav />
+        <PageHeader
+          eyebrow="Booking Information"
+          title="ข้อมูลการจอง"
+          description="ดู User และ Password สำหรับ TimeLock หรือยกเลิกการจองที่ยังไม่เริ่มใช้งานได้ที่นี่"
+        />
         <ManageBookingForm />
       </div>
     </main>

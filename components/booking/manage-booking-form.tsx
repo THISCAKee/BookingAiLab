@@ -57,7 +57,7 @@ export function ManageBookingForm() {
   }, []);
 
   return (
-    <div className="mt-10">
+    <div className="mt-8">
       {storedBooking ? <BookingResultPanel
         state={storedBooking}
         actionHref="/booking"
@@ -75,7 +75,11 @@ export function ManageBookingForm() {
         })}
         isCancelling={isCancelling}
         cancelMessage={cancelMessage}
-      /> : <section className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center text-slate-600">ยังไม่มีข้อมูลการจองของคุณ</section>}
+      /> : <section className="grid place-items-center rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50 px-6 py-14 text-center">
+        <p className="font-display text-lg font-semibold text-[#171717]">ยังไม่มีข้อมูลการจองของคุณ</p>
+        <p className="mt-1 text-sm text-slate-500">เลือกเครื่องที่ว่างเพื่อเริ่มจอง ใช้งานได้รอบละ 3 ชั่วโมง</p>
+        <a href="/booking" className="mt-5 rounded-xl bg-[#facc15] px-5 py-3 text-sm font-semibold text-[#171717] transition hover:bg-[#eab308] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200">ไปหน้าจองเครื่อง</a>
+      </section>}
     </div>
   );
 }

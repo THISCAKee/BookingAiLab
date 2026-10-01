@@ -10,15 +10,6 @@ import { clearStoredBooking, loadStoredBooking, storeBooking } from "@/lib/booki
 
 const initialState: BookingFormState = { ok: false, code: "", message: "", retryable: true };
 
-function StepHeading({ number, title }: { number: string; title: string }) {
-  return (
-    <div className="flex items-center gap-3">
-      <span className="font-display grid h-8 w-8 place-items-center rounded-lg bg-amber-100 text-xs font-bold text-amber-700">{number}</span>
-      <h2 className="font-display text-sm font-semibold tracking-wide text-[#0b1324]">{title}</h2>
-    </div>
-  );
-}
-
 const statusLabels: Record<QueueOperationalStatus, string> = {
   available: "ว่าง",
   in_use: "ใช้งานอยู่",
@@ -26,6 +17,37 @@ const statusLabels: Record<QueueOperationalStatus, string> = {
   waiting_for_login: "รอผู้จองก่อนหน้า login",
   full_today: "คิวเต็มสำหรับวันนี้",
 };
+
+const statusTones: Record<QueueOperationalStatus, { dot: string; badge: string }> = {
+  available: { dot: "bg-emerald-500", badge: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
+  in_use: { dot: "bg-amber-500", badge: "bg-amber-50 text-amber-800 ring-amber-200" },
+  queued: { dot: "bg-amber-500", badge: "bg-amber-50 text-amber-800 ring-amber-200" },
+  waiting_for_login: { dot: "bg-slate-400", badge: "bg-slate-100 text-slate-600 ring-slate-200" },
+  full_today: { dot: "bg-rose-400", badge: "bg-rose-50 text-rose-700 ring-rose-200" },
+};
+
+const howItWorks = [
+  { title: "เลือกเครื่องที่ว่าง", detail: "เครื่องที่มีคนใช้อยู่ จองต่อคิวได้ ระบบเว้นช่วงให้ 15 นาที" },
+  { title: "ยืนยันการจอง", detail: "รับ User และ Password สำหรับ TimeLock ทันที" },
+  { title: "Login ที่เครื่อง", detail: "เวลาจะเริ่มนับเมื่อ login เข้า TimeLock ใช้งานได้ 3 ชั่วโมง" },
+];
+
+function MonitorIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <rect x="3" y="4" width="18" height="12" rx="2" />
+      <path d="M8 20h8M12 16v4" />
+    </svg>
+  );
+}
+
+function CheckIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="m5 12 5 5 9-10" />
+    </svg>
+  );
+}
 
 const timeOnly = new Intl.DateTimeFormat("th-TH", {
   hour: "2-digit",
@@ -97,6 +119,10 @@ export function PublicBookingBoard({
     : state.ok ? state : storedState ?? state;
 
   const machines = initialOptions.machines;
+  const bookableCount = machines.filter((machine) => machine.bookable).length;
+  const selectedMachineCode = selectedMachineBookable
+    ? machines.find((machine) => machine.id === selectedMachine)?.machineCode
+    : undefined;
 
   return (
     <>
@@ -123,84 +149,113 @@ export function PublicBookingBoard({
       {visibleState.code ? (
         <BookingResultPanel state={visibleState} onRetry={() => setSelectedMachine("")} />
       ) : null}
-      <form action={formAction} className="mt-8 grid gap-5 lg:grid-cols-[330px_1fr] lg:items-start">
-        <aside className="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_22px_60px_-48px_rgba(11,19,36,0.55)] sm:p-6 lg:sticky lg:top-5">
-          <section>
-            <StepHeading number="01" title="ข้อมูลผู้จอง" />
-            <p className="mt-4 text-sm leading-6 text-slate-600">ใช้บัญชี Google @msu.ac.th ที่เข้าสู่ระบบอยู่ ระบบจะบันทึกชื่อและอีเมลจากบัญชีนั้นโดยอัตโนมัติ</p>
-          </section>
-
-          <section className="mt-6 border-t border-slate-100 pt-6">
-            <StepHeading number="02" title="ช่วงเวลาการใช้งาน" />
-            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">รอบละ 180 นาที</p>
-              <p className="mt-2 text-sm font-semibold leading-6 text-amber-950">ระบบจัดเวลาให้ต่อจากคิวล่าสุดโดยเว้น 15 นาที</p>
-              <p className="mt-2 text-xs leading-5 text-amber-800">เวลาจะเริ่มนับเมื่อ login เข้า TimeLock และคิวถัดไปเปิดหลังผู้จองก่อนหน้าเริ่มใช้งาน</p>
+      <ol className="mt-8 grid gap-3 sm:grid-cols-3" aria-label="ขั้นตอนการจอง">
+        {howItWorks.map((step, index) => (
+          <li key={step.title} className="flex gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+            <span className="font-display grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#171717] text-sm font-bold text-[#facc15]">{index + 1}</span>
+            <div>
+              <p className="text-sm font-semibold text-[#171717]">{step.title}</p>
+              <p className="mt-0.5 text-xs leading-5 text-slate-600">{step.detail}</p>
             </div>
-          </section>
-        </aside>
+          </li>
+        ))}
+      </ol>
 
-        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_22px_60px_-48px_rgba(11,19,36,0.55)] sm:p-6 lg:p-7">
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-5">
-            <StepHeading number="03" title="เลือกเครื่องคอมพิวเตอร์" />
-            <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-xs font-medium text-slate-600">
-              <span className={`h-2 w-2 rounded-full ${initialOptions.viewerCanBook && hasBookableMachine ? "bg-[#16a34a]" : "bg-slate-300"}`} aria-hidden="true" />
-              {initialOptions.viewerCanBook && hasBookableMachine ? "มีช่วงเวลาที่จองได้" : "จองเพิ่มไม่ได้"}
-            </div>
-          </div>
-
-          {!initialOptions.viewerCanBook && initialOptions.viewerBlockReason === "BOOKING_ALREADY_ACTIVE" ? (
-            <p role="alert" className="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold leading-6 text-amber-900">
-              กรุณารอให้ Session หรือการจองปัจจุบันสิ้นสุดก่อนจองใหม่
+      <form action={formAction} className="mt-10">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="font-display text-2xl font-semibold tracking-tight">เลือกเครื่อง</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              {machines.length > 0 ? `จองได้ ${bookableCount} จาก ${machines.length} เครื่อง` : "ยังไม่มีข้อมูลเครื่อง"}
+              <span className="text-slate-400"> · อัปเดตอัตโนมัติทุก 10 วินาที</span>
             </p>
-          ) : null}
+          </div>
+          <div className="flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600">
+            <span className={`h-2 w-2 rounded-full ${initialOptions.viewerCanBook && hasBookableMachine ? "bg-emerald-500" : "bg-slate-300"}`} aria-hidden="true" />
+            {initialOptions.viewerCanBook && hasBookableMachine ? "มีช่วงเวลาที่จองได้" : "จองเพิ่มไม่ได้"}
+          </div>
+        </div>
 
-          <div className="mt-5 grid gap-3.5 sm:grid-cols-2 xl:grid-cols-3" aria-label="เครื่องคอมพิวเตอร์">
-            {machines.map((machine, index) => {
-              const selectable = initialOptions.viewerCanBook && machine.bookable;
-              return (
-              <label key={machine.id} className={`group relative min-h-60 overflow-hidden rounded-2xl border p-5 transition focus-within:ring-4 focus-within:ring-amber-100 ${selectable ? "cursor-pointer border-slate-200 bg-white hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-lg has-[:checked]:border-amber-400 has-[:checked]:bg-[#171717] has-[:checked]:text-white has-[:checked]:shadow-xl" : "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-500"}`}>
+        {!initialOptions.viewerCanBook && initialOptions.viewerBlockReason === "BOOKING_ALREADY_ACTIVE" ? (
+          <p role="alert" className="mt-5 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold leading-6 text-amber-900">
+            <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-amber-400 text-xs font-bold text-[#171717]" aria-hidden="true">!</span>
+            กรุณารอให้ Session หรือการจองปัจจุบันสิ้นสุดก่อนจองใหม่
+          </p>
+        ) : null}
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label="เครื่องคอมพิวเตอร์">
+          {machines.map((machine) => {
+            const selectable = initialOptions.viewerCanBook && machine.bookable;
+            const tone = statusTones[machine.operationalStatus];
+            return (
+              <label
+                key={machine.id}
+                className={`group relative flex flex-col rounded-2xl border-2 p-5 transition focus-within:ring-4 focus-within:ring-amber-200 ${selectable ? "cursor-pointer border-slate-200 bg-white hover:border-slate-300 hover:shadow-[0_12px_32px_-20px_rgba(15,23,42,0.45)] has-[:checked]:border-[#171717] has-[:checked]:bg-[#fffbea] has-[:checked]:shadow-[0_16px_40px_-24px_rgba(15,23,42,0.55)]" : "cursor-not-allowed border-slate-100 bg-slate-50 text-slate-500"}`}
+              >
                 <input type="radio" name="machineId" value={machine.id} disabled={!selectable} checked={selectedMachine === machine.id} onChange={() => setSelectedMachine(machine.id)} className="sr-only" />
-                <span className={`absolute inset-x-0 top-0 h-1 ${machine.bookable ? "bg-[#16a34a]" : "bg-slate-300"}`} aria-hidden="true" />
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="font-display text-xs font-bold uppercase tracking-[0.15em]">{machine.machineCode}</p>
-                    <p className="mt-1 text-[11px] opacity-60">{machine.machineName}</p>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className={`grid h-11 w-11 place-items-center rounded-xl ${selectable ? "bg-slate-100 text-[#171717] group-has-[:checked]:bg-[#171717] group-has-[:checked]:text-[#facc15]" : "bg-slate-200/70 text-slate-400"}`}>
+                      <MonitorIcon className="h-5 w-5" />
+                    </span>
+                    <div>
+                      <p className="font-display text-lg font-semibold leading-tight">{machine.machineCode}</p>
+                      <p className="text-xs text-slate-500">{machine.machineName}</p>
+                    </div>
                   </div>
-                  <span className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold ${machine.bookable ? "bg-emerald-50 text-emerald-700 group-has-[:checked]:bg-white/10 group-has-[:checked]:text-emerald-200" : "bg-slate-200 text-slate-600"}`}>{statusLabels[machine.operationalStatus]}</span>
+                  {selectable ? (
+                    <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 border-slate-300 text-transparent transition group-has-[:checked]:border-[#171717] group-has-[:checked]:bg-[#171717] group-has-[:checked]:text-[#facc15]">
+                      <CheckIcon className="h-3.5 w-3.5" />
+                    </span>
+                  ) : null}
                 </div>
-                <div className="mt-5 border-t border-current/10 pt-4 text-xs leading-5">
+
+                <span className={`mt-4 inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${tone.badge}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} aria-hidden="true" />
+                  {statusLabels[machine.operationalStatus]}
+                </span>
+
+                <div className="mt-4 flex flex-1 flex-col gap-2 text-sm leading-6">
                   {machine.operationalStatus === "waiting_for_login" ? (
-                    <p className="font-semibold">ยังจองต่อไม่ได้ กรุณารอผู้จองก่อนหน้า login TimeLock</p>
+                    <p className="text-slate-600">ยังจองต่อไม่ได้ กรุณารอผู้จองก่อนหน้า login TimeLock</p>
                   ) : machine.bookable ? (
-                    <p className="font-semibold">ใช้งานได้ 3 ชั่วโมง</p>
-                  ) : <p className="font-semibold">ไม่มีช่วงเวลาว่างภายในวันนี้</p>}
+                    <p className="font-semibold text-[#171717]">ใช้งานได้ 3 ชั่วโมง</p>
+                  ) : (
+                    <p className="text-slate-600">ไม่มีช่วงเวลาว่างภายในวันนี้</p>
+                  )}
                   {machine.currentEndAt !== null && machine.currentRemainingMinutes !== null ? (
-                    <div className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-amber-900 group-has-[:checked]:bg-white/10 group-has-[:checked]:text-amber-100">
-                      <p className="font-semibold">{remainingLabel(machine.currentRemainingMinutes)}</p>
-                      <p className="mt-0.5 opacity-80">สิ้นสุด {timeOnly.format(new Date(machine.currentEndAt))}</p>
+                    <div className="flex items-center justify-between gap-2 rounded-xl bg-slate-100 px-3 py-2 text-xs text-slate-700">
+                      <span className="font-semibold">{remainingLabel(machine.currentRemainingMinutes)}</span>
+                      <span>สิ้นสุด {timeOnly.format(new Date(machine.currentEndAt))}</span>
                     </div>
                   ) : null}
-                  {machine.queueCount > 0 ? <p className="mt-1 opacity-75">คิวรอ {machine.queueCount} รายการ</p> : null}
+                  {machine.queueCount > 0 ? <p className="text-xs text-slate-500">คิวรอ {machine.queueCount} รายการ</p> : null}
                 </div>
-                <p className="font-display absolute bottom-4 right-5 text-4xl font-semibold leading-none tracking-[-0.08em] opacity-15">{String(index + 1).padStart(2, "0")}</p>
               </label>
-              );
-            })}
+            );
+          })}
+        </div>
+
+        {machines.length === 0 ? (
+          <div className="mt-5 grid min-h-44 place-items-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 px-5 text-center">
+            <div><p className="font-display font-semibold text-slate-700">ยังไม่มีข้อมูลเครื่อง</p><p className="mt-1 text-sm text-slate-500">กรุณาติดต่อผู้ดูแลระบบ</p></div>
           </div>
+        ) : null}
 
-          {machines.length === 0 ? (
-            <div className="mt-5 grid min-h-44 place-items-center rounded-2xl border border-dashed border-slate-200 bg-[#f8fafc] px-5 text-center">
-              <div><p className="font-display font-semibold text-slate-700">ยังไม่มีข้อมูลเครื่อง</p><p className="mt-1 text-sm text-slate-500">กรุณาติดต่อผู้ดูแลระบบ</p></div>
-            </div>
-          ) : null}
+        {loadMessage ? <p role="alert" className="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{loadMessage}</p> : null}
 
-          {loadMessage ? <p role="alert" className="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{loadMessage}</p> : null}
-          <p className="mt-5 text-center text-xs text-slate-500">สถานะจะอัปเดตอัตโนมัติภายใน 10 วินาทีหลัง login TimeLock</p>
-          <button type="submit" disabled={isPending || !initialOptions.viewerCanBook || !selectedMachineBookable} className="mt-3 w-full rounded-xl bg-[#171717] px-6 py-4 text-base font-semibold text-white transition hover:bg-amber-400 hover:text-[#171717] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500">
-            {isPending ? "กำลังยืนยันการจอง…" : selectedMachineBookable ? "ยืนยันการจองเครื่องที่เลือก" : "เลือกเครื่องเพื่อดำเนินการต่อ"}
-          </button>
-        </section>
+        <div className="sticky bottom-4 z-20 mt-6">
+          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-[0_20px_50px_-24px_rgba(15,23,42,0.5)] backdrop-blur sm:flex-row sm:items-center sm:pl-5">
+            <p className="text-sm text-slate-600 sm:flex-1">
+              {selectedMachineCode ? (
+                <>เครื่องที่เลือก: <span className="font-display font-semibold text-[#171717]">{selectedMachineCode}</span> · ใช้งานได้ 3 ชั่วโมง</>
+              ) : "ยังไม่ได้เลือกเครื่อง"}
+            </p>
+            <button type="submit" disabled={isPending || !initialOptions.viewerCanBook || !selectedMachineBookable} className="w-full rounded-xl bg-[#facc15] px-6 py-3.5 text-base font-semibold text-[#171717] transition hover:bg-[#eab308] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 sm:w-auto">
+              {isPending ? "กำลังยืนยันการจอง…" : selectedMachineBookable ? "ยืนยันการจอง" : "เลือกเครื่องเพื่อดำเนินการต่อ"}
+            </button>
+          </div>
+        </div>
       </form>
     </>
   );

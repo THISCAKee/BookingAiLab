@@ -39,16 +39,17 @@ export function BookingSettingsForm({
     <form action={formAction} className="space-y-8">
       <fieldset disabled={!canEdit || isPending} className="space-y-8 disabled:opacity-75">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Service days</p>
+          <p className="font-display font-semibold">วันที่เปิดให้บริการ</p>
+          <p className="mt-1 text-xs text-slate-500">Service days</p>
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {weekdays.map(([value, label]) => (
-              <label key={value} className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 has-[:checked]:border-amber-400 has-[:checked]:bg-amber-50">
+              <label key={value} className="flex cursor-pointer items-center gap-3 rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 has-[:checked]:border-[#171717] has-[:checked]:bg-[#fffbea] has-[:checked]:text-[#171717]">
                 <input
                   type="checkbox"
                   name="serviceWeekdays"
                   value={value}
                   defaultChecked={settings.serviceWeekdays.includes(value)}
-                  className="h-4 w-4 accent-amber-500"
+                  className="h-4 w-4 accent-[#171717]"
                 />
                 {label}
               </label>
@@ -56,33 +57,33 @@ export function BookingSettingsForm({
           </div>
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid gap-5 border-t border-slate-100 pt-8 sm:grid-cols-2">
           <label className="space-y-2 text-sm font-semibold text-slate-700">
             เวลาเปิดบริการ
-            <input name="openingTime" type="time" defaultValue={settings.openingTime} className="block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-950 outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-100" />
+            <input name="openingTime" type="time" defaultValue={settings.openingTime} className="block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-950 outline-none focus:border-[#171717] focus:ring-4 focus:ring-amber-100" />
           </label>
           <label className="space-y-2 text-sm font-semibold text-slate-700">
             เวลาปิดบริการ
-            <input name="closingTime" type="time" defaultValue={settings.closingTime} className="block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-950 outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-100" />
+            <input name="closingTime" type="time" defaultValue={settings.closingTime} className="block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-950 outline-none focus:border-[#171717] focus:ring-4 focus:ring-amber-100" />
           </label>
           <label className="space-y-2 text-sm font-semibold text-slate-700">
             ระยะเวลาจอง (นาที)
-            <input name="durationMinutes" type="number" min="1" defaultValue={settings.durationMinutes} className="block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-950 outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-100" />
+            <input name="durationMinutes" type="number" min="1" defaultValue={settings.durationMinutes} className="block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-950 outline-none focus:border-[#171717] focus:ring-4 focus:ring-amber-100" />
           </label>
           <label className="space-y-2 text-sm font-semibold text-slate-700">
             Grace period (นาที)
-            <input name="graceMinutes" type="number" min="0" defaultValue={settings.graceMinutes} className="block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-950 outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-100" />
+            <input name="graceMinutes" type="number" min="0" defaultValue={settings.graceMinutes} className="block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-950 outline-none focus:border-[#171717] focus:ring-4 focus:ring-amber-100" />
           </label>
         </div>
 
         <label className="block space-y-2 text-sm font-semibold text-slate-700">
           Timezone
-          <input name="timezone" defaultValue={settings.timezone} className="block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-950 outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-100" />
+          <input name="timezone" defaultValue={settings.timezone} className="block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-950 outline-none focus:border-[#171717] focus:ring-4 focus:ring-amber-100" />
         </label>
       </fieldset>
 
       {!canEdit ? null : (
-        <button type="submit" disabled={isPending} className="rounded-xl bg-slate-950 px-5 py-3 font-semibold text-white transition hover:bg-amber-500 hover:text-slate-950 focus:outline-none focus:ring-4 focus:ring-amber-200 disabled:cursor-wait disabled:opacity-60">
+        <button type="submit" disabled={isPending} className="rounded-xl bg-[#facc15] px-6 py-3 font-semibold text-[#171717] transition hover:bg-[#eab308] focus:outline-none focus:ring-4 focus:ring-amber-200 disabled:cursor-wait disabled:opacity-60">
           {isPending ? "กำลังบันทึก..." : "บันทึก Settings"}
         </button>
       )}

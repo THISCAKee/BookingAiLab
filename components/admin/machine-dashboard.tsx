@@ -33,19 +33,19 @@ function formatTime(value: string | null) {
 
 function connectionTone(machine: MachineDashboardRow) {
   if (machine.operationalStatus === "offline") {
-    return { rail: "bg-slate-300", dot: "bg-slate-300", label: "Offline", labelTone: "bg-slate-100 text-slate-600" };
+    return { dot: "bg-slate-400", label: "Offline", labelTone: "bg-slate-100 text-slate-600 ring-slate-200" };
   }
   if (machine.operationalStatus === "active") {
-    return { rail: "bg-[#16a34a]", dot: "bg-[#16a34a]", label: "Active", labelTone: "bg-emerald-50 text-emerald-700" };
+    return { dot: "bg-emerald-500", label: "Active", labelTone: "bg-emerald-50 text-emerald-700 ring-emerald-200" };
   }
-  return { rail: "bg-amber-400", dot: "bg-amber-400", label: "Online", labelTone: "bg-amber-50 text-amber-700" };
+  return { dot: "bg-amber-500", label: "Online", labelTone: "bg-amber-50 text-amber-800 ring-amber-200" };
 }
 
 const filterCards: Array<{ key: DashboardFilter; label: string; countKey: "all" | "online" | "active" | "offline"; dot: string }> = [
-  { key: "all", label: "เครื่องทั้งหมด", countKey: "all", dot: "bg-amber-400" },
-  { key: "online", label: "กำลัง Online", countKey: "online", dot: "bg-amber-400" },
-  { key: "active", label: "กำลังใช้งาน", countKey: "active", dot: "bg-[#16a34a]" },
-  { key: "offline", label: "Offline", countKey: "offline", dot: "bg-slate-300" },
+  { key: "all", label: "เครื่องทั้งหมด", countKey: "all", dot: "bg-[#171717]" },
+  { key: "online", label: "กำลัง Online", countKey: "online", dot: "bg-amber-500" },
+  { key: "active", label: "กำลังใช้งาน", countKey: "active", dot: "bg-emerald-500" },
+  { key: "offline", label: "Offline", countKey: "offline", dot: "bg-slate-400" },
 ];
 
 export function MachineDashboard({ machines, syncHealth }: { machines: MachineDashboardRow[]; syncHealth: TimelockSyncHealth | null }) {
@@ -61,7 +61,7 @@ export function MachineDashboard({ machines, syncHealth }: { machines: MachineDa
   const visibleMachines = filterDashboardMachines(machines, filter);
 
   return (
-    <section className="mt-7 pb-12">
+    <section className="mt-8 pb-12">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="ตัวกรองสถานะเครื่อง">
         {filterCards.map((item) => {
           const active = filter === item.key;
@@ -71,85 +71,81 @@ export function MachineDashboard({ machines, syncHealth }: { machines: MachineDa
               type="button"
               aria-pressed={active}
               onClick={() => setFilter(item.key)}
-              className={`group rounded-2xl border p-4 text-left transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-100 sm:p-5 ${active ? "border-[#0b1324] bg-[#0b1324] text-white shadow-lg" : "border-slate-200 bg-white text-[#0b1324] hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-md"}`}
+              className={`rounded-2xl border-2 p-4 text-left transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200 sm:p-5 ${active ? "border-[#171717] bg-[#fffbea]" : "border-slate-200 bg-white hover:border-slate-300"}`}
             >
-              <div className="flex items-center justify-between gap-3">
-                <span className={`h-2.5 w-2.5 rounded-full ${item.dot}`} aria-hidden="true" />
-                <span className={`font-display text-3xl font-semibold tabular-nums ${active ? "text-white" : "text-[#0b1324]"}`}>{counts[item.countKey]}</span>
-              </div>
-              <p className={`mt-3 text-xs font-semibold sm:text-sm ${active ? "text-slate-300" : "text-slate-500"}`}>{item.label}</p>
+              <p className="flex items-center gap-2 text-xs font-semibold text-slate-600 sm:text-sm">
+                <span className={`h-2 w-2 rounded-full ${item.dot}`} aria-hidden="true" />
+                {item.label}
+              </p>
+              <p className="font-display mt-2 text-3xl font-semibold tabular-nums text-[#171717]">{counts[item.countKey]}</p>
             </button>
           );
         })}
       </div>
 
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4">
+      <div className="mt-8 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="font-display font-semibold">Workstation live view</h2>
-          <p className="mt-1 text-xs text-slate-500">แสดง {visibleMachines.length} จาก {machines.length} เครื่อง</p>
+          <h2 className="font-display text-2xl font-semibold tracking-tight">เครื่องในห้อง</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            แสดง {visibleMachines.length} จาก {machines.length} เครื่อง
+            <span className="text-slate-400"> · รีเฟรชอัตโนมัติทุก 15 วินาที</span>
+          </p>
         </div>
-        <span className="inline-flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
-          <span className="h-2 w-2 animate-pulse rounded-full bg-[#16a34a]" aria-hidden="true" />
-          รีเฟรชอัตโนมัติทุก 15 วินาที
-        </span>
-      </div>
-
-      <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 rounded-xl border border-slate-200/80 bg-white/70 px-4 py-3 text-xs text-slate-500">
-        <span>Google Sheet: <strong className={syncHealth?.lastError ? "text-rose-600" : "text-slate-700"}>{syncHealth?.lastError ? "Sync มีปัญหา" : syncHealth?.lastSuccessAt ? formatTime(syncHealth.lastSuccessAt) : "ยังไม่เคย Sync"}</strong></span>
-        <span>บัญชีล่าสุด: <strong className="text-slate-700">{syncHealth?.syncedRowCount ?? 0}</strong></span>
-        <span>รอเขียนกลับ: <strong className={syncHealth?.pendingOutboxCount ? "text-amber-600" : "text-slate-700"}>{syncHealth?.pendingOutboxCount ?? 0}</strong></span>
+        <div className="flex flex-wrap gap-2 text-xs text-slate-600">
+          <span className="rounded-full bg-slate-50 px-3 py-1.5 ring-1 ring-inset ring-slate-200">Google Sheet: <strong className={syncHealth?.lastError ? "text-rose-600" : "text-[#171717]"}>{syncHealth?.lastError ? "Sync มีปัญหา" : syncHealth?.lastSuccessAt ? formatTime(syncHealth.lastSuccessAt) : "ยังไม่เคย Sync"}</strong></span>
+          <span className="rounded-full bg-slate-50 px-3 py-1.5 ring-1 ring-inset ring-slate-200">บัญชีล่าสุด: <strong className="text-[#171717]">{syncHealth?.syncedRowCount ?? 0}</strong></span>
+          <span className="rounded-full bg-slate-50 px-3 py-1.5 ring-1 ring-inset ring-slate-200">รอเขียนกลับ: <strong className={syncHealth?.pendingOutboxCount ? "text-amber-700" : "text-[#171717]"}>{syncHealth?.pendingOutboxCount ?? 0}</strong></span>
+        </div>
       </div>
 
       {visibleMachines.length > 0 ? (
-        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {visibleMachines.map((machine) => {
             const tone = connectionTone(machine);
-            const machineNumber = machine.machineCode.match(/\d+/)?.[0]?.padStart(2, "0") ?? "--";
             return (
-              <article key={machine.id} className="group relative min-h-72 overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_20px_55px_-48px_rgba(11,19,36,0.8)] transition hover:-translate-y-0.5 hover:shadow-lg sm:p-6">
-                <span className={`absolute inset-x-0 top-0 h-1 ${tone.rail}`} aria-hidden="true" />
-
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="font-display text-xs font-bold uppercase tracking-[0.15em] text-slate-500">{machine.machineCode}</p>
-                    <h3 className="mt-1 font-semibold text-[#0b1324]">{machine.machineName}</h3>
-                    <p className="mt-1 text-xs text-slate-400">{machine.location ?? "ยังไม่ระบุตำแหน่ง"}</p>
+              <article key={machine.id} className="flex flex-col rounded-2xl border-2 border-slate-200 bg-white p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="grid h-11 w-11 place-items-center rounded-xl bg-slate-100 text-[#171717]" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20h8M12 16v4" /></svg>
+                    </span>
+                    <div>
+                      <h3 className="font-display text-lg font-semibold leading-tight">{machine.machineCode}</h3>
+                      <p className="text-xs text-slate-500">{machine.machineName} · {machine.location ?? "ยังไม่ระบุตำแหน่ง"}</p>
+                    </div>
                   </div>
-                  <span className={`inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold ${tone.labelTone}`}>
-                    <span className={`h-2 w-2 rounded-full ${tone.dot}`} aria-hidden="true" />
+                  <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${tone.labelTone}`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} aria-hidden="true" />
                     {tone.label}
                   </span>
                 </div>
 
-                <div className="mt-7 flex items-end justify-between border-b border-slate-100 pb-6">
-                  <p className="font-display text-7xl font-semibold leading-none tracking-[-0.09em] text-slate-100 transition group-hover:text-amber-50" aria-hidden="true">{machineNumber}</p>
-                  <div className="text-right">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Session</p>
-                    <p className="mt-1 font-semibold text-[#0b1324]">{sessionLabels[machine.sessionStatus]}</p>
-                    {machine.username ? <p className="mt-1 max-w-44 truncate text-xs text-amber-700" title={machine.username}>{machine.username}</p> : null}
-                  </div>
+                <div className="mt-5 rounded-xl bg-slate-50 px-4 py-3">
+                  <p className="text-xs text-slate-500">Session</p>
+                  <p className="mt-0.5 font-semibold">{sessionLabels[machine.sessionStatus]}</p>
+                  {machine.username ? <p className="mt-0.5 truncate text-xs text-amber-700" title={machine.username}>{machine.username}</p> : null}
                 </div>
 
-                <div className="mt-5 grid grid-cols-2 gap-4 text-sm">
+                <dl className="mt-4 grid grid-cols-2 gap-3 text-xs">
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Last heartbeat</p>
-                    <p className="mt-1 text-xs font-medium text-slate-600">{formatTime(machine.lastSeenAt)}</p>
+                    <dt className="text-slate-500">Last heartbeat</dt>
+                    <dd className="mt-0.5 font-medium text-slate-700">{formatTime(machine.lastSeenAt)}</dd>
                   </div>
                   <div className="text-right">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Machine status</p>
-                    <p className="mt-1 text-xs font-medium text-slate-600">{machineLabels[machine.machineStatus] ?? machine.machineStatus}</p>
+                    <dt className="text-slate-500">Machine status</dt>
+                    <dd className="mt-0.5 font-medium text-slate-700">{machineLabels[machine.machineStatus] ?? machine.machineStatus}</dd>
                   </div>
-                </div>
+                </dl>
 
-                <div className={`mt-5 rounded-xl px-3.5 py-3 text-xs ${machine.booking ? "bg-amber-50 text-amber-800" : "bg-slate-50 text-slate-500"}`}>
-                  {machine.booking ? <><span className="font-semibold">Booking</span><span className="mx-2 text-amber-300">·</span>{machine.booking.bookingNumber}</> : "ไม่มีรายการจองที่กำลังใช้งาน"}
-                </div>
+                <p className={`mt-4 border-t border-slate-100 pt-4 text-xs ${machine.booking ? "font-semibold text-[#171717]" : "text-slate-500"}`}>
+                  {machine.booking ? <>Booking · {machine.booking.bookingNumber}</> : "ไม่มีรายการจองที่กำลังใช้งาน"}
+                </p>
               </article>
             );
           })}
         </div>
       ) : (
-        <div className="mt-4 grid min-h-56 place-items-center rounded-2xl border border-dashed border-slate-200 bg-white px-6 text-center">
+        <div className="mt-5 grid min-h-56 place-items-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 px-6 text-center">
           <div><p className="font-display font-semibold text-slate-700">ไม่พบเครื่องในสถานะนี้</p><p className="mt-1 text-sm text-slate-500">เลือกตัวกรองอื่นเพื่อดูเครื่องทั้งหมด</p></div>
         </div>
       )}
