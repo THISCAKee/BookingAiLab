@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export function LoginButton() {
+export function LoginButton({ label, connectingLabel }: { label: string; connectingLabel: string }) {
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleLogin() {
@@ -15,14 +15,14 @@ export function LoginButton() {
       type="button"
       onClick={handleLogin}
       disabled={isLoading}
-      aria-label="เข้าสู่ระบบด้วย Google"
+      aria-label={label}
       aria-busy={isLoading}
       className="login-google-button flex w-full items-center justify-center gap-3 rounded-xl bg-[#facc15] px-5 py-3.5 font-semibold text-[#1f2937] transition hover:bg-[#eab308] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-yellow-200/50 disabled:cursor-wait disabled:opacity-70"
     >
       {isLoading ? (
         <span className="flex items-center gap-3">
           <span className="login-spinner" aria-hidden="true" />
-          กำลังเชื่อมต่อ...
+          {connectingLabel}
         </span>
       ) : (
         <>
@@ -32,7 +32,7 @@ export function LoginButton() {
             <path fill="#FBBC05" d="M6.38 13.74A6 6 0 0 1 6.06 12c0-.6.11-1.19.32-1.74V7.71H3.05A9.98 9.98 0 0 0 2 12c0 1.55.37 3.02 1.05 4.29l3.33-2.55Z" />
             <path fill="#EA4335" d="M12 6.13c1.47 0 2.79.5 3.83 1.5l2.87-2.87C16.95 3.16 14.7 2.2 12 2.2a9.98 9.98 0 0 0-8.95 5.51l3.33 2.55C7.17 7.89 9.39 6.13 12 6.13Z" />
           </svg>
-          เข้าสู่ระบบด้วย Google
+          {label}
         </>
       )}
     </button>

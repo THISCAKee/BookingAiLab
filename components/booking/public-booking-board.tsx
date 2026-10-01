@@ -7,16 +7,9 @@ import { BookingResultPanel } from "@/components/booking/booking-result-panel";
 import type { PublicBookingOptions } from "@/lib/booking/actions";
 import type { QueueOperationalStatus } from "@/lib/booking/queue-policy";
 import { clearStoredBooking, loadStoredBooking, storeBooking } from "@/lib/booking/client-storage";
+import { defaultLocale, getDictionary, type Locale } from "@/lib/i18n/dictionaries";
 
 const initialState: BookingFormState = { ok: false, code: "", message: "", retryable: true };
-
-const statusLabels: Record<QueueOperationalStatus, string> = {
-  available: "ว่าง",
-  in_use: "ใช้งานอยู่",
-  queued: "มีคิว",
-  waiting_for_login: "รอผู้จองก่อนหน้า login",
-  full_today: "คิวเต็มสำหรับวันนี้",
-};
 
 const statusTones: Record<QueueOperationalStatus, { dot: string; badge: string }> = {
   available: { dot: "bg-emerald-500", badge: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
@@ -25,12 +18,6 @@ const statusTones: Record<QueueOperationalStatus, { dot: string; badge: string }
   waiting_for_login: { dot: "bg-slate-400", badge: "bg-slate-100 text-slate-600 ring-slate-200" },
   full_today: { dot: "bg-rose-400", badge: "bg-rose-50 text-rose-700 ring-rose-200" },
 };
-
-const howItWorks = [
-  { title: "เลือกเครื่องที่ว่าง", detail: "เครื่องที่มีคนใช้อยู่ จองต่อคิวได้ ระบบเว้นช่วงให้ 15 นาที" },
-  { title: "ยืนยันการจอง", detail: "รับ User และ Password สำหรับ TimeLock ทันที" },
-  { title: "Login ที่เครื่อง", detail: "เวลาจะเริ่มนับเมื่อ login เข้า TimeLock ใช้งานได้ 3 ชั่วโมง" },
-];
 
 function MonitorIcon({ className }: { className?: string }) {
   return (
@@ -49,28 +36,18 @@ function CheckIcon({ className }: { className?: string }) {
   );
 }
 
-const timeOnly = new Intl.DateTimeFormat("th-TH", {
-  hour: "2-digit",
-  minute: "2-digit",
-  hourCycle: "h23",
-  timeZone: "Asia/Bangkok",
-});
-
-function remainingLabel(totalMinutes: number) {
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  if (hours === 0) return `เหลือ ${minutes} นาที`;
-  if (minutes === 0) return `เหลือ ${hours} ชม.`;
-  return `เหลือ ${hours} ชม. ${minutes} นาที`;
-}
-
 export function PublicBookingBoard({
   initialOptions,
   initialMessage,
+  locale = defaultLocale,
 }: {
   initialOptions: PublicBookingOptions;
   initialMessage?: string;
+  locale?: Locale;
 }) {
+  const dictionary = getDictionary(locale);
+  const t = dictionary.board;
+  const timeOnly = new Intl.DateTimeFormat(dictionary.dateLocale, { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "Asia/Bangkok" });
   const router = useRouter();
   const [selectedMachine, setSelectedMachine] = useState("");
   const [storedState, setStoredState] = useState<BookingFormState | null>(null);
@@ -138,19 +115,19 @@ export function PublicBookingBoard({
               <span className="booking-loading-spinner" />
             </div>
             <h2 id="booking-loading-title" className="font-display mt-5 text-xl font-semibold text-[#171717]">
-              กำลังยืนยันการจอง
+              {t.loadingTitle}
             </h2>
             <p role="status" className="mt-2 text-sm leading-6 text-slate-600">
-              ระบบกำลังตรวจสอบเครื่องที่เลือก กรุณารอสักครู่
+              {t.loadingBody}
             </p>
           </div>
         </div>
       ) : null}
       {visibleState.code ? (
-        <BookingResultPanel state={visibleState} onRetry={() => setSelectedMachine("")} />
+        <BookingResultPanel state={visibleState} onRetry={() => setSelectedMachine("")} locale={locale} />
       ) : null}
-      <ol className="mt-8 grid gap-3 sm:grid-cols-3" aria-label="ขั้นตอนการจอง">
-        {howItWorks.map((step, index) => (
+      <ol className="mt-8 grid gap-3 sm:grid-cols-3" aria-label={t.stepsLabel}>
+        {t.steps.map((step, index) => (
           <li key={step.title} className="flex gap-3 rounded-2xl border border-slate-200 bg-white p-4">
             <span className="font-display grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#171717] text-sm font-bold text-[#facc15]">{index + 1}</span>
             <div>
@@ -164,26 +141,26 @@ export function PublicBookingBoard({
       <form action={formAction} className="mt-10">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="font-display text-2xl font-semibold tracking-tight">เลือกเครื่อง</h2>
+            <h2 className="font-display text-2xl font-semibold tracking-tight">{t.chooseMachine}</h2>
             <p className="mt-1 text-sm text-slate-600">
-              {machines.length > 0 ? `จองได้ ${bookableCount} จาก ${machines.length} เครื่อง` : "ยังไม่มีข้อมูลเครื่อง"}
-              <span className="text-slate-400"> · อัปเดตอัตโนมัติทุก 10 วินาที</span>
+              {machines.length > 0 ? t.summary(bookableCount, machines.length) : t.noMachines}
+              <span className="text-slate-400"> · {t.autoRefresh}</span>
             </p>
           </div>
           <div className="flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600">
             <span className={`h-2 w-2 rounded-full ${initialOptions.viewerCanBook && hasBookableMachine ? "bg-emerald-500" : "bg-slate-300"}`} aria-hidden="true" />
-            {initialOptions.viewerCanBook && hasBookableMachine ? "มีช่วงเวลาที่จองได้" : "จองเพิ่มไม่ได้"}
+            {initialOptions.viewerCanBook && hasBookableMachine ? t.canBook : t.cannotBook}
           </div>
         </div>
 
         {!initialOptions.viewerCanBook && initialOptions.viewerBlockReason === "BOOKING_ALREADY_ACTIVE" ? (
           <p role="alert" className="mt-5 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold leading-6 text-amber-900">
             <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-amber-400 text-xs font-bold text-[#171717]" aria-hidden="true">!</span>
-            กรุณารอให้ Session หรือการจองปัจจุบันสิ้นสุดก่อนจองใหม่
+            {t.alreadyActive}
           </p>
         ) : null}
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label="เครื่องคอมพิวเตอร์">
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label={t.machinesLabel}>
           {machines.map((machine) => {
             const selectable = initialOptions.viewerCanBook && machine.bookable;
             const tone = statusTones[machine.operationalStatus];
@@ -212,24 +189,24 @@ export function PublicBookingBoard({
 
                 <span className={`mt-4 inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${tone.badge}`}>
                   <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} aria-hidden="true" />
-                  {statusLabels[machine.operationalStatus]}
+                  {t.statusLabels[machine.operationalStatus]}
                 </span>
 
                 <div className="mt-4 flex flex-1 flex-col gap-2 text-sm leading-6">
                   {machine.operationalStatus === "waiting_for_login" ? (
-                    <p className="text-slate-600">ยังจองต่อไม่ได้ กรุณารอผู้จองก่อนหน้า login TimeLock</p>
+                    <p className="text-slate-600">{t.waitingForLogin}</p>
                   ) : machine.bookable ? (
-                    <p className="font-semibold text-[#171717]">ใช้งานได้ 3 ชั่วโมง</p>
+                    <p className="font-semibold text-[#171717]">{t.usable}</p>
                   ) : (
-                    <p className="text-slate-600">ไม่มีช่วงเวลาว่างภายในวันนี้</p>
+                    <p className="text-slate-600">{t.noSlotToday}</p>
                   )}
                   {machine.currentEndAt !== null && machine.currentRemainingMinutes !== null ? (
                     <div className="flex items-center justify-between gap-2 rounded-xl bg-slate-100 px-3 py-2 text-xs text-slate-700">
-                      <span className="font-semibold">{remainingLabel(machine.currentRemainingMinutes)}</span>
-                      <span>สิ้นสุด {timeOnly.format(new Date(machine.currentEndAt))}</span>
+                      <span className="font-semibold">{t.remaining(Math.floor(machine.currentRemainingMinutes / 60), machine.currentRemainingMinutes % 60)}</span>
+                      <span>{t.endsAt(timeOnly.format(new Date(machine.currentEndAt)))}</span>
                     </div>
                   ) : null}
-                  {machine.queueCount > 0 ? <p className="text-xs text-slate-500">คิวรอ {machine.queueCount} รายการ</p> : null}
+                  {machine.queueCount > 0 ? <p className="text-xs text-slate-500">{t.queue(machine.queueCount)}</p> : null}
                 </div>
               </label>
             );
@@ -238,7 +215,7 @@ export function PublicBookingBoard({
 
         {machines.length === 0 ? (
           <div className="mt-5 grid min-h-44 place-items-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 px-5 text-center">
-            <div><p className="font-display font-semibold text-slate-700">ยังไม่มีข้อมูลเครื่อง</p><p className="mt-1 text-sm text-slate-500">กรุณาติดต่อผู้ดูแลระบบ</p></div>
+            <div><p className="font-display font-semibold text-slate-700">{t.noMachines}</p><p className="mt-1 text-sm text-slate-500">{t.contactAdmin}</p></div>
           </div>
         ) : null}
 
@@ -248,11 +225,11 @@ export function PublicBookingBoard({
           <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-[0_20px_50px_-24px_rgba(15,23,42,0.5)] backdrop-blur sm:flex-row sm:items-center sm:pl-5">
             <p className="text-sm text-slate-600 sm:flex-1">
               {selectedMachineCode ? (
-                <>เครื่องที่เลือก: <span className="font-display font-semibold text-[#171717]">{selectedMachineCode}</span> · ใช้งานได้ 3 ชั่วโมง</>
-              ) : "ยังไม่ได้เลือกเครื่อง"}
+                <>{t.selected} <span className="font-display font-semibold text-[#171717]">{selectedMachineCode}</span> · {t.usable}</>
+              ) : t.notSelected}
             </p>
             <button type="submit" disabled={isPending || !initialOptions.viewerCanBook || !selectedMachineBookable} className="w-full rounded-xl bg-[#facc15] px-6 py-3.5 text-base font-semibold text-[#171717] transition hover:bg-[#eab308] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 sm:w-auto">
-              {isPending ? "กำลังยืนยันการจอง…" : selectedMachineBookable ? "ยืนยันการจอง" : "เลือกเครื่องเพื่อดำเนินการต่อ"}
+              {isPending ? t.confirming : selectedMachineBookable ? t.confirm : t.selectToContinue}
             </button>
           </div>
         </div>

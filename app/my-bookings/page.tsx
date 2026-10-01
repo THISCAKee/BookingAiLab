@@ -1,18 +1,22 @@
 import { ManageBookingForm } from "@/components/booking/manage-booking-form";
 import { PublicBookingNav } from "@/components/booking/public-booking-nav";
 import { PageHeader } from "@/components/ui/page-header";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/locale";
 
-export default function MyBookingsPage() {
+export default async function MyBookingsPage() {
+  const locale = await getLocale();
+  const t = getDictionary(locale).myBookings;
   return (
     <main className="min-h-screen bg-white text-[#171717]">
       <div className="mx-auto max-w-4xl px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
-        <PublicBookingNav />
+        <PublicBookingNav locale={locale} />
         <PageHeader
-          eyebrow="Booking Information"
-          title="ข้อมูลการจอง"
-          description="ดู User และ Password สำหรับ TimeLock หรือยกเลิกการจองที่ยังไม่เริ่มใช้งานได้ที่นี่"
+          eyebrow={t.eyebrow}
+          title={t.title}
+          description={t.description}
         />
-        <ManageBookingForm />
+        <ManageBookingForm locale={locale} />
       </div>
     </main>
   );

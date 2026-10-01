@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Anuphan, Chakra_Petch } from "next/font/google";
+import { getLocale } from "@/lib/i18n/locale";
 import "./globals.css";
 
 const anuphan = Anuphan({
@@ -20,11 +21,12 @@ export const metadata: Metadata = {
   description: "ระบบจองเครื่องคอมพิวเตอร์สำหรับมหาวิทยาลัยมหาสารคาม",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const locale = await getLocale();
   return (
-    <html lang="th">
+    <html lang={locale}>
       <body className={`${anuphan.variable} ${chakraPetch.variable}`}>{children}</body>
     </html>
   );

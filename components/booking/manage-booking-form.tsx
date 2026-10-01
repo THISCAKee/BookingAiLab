@@ -5,8 +5,10 @@ import { cancelMyBookingAction, loadMyBookingsAction } from "@/app/my-bookings/a
 import type { BookingFormState } from "@/app/booking/actions";
 import { BookingResultPanel } from "@/components/booking/booking-result-panel";
 import { clearStoredBooking, loadStoredBooking, storeBooking } from "@/lib/booking/client-storage";
+import { defaultLocale, getDictionary, type Locale } from "@/lib/i18n/dictionaries";
 
-export function ManageBookingForm() {
+export function ManageBookingForm({ locale = defaultLocale }: { locale?: Locale }) {
+  const t = getDictionary(locale).myBookings;
   const [storedBooking, setStoredBooking] = useState<BookingFormState | null>(null);
   const [cancelMessage, setCancelMessage] = useState("");
   const [isCancelling, startCancelling] = useTransition();
@@ -30,7 +32,7 @@ export function ManageBookingForm() {
           bookingNumber: latest.bookingNumber,
           name: latest.name,
           timelockUsername: latest.timelockUsername,
-          timelockPassword: latest.timelockPassword ?? matchingStored?.timelockPassword ?? "ไม่สามารถแสดงซ้ำได้",
+          timelockPassword: latest.timelockPassword ?? matchingStored?.timelockPassword ?? t.passwordUnavailable,
           machineCode: latest.machineCode,
           startAt: latest.startAt,
           endAt: latest.endAt,
@@ -61,7 +63,8 @@ export function ManageBookingForm() {
       {storedBooking ? <BookingResultPanel
         state={storedBooking}
         actionHref="/booking"
-        actionLabel="กลับไปจองเครื่อง"
+        actionLabel={t.backToBooking}
+        locale={locale}
         onCancel={() => startCancelling(async () => {
           if (!cancelBookingId) return;
           setCancelMessage("");
@@ -76,9 +79,9 @@ export function ManageBookingForm() {
         isCancelling={isCancelling}
         cancelMessage={cancelMessage}
       /> : <section className="grid place-items-center rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50 px-6 py-14 text-center">
-        <p className="font-display text-lg font-semibold text-[#171717]">ยังไม่มีข้อมูลการจองของคุณ</p>
-        <p className="mt-1 text-sm text-slate-500">เลือกเครื่องที่ว่างเพื่อเริ่มจอง ใช้งานได้รอบละ 3 ชั่วโมง</p>
-        <a href="/booking" className="mt-5 rounded-xl bg-[#facc15] px-5 py-3 text-sm font-semibold text-[#171717] transition hover:bg-[#eab308] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200">ไปหน้าจองเครื่อง</a>
+        <p className="font-display text-lg font-semibold text-[#171717]">{t.emptyTitle}</p>
+        <p className="mt-1 text-sm text-slate-500">{t.emptyBody}</p>
+        <a href="/booking" className="mt-5 rounded-xl bg-[#facc15] px-5 py-3 text-sm font-semibold text-[#171717] transition hover:bg-[#eab308] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200">{t.goToBooking}</a>
       </section>}
     </div>
   );
