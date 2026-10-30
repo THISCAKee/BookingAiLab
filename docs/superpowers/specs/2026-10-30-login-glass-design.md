@@ -26,11 +26,11 @@ Refresh the BookingAiLab login page so Mahasarakham University users can identif
 
 ## Approaches
 
-1. **One glass card with the guide below the sign-in action (recommended).** Keep the user focused on one primary action, then show the three steps in the same panel. Use a horizontal guide on desktop and a vertical list on mobile. This matches the request for a clear login screen and keeps all essential guidance together.
-2. **Split login and guide into two desktop columns.** This gives the guide more room, but makes the login surface wider and introduces a more complex mobile stack.
+1. **Split login and guide into two desktop columns (selected).** Keep the sign-in form on the left and the guide on the right inside the same panel. Stack them on narrow screens with the form first.
+2. **One glass card with the guide beneath the sign-in action.** This keeps the panel narrower, but leaves the guide less distinct from the sign-in form.
 3. **Keep login compact and link to a separate guide.** This minimizes the page, but hides the requested help behind another navigation step.
 
-The first approach is the working direction, based on the requested simplicity and the generated desktop and mobile mockups shown for review.
+The split layout follows the user's latest direction. The existing white glass treatment and generated visual concepts remain the style reference.
 
 ## Proposed design
 
@@ -38,9 +38,9 @@ The first approach is the working direction, based on the requested simplicity a
 - Center one translucent white glass panel with backdrop blur, a fine cool-gray edge, and a soft shadow.
 - Use dark ink and slate for text contrast, keeping yellow as the primary-action and brand accent.
 - Keep the existing BookingAiLab mark and TH/EN switch in a quiet top row.
-- Order the panel content as: university-account heading and description, yellow Google sign-in button, `@msu.ac.th` note, divider, then a three-step guide.
+- Keep the brand and language row across the top of the panel. Below it, place the university-account heading, description, yellow Google sign-in button, and `@msu.ac.th` note on the left; place the three-step guide on the right with a vertical divider on desktop.
 - Guide steps: sign in with Google; choose a machine and confirm the booking; use the provided User and Password to sign in to TimeLock.
-- Keep the return-to-home link below the panel. On mobile, stack the guide steps vertically and allow normal scrolling if needed.
+- Keep the return-to-home link below the panel. On mobile, stack the form first and the guide beneath it with a horizontal divider; keep the guide steps vertical and allow normal scrolling if needed.
 - Add a short fade-and-rise entrance, subtle button hover/press feedback, clear keyboard focus, and retain the existing loading state. Disable or sharply reduce nonessential motion with `prefers-reduced-motion`.
 - Keep all interface text and controls in HTML/CSS. Add Thai and English guide copy to the existing dictionaries.
 

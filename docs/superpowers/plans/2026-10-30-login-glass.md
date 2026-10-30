@@ -14,7 +14,7 @@
 
 - Preserve Google OAuth, routes, authentication rules, errors, loading behavior, and the `@msu.ac.th` requirement.
 - Keep Thai and English content, the existing brand mark, language switcher, and return-to-home link.
-- Keep the usage guide in the same panel: horizontal on desktop and vertical on mobile.
+- Keep the form and usage guide in the same panel: form left and guide right on desktop; form first and guide below on mobile.
 - Use code-native HTML and CSS for all text and controls; add no dependencies or production image assets.
 - Respect `prefers-reduced-motion` and keep focus states visible.
 - Preserve the existing user edits in `package.json` and `package-lock.json`.
@@ -42,7 +42,7 @@ No tests are included in this plan because workspace instructions say not to add
 - Keep `LoginButton`'s current `label` and `connectingLabel` props and existing sign-in behavior.
 
 - [x] Add the guide title and three localized steps under `login` for both locales.
-- [x] Render the guide as a semantic ordered list beneath the domain note and divider, preserving the current error alert and return link.
+- [x] Render the guide as a semantic ordered list in its own guide section, preserving the current error alert and return link.
 - [x] Keep the guide wording aligned with the booking flow: Google sign-in, choose and confirm a machine, then use the issued User and Password in TimeLock.
 
 ### Task 2: Apply the glass visual system and motion
@@ -52,13 +52,13 @@ No tests are included in this plan because workspace instructions say not to add
 - Modify: `app/globals.css`
 
 **Interfaces:**
-- Restructure `app/login/page.tsx` so the brand/language row, login content, and guide sit inside one `.login-panel`; keep the return link below it.
+- Restructure `app/login/page.tsx` so the brand/language row, `.login-content`, and guide sit inside one `.login-panel`; use `.login-columns` for the desktop split and keep the return link below it.
 - Use stable classes `.login-panel`, `.login-header`, `.login-content`, `.login-domain-note`, `.login-guide`, `.login-guide-title`, `.login-guide-steps`, `.login-guide-step`, and `.login-guide-number`.
 - Keep styles scoped to `.login-shell` so other routes retain their existing appearance.
 
 - [x] Use a white login canvas with restrained amber ambient treatment and a translucent white blurred panel with a fine border.
 - [x] Style the brand row, language control, heading, Google action, domain note, error alert, guide, and return link for clear contrast.
-- [x] Lay out the three guide steps horizontally on wide screens and vertically on mobile.
+- [x] Split the form and guide into two columns on wide screens; stack the form before the vertical guide on mobile.
 - [x] Add a brief panel entrance, subtle button hover/press feedback, and visible keyboard focus; retain the existing loading spinner.
 - [x] Add `prefers-reduced-motion` handling for login entrance and ambient effects.
 

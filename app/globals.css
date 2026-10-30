@@ -101,6 +101,16 @@
   color: var(--login-text);
 }
 
+.login-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.75rem;
+}
+
+.login-content > header {
+  text-align: center;
+}
+
 .login-content > header p {
   color: var(--login-muted);
 }
@@ -116,7 +126,9 @@
 }
 
 .login-guide {
-  border-color: var(--login-line);
+  margin: 0;
+  border-top: 1px solid var(--login-line);
+  padding-top: 1.5rem;
 }
 
 .login-guide-title {
@@ -125,6 +137,7 @@
 
 .login-guide-steps {
   grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
   margin-inline: 0;
   padding: 0;
   list-style: none;
@@ -132,16 +145,15 @@
 
 .login-guide-step {
   min-width: 0;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 1rem;
+  padding: 0.85rem 1rem;
+  background: rgba(255, 255, 255, 0.58);
   color: #475569;
 }
 
 .login-guide-step > span:last-child {
   display: block;
-}
-
-.login-guide-step:last-child {
-  border-bottom: 0;
 }
 
 .login-guide-number {
@@ -239,40 +251,30 @@
 }
 
 @media (min-width: 56rem) {
-  .login-guide-steps {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1.5rem;
+  .login-columns {
+    grid-template-columns: minmax(0, 1.12fr) minmax(18rem, 0.88fr);
+    align-items: center;
+    gap: clamp(2rem, 4vw, 3.25rem);
+  }
+
+  .login-content {
+    padding-right: clamp(0.5rem, 1.5vw, 1.5rem);
+  }
+
+  .login-content > header {
+    text-align: left;
+  }
+
+  .login-guide {
+    border-top: 0;
+    border-left: 1px solid var(--login-line);
+    padding-top: 0;
+    padding-left: clamp(1.5rem, 3vw, 2.5rem);
   }
 
   .login-guide-step {
-    position: relative;
     align-items: center;
-    border: 1px solid rgba(148, 163, 184, 0.2);
-    border-radius: 1rem;
-    padding: 1.25rem 0.875rem;
-    background: rgba(255, 255, 255, 0.58);
-    text-align: center;
-    flex-direction: column;
-  }
-
-  .login-guide-step > span:last-child {
-    max-width: 18rem;
-  }
-
-  .login-guide-step:not(:last-child)::after {
-    position: absolute;
-    top: 1.7rem;
-    right: -1.12rem;
-    width: 0.65rem;
-    height: 0.65rem;
-    border-top: 1px solid rgba(71, 85, 105, 0.45);
-    border-right: 1px solid rgba(71, 85, 105, 0.45);
-    content: "";
-    transform: rotate(45deg);
-  }
-
-  .login-guide-step:last-child {
-    border: 1px solid rgba(148, 163, 184, 0.2);
+    text-align: left;
   }
 }
 
