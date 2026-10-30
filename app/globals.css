@@ -17,7 +17,13 @@
 }
 
 .login-shell {
-  background: #ffffff;
+  --login-text: #1f2937;
+  --login-muted: #64748b;
+  --login-line: rgba(15, 23, 42, 0.12);
+  background:
+    radial-gradient(ellipse at 6% 7%, rgba(250, 204, 21, 0.11), transparent 30%),
+    radial-gradient(ellipse at 94% 92%, rgba(250, 204, 21, 0.06), transparent 27%),
+    #ffffff;
   isolation: isolate;
 }
 
@@ -25,15 +31,131 @@
   position: absolute;
   inset: 0;
   z-index: -1;
-  background-image: linear-gradient(rgba(250, 204, 21, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(250, 204, 21, 0.08) 1px, transparent 1px);
+  background-image: linear-gradient(rgba(15, 23, 42, 0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(15, 23, 42, 0.025) 1px, transparent 1px);
   background-position: center;
-  background-size: 32px 32px;
+  background-size: 84px 84px;
   content: "";
-  mask-image: radial-gradient(ellipse at center, black 0%, transparent 72%);
+  mask-image: radial-gradient(ellipse at center, black 0%, transparent 68%);
+  pointer-events: none;
+  animation: login-grid-drift 36s linear infinite;
+}
+
+.login-shell::after {
+  position: absolute;
+  inset: -12%;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse at 18% 18%, rgba(250, 204, 21, 0.12), transparent 34%),
+    radial-gradient(ellipse at 82% 82%, rgba(148, 163, 184, 0.09), transparent 32%);
+  content: "";
+  pointer-events: none;
+  animation: login-ambient-drift 22s ease-in-out infinite alternate;
 }
 
 .login-card {
-  animation: login-card-enter 500ms ease-out both;
+  animation: login-card-enter 560ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+.login-panel {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  border-radius: 2rem;
+  padding: clamp(1.25rem, 4vw, 2.75rem);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.68) 48%, rgba(255, 255, 255, 0.76));
+  box-shadow: 0 32px 84px -52px rgba(15, 23, 42, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(28px) saturate(145%);
+  -webkit-backdrop-filter: blur(28px) saturate(145%);
+}
+
+.login-header {
+  color: var(--login-text);
+}
+
+.login-header [role="group"] {
+  border-color: rgba(15, 23, 42, 0.1);
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.login-header [role="group"] button {
+  color: #64748b;
+}
+
+.login-shell .login-header [role="group"] button[aria-pressed="true"] {
+  background: #171717;
+  color: #ffffff;
+}
+
+.login-header [role="group"] button:not([aria-pressed="true"]):hover {
+  background: rgba(15, 23, 42, 0.055);
+  color: #171717;
+}
+
+.login-header [role="group"] button:focus-visible,
+.login-back-link:focus-visible {
+  outline: 2px solid #a16207;
+  outline-offset: 3px;
+}
+
+.login-content > header h1 {
+  color: var(--login-text);
+}
+
+.login-content > header p {
+  color: var(--login-muted);
+}
+
+.login-domain-note {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(255, 255, 255, 0.62);
+  color: #64748b;
+}
+
+.login-shell .login-domain-note strong {
+  color: #1f2937;
+}
+
+.login-guide {
+  border-color: var(--login-line);
+}
+
+.login-guide-title {
+  color: var(--login-text);
+}
+
+.login-guide-steps {
+  grid-template-columns: minmax(0, 1fr);
+  margin-inline: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.login-guide-step {
+  min-width: 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  color: #475569;
+}
+
+.login-guide-step > span:last-child {
+  display: block;
+}
+
+.login-guide-step:last-child {
+  border-bottom: 0;
+}
+
+.login-guide-number {
+  border-color: #facc15;
+  background: #fff9db;
+  color: #a16207;
+}
+
+.login-back-link {
+  color: #64748b;
+}
+
+.login-back-link:hover {
+  color: #a16207;
 }
 
 .login-accent-bar {
@@ -78,9 +200,33 @@
 }
 
 .login-error {
-  background: #fff1f2;
   border: 1px solid #fecdd3;
+  background: #fff1f2;
   color: #9f1239;
+}
+
+.login-google-button {
+  min-height: 3.25rem;
+  box-shadow: 0 12px 28px -17px rgba(250, 204, 21, 0.85);
+  transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+
+@media (hover: hover) {
+  .login-google-button:not(:disabled):hover {
+    box-shadow: 0 18px 34px -17px rgba(250, 204, 21, 0.95);
+    transform: translateY(-2px);
+  }
+}
+
+.login-google-button:not(:disabled):active {
+  box-shadow: 0 6px 16px -12px rgba(250, 204, 21, 0.75);
+  transform: translateY(1px) scale(0.99);
+}
+
+.login-google-button:focus-visible {
+  outline: 3px solid #171717;
+  outline-offset: 4px;
+  box-shadow: 0 0 0 7px rgba(250, 204, 21, 0.35), 0 12px 28px -17px rgba(250, 204, 21, 0.85);
 }
 
 .login-spinner {
@@ -90,6 +236,67 @@
   border-top-color: #1f2937;
   border-radius: 999px;
   animation: login-spin 700ms linear infinite;
+}
+
+@media (min-width: 56rem) {
+  .login-guide-steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+
+  .login-guide-step {
+    position: relative;
+    align-items: center;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 1rem;
+    padding: 1.25rem 0.875rem;
+    background: rgba(255, 255, 255, 0.58);
+    text-align: center;
+    flex-direction: column;
+  }
+
+  .login-guide-step > span:last-child {
+    max-width: 18rem;
+  }
+
+  .login-guide-step:not(:last-child)::after {
+    position: absolute;
+    top: 1.7rem;
+    right: -1.12rem;
+    width: 0.65rem;
+    height: 0.65rem;
+    border-top: 1px solid rgba(71, 85, 105, 0.45);
+    border-right: 1px solid rgba(71, 85, 105, 0.45);
+    content: "";
+    transform: rotate(45deg);
+  }
+
+  .login-guide-step:last-child {
+    border: 1px solid rgba(148, 163, 184, 0.2);
+  }
+}
+
+@media (max-width: 23rem) {
+  .login-panel {
+    border-radius: 1.5rem;
+    padding: 1rem;
+  }
+
+  .login-header {
+    gap: 0.5rem;
+  }
+
+  .login-header > span:first-child {
+    gap: 0.5rem;
+  }
+
+  .login-header .font-display {
+    font-size: 0.78rem;
+  }
+
+  .login-content > header h1 {
+    font-size: 1.5rem;
+  }
 }
 
 .time-value-regular {
@@ -127,6 +334,24 @@
   }
 }
 
+@keyframes login-grid-drift {
+  from {
+    background-position: 0 0, 0 0;
+  }
+  to {
+    background-position: 84px 84px, 84px 84px;
+  }
+}
+
+@keyframes login-ambient-drift {
+  from {
+    transform: translate3d(-0.5%, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(0.5%, 0.75%, 0) scale(1.035);
+  }
+}
+
 @keyframes login-spin {
   to {
     transform: rotate(360deg);
@@ -146,6 +371,16 @@
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+  }
+
+  .login-shell::before,
+  .login-shell::after,
+  .login-card {
+    animation: none !important;
+  }
+
+  .login-google-button {
+    transition: none !important;
   }
 }
 

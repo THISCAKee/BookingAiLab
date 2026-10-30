@@ -32,8 +32,8 @@ const th = {
     stepsLabel: "ขั้นตอนการจอง",
     steps: [
       { title: "เลือกเครื่องที่ว่าง", detail: "เครื่องที่มีคนใช้อยู่ จองต่อคิวได้ ระบบเว้นช่วงให้ 15 นาที" },
-      { title: "ยืนยันการจอง", detail: "รับ User และ Password สำหรับ TimeLock ทันที" },
-      { title: "Login ที่เครื่อง", detail: "เวลาจะเริ่มนับเมื่อ login เข้า TimeLock ใช้งานได้ 3 ชั่วโมง" },
+      { title: "ยืนยันการจอง", detail: "รับ User และ Password สำหรับเข้าใช้งาน" },
+      { title: "Login ที่เครื่อง", detail: "เวลาจะเริ่มนับเมื่อ login เข้าใช้งานเครื่อง ใช้งานได้ 3 ชั่วโมง" },
     ],
     chooseMachine: "เลือกเครื่อง",
     machinesLabel: "เครื่องคอมพิวเตอร์",
@@ -42,7 +42,7 @@ const th = {
     canBook: "มีช่วงเวลาที่จองได้",
     cannotBook: "จองเพิ่มไม่ได้",
     alreadyActive: "กรุณารอให้ Session หรือการจองปัจจุบันสิ้นสุดก่อนจองใหม่",
-    waitingForLogin: "ยังจองต่อไม่ได้ กรุณารอผู้จองก่อนหน้า login TimeLock",
+    waitingForLogin: "ยังจองต่อไม่ได้ กรุณารอผู้จองก่อนหน้า login เข้าใช้งานเครื่องก่อน",
     usable: "ใช้งานได้ 3 ชั่วโมง",
     noSlotToday: "ไม่มีช่วงเวลาว่างภายในวันนี้",
     remaining: (hours: number, minutes: number) =>
@@ -75,7 +75,7 @@ const th = {
     passwordOnce: "Password · แสดงครั้งเดียว",
     usable: "ใช้งานได้ 3 ชั่วโมง",
     cycle: "รอบใช้งาน 180 นาที",
-    timerStarts: "เวลาจะเริ่มนับเมื่อ login เข้า TimeLock",
+    timerStarts: "เวลาจะเริ่มนับเมื่อ login เข้าใช้งานเครื่อง",
     usageNote: "ใช้ User และ Password เพื่อเข้าเครื่องที่จอง",
     usageNoteActive: " ขณะนี้กำลังใช้งานอยู่",
     usageNoteSave: " โปรดบันทึกรหัสผ่านก่อนปิดหน้า เพราะระบบจะแสดง password เพียงครั้งเดียว",
@@ -104,6 +104,12 @@ const th = {
     button: "เข้าสู่ระบบด้วย Google",
     connecting: "กำลังเชื่อมต่อ...",
     domainNote: "ใช้บัญชี Google ของมหาวิทยาลัยมหาสารคามที่ลงท้ายด้วย",
+    guideTitle: "วิธีเริ่มใช้งาน",
+    guideSteps: [
+      "เข้าสู่ระบบด้วย Google",
+      "เลือกเครื่องและยืนยันการจอง",
+      "ใช้ User และ Password ที่ได้รับเพื่อเข้าใช้งานเครื่อง",
+    ],
     back: "← กลับหน้าหลัก",
   },
   unauthorized: {
@@ -242,6 +248,12 @@ const en: Dictionary = {
     button: "Sign in with Google",
     connecting: "Connecting...",
     domainNote: "Use your Mahasarakham University Google account ending in",
+    guideTitle: "How to get started",
+    guideSteps: [
+      "Sign in with Google",
+      "Choose a machine and confirm your booking",
+      "Use your assigned User and Password to sign in to TimeLock",
+    ],
     back: "← Back to home",
   },
   unauthorized: {

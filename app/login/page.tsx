@@ -16,48 +16,61 @@ export default async function LoginPage({
 
   return (
     <main
-      className="login-shell relative flex min-h-screen items-center justify-center overflow-hidden bg-white px-4 py-10 sm:px-8"
+      className="login-shell relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10 sm:px-8"
       data-testid="login-shell"
       data-theme="light-signal"
     >
-      <section className="login-card w-full max-w-[26rem]">
-        <div className="flex items-center justify-between gap-3 text-[#1f2937]">
-          <BrandMark />
-          <LanguageSwitcher locale={locale} />
-        </div>
-
-        <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_24px_60px_-36px_rgba(15,23,42,0.4)] sm:p-8">
-          <header className="text-center">
-            <p className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden="true" />
-              MSU AI Lab
-            </p>
-            <h1 className="font-display mt-4 text-[1.75rem] font-semibold leading-tight tracking-[-0.03em] text-[#1f2937] sm:text-3xl">
-              {t.title}
-            </h1>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              {t.description}
-            </p>
-          </header>
-
-          {error && t.errors[error] ? (
-            <div className="login-error mt-6 flex items-start gap-3 rounded-2xl px-4 py-3.5 text-sm leading-6" role="alert">
-              <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-rose-100 text-xs font-bold text-rose-700" aria-hidden="true">!</span>
-              <p>{t.errors[error]}</p>
-            </div>
-          ) : null}
-
-          <div className="mt-6">
-            <LoginButton label={t.button} connectingLabel={t.connecting} />
+      <section className="login-card w-full max-w-[52rem]">
+        <div className="login-panel">
+          <div className="login-header flex items-center justify-between gap-3">
+            <BrandMark />
+            <LanguageSwitcher locale={locale} />
           </div>
 
-          <p className="mt-4 flex items-start gap-2.5 rounded-xl bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-600">
-            <span className="mt-px grid h-4 w-4 shrink-0 place-items-center rounded-full bg-[#171717] text-[10px] font-bold text-[#facc15]" aria-hidden="true">@</span>
-            <span>{t.domainNote} <strong className="font-semibold text-[#1f2937]">@msu.ac.th</strong></span>
-          </p>
+          <div className="login-content mt-8">
+            <header className="text-center">
+              <h1 className="font-display text-[1.75rem] font-semibold leading-tight tracking-[-0.03em] text-[#1f2937] sm:text-3xl">
+                {t.title}
+              </h1>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                {t.description}
+              </p>
+            </header>
+
+            {error && t.errors[error] ? (
+              <div className="login-error mt-6 flex items-start gap-3 rounded-2xl px-4 py-3.5 text-sm leading-6" role="alert">
+                <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-rose-100 text-xs font-bold text-rose-700" aria-hidden="true">!</span>
+                <p>{t.errors[error]}</p>
+              </div>
+            ) : null}
+
+            <div className="mt-6">
+              <LoginButton label={t.button} connectingLabel={t.connecting} />
+            </div>
+
+            <p className="login-domain-note mt-4 rounded-xl px-4 py-3 text-xs leading-5">
+              {t.domainNote} <strong className="font-semibold text-[#1f2937]">@msu.ac.th</strong>
+            </p>
+
+            <section className="login-guide mt-7 border-t border-slate-200/80 pt-6" aria-labelledby="login-guide-title">
+              <h2 id="login-guide-title" className="login-guide-title font-display text-base font-semibold text-[#1f2937]">
+                {t.guideTitle}
+              </h2>
+              <ol className="login-guide-steps mt-4 grid gap-2">
+                {t.guideSteps.map((step, index) => (
+                  <li key={step} className="login-guide-step flex items-start gap-3 rounded-2xl px-3 py-3 text-sm leading-6">
+                    <span className="login-guide-number grid h-8 w-8 shrink-0 place-items-center rounded-full border border-amber-200 bg-amber-50 text-sm font-bold text-amber-700" aria-hidden="true">
+                      {index + 1}
+                    </span>
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          </div>
         </div>
 
-        <Link href="/" className="mt-6 block text-center text-sm font-semibold text-slate-500 transition hover:text-[#1f2937] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-100">
+        <Link href="/" className="login-back-link mt-6 block text-center text-sm font-semibold text-slate-500 transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-100">
           {t.back}
         </Link>
       </section>
