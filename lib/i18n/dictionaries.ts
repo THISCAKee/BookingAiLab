@@ -1,4 +1,4 @@
-import type { QueueOperationalStatus } from "@/lib/booking/queue-policy";
+import type { AdminUnavailableStatus, QueueOperationalStatus } from "@/lib/booking/queue-policy";
 
 export const locales = ["th", "en"] as const;
 export type Locale = (typeof locales)[number];
@@ -28,7 +28,15 @@ const th = {
       queued: "มีคิว",
       waiting_for_login: "รอผู้จองก่อนหน้า login",
       full_today: "คิวเต็มสำหรับวันนี้",
+      maintenance: "ซ่อมบำรุง",
+      inactive: "ยังไม่เปิดใช้",
+      disabled: "ปิดใช้งาน",
     } satisfies Record<QueueOperationalStatus, string>,
+    adminStatusDetails: {
+      maintenance: "เครื่องอยู่ระหว่างซ่อมบำรุง",
+      inactive: "เครื่องนี้ยังไม่เปิดให้จอง",
+      disabled: "เครื่องนี้ถูกปิดใช้งาน",
+    } satisfies Record<AdminUnavailableStatus, string>,
     stepsLabel: "ขั้นตอนการจอง",
     steps: [
       { title: "เลือกเครื่องที่ว่าง", detail: "เครื่องที่มีคนใช้อยู่ จองต่อคิวได้ ระบบเว้นช่วงให้ 15 นาที" },
@@ -142,6 +150,14 @@ const en: Dictionary = {
       queued: "Queued",
       waiting_for_login: "Waiting for previous login",
       full_today: "Fully booked today",
+      maintenance: "Under maintenance",
+      inactive: "Inactive",
+      disabled: "Disabled",
+    },
+    adminStatusDetails: {
+      maintenance: "This machine is under maintenance",
+      inactive: "This machine is not active",
+      disabled: "This machine is disabled",
     },
     stepsLabel: "How booking works",
     steps: [

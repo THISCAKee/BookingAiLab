@@ -108,7 +108,7 @@ export function buildPublicBookingOptions(input: {
             now: input.now,
           })
         : {
-            operationalStatus: "full_today" as const,
+            operationalStatus: machine.status === "available" ? "full_today" as const : machine.status,
             bookable: false,
             nextStartAt: null,
             nextEndAt: null,

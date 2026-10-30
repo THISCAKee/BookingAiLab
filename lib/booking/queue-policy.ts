@@ -1,6 +1,7 @@
 import type { SheetBooking, SheetMachine } from "@/lib/google/sheet-types";
 
-export type QueueOperationalStatus = "available" | "in_use" | "queued" | "waiting_for_login" | "full_today";
+export type AdminUnavailableStatus = Exclude<SheetMachine["status"], "available">;
+export type QueueOperationalStatus = "available" | "in_use" | "queued" | "waiting_for_login" | "full_today" | AdminUnavailableStatus;
 
 export type QueueMachineOption = {
   operationalStatus: QueueOperationalStatus;
@@ -86,13 +87,12 @@ export function deriveMachineQueueOption(input: {
     .sort((left, right) => new Date(right.endAt).getTime() - new Date(left.endAt).getTime())[0];
   const start = new Date(effective.length === 0 ? nowMs : latestEnd + TURNAROUND_MS);
   const end = new Date(start.getTime() + SLOT_MS);
-  const unavailable = input.machine.status !== "available";
   const crossesMidnight = bangkokDateValue(start) !== bangkokDateValue(input.now)
     || end.getTime() > nextBangkokMidnight(start).getTime();
 
-  if (unavailable) {
+  if (input.machine.status !== "available") {
     return {
-      operationalStatus: "full_today",
+      operationalStatus: input.machine.status,
       bookable: false,
       nextStartAt: null,
       nextEndAt: null,

@@ -17,6 +17,9 @@ const statusTones: Record<QueueOperationalStatus, { dot: string; badge: string }
   queued: { dot: "bg-amber-500", badge: "bg-amber-50 text-amber-800 ring-amber-200" },
   waiting_for_login: { dot: "bg-slate-400", badge: "bg-slate-100 text-slate-600 ring-slate-200" },
   full_today: { dot: "bg-rose-400", badge: "bg-rose-50 text-rose-700 ring-rose-200" },
+  maintenance: { dot: "bg-orange-500", badge: "bg-orange-50 text-orange-700 ring-orange-200" },
+  inactive: { dot: "bg-slate-400", badge: "bg-slate-100 text-slate-600 ring-slate-200" },
+  disabled: { dot: "bg-rose-500", badge: "bg-rose-50 text-rose-700 ring-rose-200" },
 };
 
 function MonitorIcon({ className }: { className?: string }) {
@@ -164,6 +167,13 @@ export function PublicBookingBoard({
           {machines.map((machine) => {
             const selectable = initialOptions.viewerCanBook && machine.bookable;
             const tone = statusTones[machine.operationalStatus];
+            const adminStatusDetail = machine.operationalStatus === "maintenance"
+              ? t.adminStatusDetails.maintenance
+              : machine.operationalStatus === "inactive"
+                ? t.adminStatusDetails.inactive
+                : machine.operationalStatus === "disabled"
+                  ? t.adminStatusDetails.disabled
+                  : null;
             return (
               <label
                 key={machine.id}
@@ -197,6 +207,8 @@ export function PublicBookingBoard({
                     <p className="text-slate-600">{t.waitingForLogin}</p>
                   ) : machine.bookable ? (
                     <p className="font-semibold text-[#171717]">{t.usable}</p>
+                  ) : adminStatusDetail ? (
+                    <p className="text-slate-600">{adminStatusDetail}</p>
                   ) : (
                     <p className="text-slate-600">{t.noSlotToday}</p>
                   )}
