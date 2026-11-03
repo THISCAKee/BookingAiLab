@@ -25,7 +25,7 @@ export default async function AdminBookingsPage({ searchParams }: { searchParams
   const rows = (await listAdminBookings()).filter((row) => (selectedStatus === "all" || row.status === selectedStatus) && (!normalizedQuery || [row.bookingNumber, row.machineCode, row.email, row.name].some((value) => value.toLowerCase().includes(normalizedQuery))));
 
   return (
-    <main className="min-h-screen bg-white text-[#171717]">
+    <main className="admin-shell min-h-screen bg-white text-[#171717]">
       <div className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
         <AdminNav />
         <PageHeader
@@ -43,7 +43,7 @@ export default async function AdminBookingsPage({ searchParams }: { searchParams
           <button className="rounded-xl bg-[#facc15] px-6 py-3 text-sm font-semibold text-[#171717] transition hover:bg-[#eab308] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200">ค้นหา</button>
         </form>
 
-        <section className="mt-5 overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+        <section className="admin-glass mt-5 overflow-x-auto rounded-2xl border border-slate-200 bg-white">
           <table className="w-full min-w-[860px] text-left text-sm">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
               <tr><th className="px-5 py-3.5">Booking</th><th className="px-5 py-3.5">ผู้จอง</th><th className="px-5 py-3.5">เครื่อง</th><th className="px-5 py-3.5">ระยะเวลา</th><th className="px-5 py-3.5">สถานะ</th><th className="px-5 py-3.5 text-right">จัดการ</th></tr>

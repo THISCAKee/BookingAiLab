@@ -45,7 +45,7 @@ export function BookingResultPanel({
   const statusLabel = isActive ? t.statusActive : booking.status === "cancelled" ? t.statusCancelled : t.statusConfirmed;
   const canCancel = onCancel && !isActive && booking.status !== "cancelled" && booking.status !== "completed" && booking.status !== "expired";
   return (
-    <section className="mt-8 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_24px_60px_-40px_rgba(15,23,42,0.45)]">
+    <section className="booking-glass mt-8 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_24px_60px_-40px_rgba(15,23,42,0.45)]">
       <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4 sm:px-7">
         <span className="grid h-8 w-8 place-items-center rounded-full bg-emerald-500 text-sm font-bold text-white" aria-hidden="true">✓</span>
         <div>
@@ -80,7 +80,7 @@ export function BookingResultPanel({
           </div>
         </div>
 
-        <div className="booking-duration-section mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-slate-200 px-5 py-4">
+        <div className="booking-duration-section booking-inset mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-slate-200 px-5 py-4">
           <p className="font-semibold text-[#171717]">{t.usable}</p>
           <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">{t.cycle}</span>
           <p className="w-full text-sm text-slate-600">{t.timerStarts}</p>
@@ -91,7 +91,7 @@ export function BookingResultPanel({
         </p>
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <a href={actionHref} className="inline-flex w-full justify-center rounded-xl bg-[#ffffff] px-5 py-3 font-semibold text-[#171717] transition hover:bg-[#eab308] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200 sm:w-auto">{actionLabel ?? t.viewBooking}</a>
+          <a href={actionHref} className="inline-flex w-full justify-center rounded-xl bg-[#facc15] px-5 py-3 font-semibold text-[#171717] transition hover:bg-[#eab308] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200 sm:w-auto">{actionLabel ?? t.viewBooking}</a>
           {canCancel ? <button type="button" onClick={onCancel} disabled={isCancelling} className="w-full rounded-xl border border-slate-200 bg-white px-5 py-3 font-semibold text-rose-600 transition hover:border-rose-200 hover:bg-rose-50 disabled:cursor-wait disabled:opacity-60 sm:w-auto">{isCancelling ? t.cancelling : t.cancel}</button> : null}
         </div>
         {cancelMessage ? <p role="alert" className="mt-3 text-sm font-semibold text-rose-700">{cancelMessage}</p> : null}

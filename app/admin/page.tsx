@@ -23,13 +23,13 @@ export default async function AdminLoginPage({
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-white px-4 py-10 text-[#171717] sm:px-8">
+    <main className="admin-shell flex min-h-screen items-center justify-center bg-white px-4 py-10 text-[#171717] sm:px-8">
       <section className="w-full max-w-[26rem]">
         <div className="flex justify-center">
           <BrandMark caption="Control room" />
         </div>
 
-        <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_24px_60px_-36px_rgba(15,23,42,0.4)] sm:p-8">
+        <div className="admin-glass mt-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_24px_60px_-36px_rgba(15,23,42,0.4)] sm:p-8">
           <p className="inline-flex items-center gap-2 rounded-full bg-[#171717] px-3 py-1 text-xs font-semibold text-white">
             <span className="h-1.5 w-1.5 rounded-full bg-[#facc15]" aria-hidden="true" />
             Admin access

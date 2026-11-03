@@ -6,7 +6,7 @@ import { defaultLocale, getDictionary, type Locale } from "@/lib/i18n/dictionari
 export function PublicBookingNav({ locale = defaultLocale }: { locale?: Locale }) {
   const t = getDictionary(locale).nav;
   return (
-    <nav className="flex items-center justify-between gap-3" aria-label={t.mainMenu}>
+    <nav className="booking-nav flex items-center justify-between gap-3" aria-label={t.mainMenu}>
       <Link href="/booking" className="text-[#171717] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-100">
         <BrandMark />
       </Link>

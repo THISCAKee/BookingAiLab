@@ -5,7 +5,8 @@ const labels: Record<Locale, string> = { th: "TH", en: "EN" };
 
 export function LanguageSwitcher({ locale }: { locale: Locale }) {
   return (
-    <form action={setLocaleAction} role="group" aria-label={getDictionary(locale).nav.language} className="inline-flex rounded-full border border-slate-200 bg-slate-50 p-0.5 text-xs font-semibold">
+    <form action={setLocaleAction} role="group" aria-label={getDictionary(locale).nav.language} className="language-switcher relative inline-flex rounded-full border border-slate-200 bg-slate-50 p-0.5 text-xs font-semibold" data-locale={locale}>
+      <span className="language-switcher-indicator" aria-hidden="true" />
       {locales.map((option) => {
         const active = option === locale;
         return (
@@ -16,7 +17,7 @@ export function LanguageSwitcher({ locale }: { locale: Locale }) {
             value={option}
             lang={option}
             aria-pressed={active}
-            className={`rounded-full px-3 py-1.5 transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-100 ${active ? "bg-[#171717] text-white" : "text-slate-600 hover:text-[#171717]"}`}
+            className={`language-switcher-button relative z-10 rounded-full px-3 py-1.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-100 ${active ? "text-white" : "text-slate-600 hover:text-[#171717]"}`}
           >
             {labels[option]}
           </button>

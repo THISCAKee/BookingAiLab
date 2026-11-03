@@ -113,7 +113,7 @@ export function PublicBookingBoard({
           aria-modal="true"
           aria-labelledby="booking-loading-title"
         >
-          <div className="w-full max-w-sm rounded-3xl border border-amber-200 bg-white p-7 text-center shadow-[0_24px_70px_-30px_rgba(23,23,23,0.65)]">
+          <div className="booking-glass w-full max-w-sm rounded-3xl border border-amber-200 bg-white p-7 text-center shadow-[0_24px_70px_-30px_rgba(23,23,23,0.65)]">
             <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-amber-100" aria-hidden="true">
               <span className="booking-loading-spinner" />
             </div>
@@ -131,7 +131,7 @@ export function PublicBookingBoard({
       ) : null}
       <ol className="mt-8 grid gap-3 sm:grid-cols-3" aria-label={t.stepsLabel}>
         {t.steps.map((step, index) => (
-          <li key={step.title} className="flex gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+          <li key={step.title} className="booking-glass card-tilt flex gap-3 rounded-2xl border border-slate-200 bg-white p-4">
             <span className="font-display grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#171717] text-sm font-bold text-[#facc15]">{index + 1}</span>
             <div>
               <p className="text-sm font-semibold text-[#171717]">{step.title}</p>
@@ -177,7 +177,7 @@ export function PublicBookingBoard({
             return (
               <label
                 key={machine.id}
-                className={`group relative flex flex-col rounded-2xl border-2 p-5 transition focus-within:ring-4 focus-within:ring-amber-200 ${selectable ? "cursor-pointer border-slate-200 bg-white hover:border-slate-300 hover:shadow-[0_12px_32px_-20px_rgba(15,23,42,0.45)] has-[:checked]:border-[#171717] has-[:checked]:bg-[#fffbea] has-[:checked]:shadow-[0_16px_40px_-24px_rgba(15,23,42,0.55)]" : "cursor-not-allowed border-slate-100 bg-slate-50 text-slate-500"}`}
+                className={`booking-machine card-tilt group relative flex flex-col rounded-2xl border-2 p-5 transition focus-within:ring-4 focus-within:ring-amber-200 ${selectable ? "cursor-pointer border-slate-200 bg-white hover:border-slate-300 hover:shadow-[0_12px_32px_-20px_rgba(15,23,42,0.45)] has-[:checked]:border-[#171717] has-[:checked]:bg-[#fffbea] has-[:checked]:shadow-[0_16px_40px_-24px_rgba(15,23,42,0.55)]" : "cursor-not-allowed border-slate-100 bg-slate-50 text-slate-500"}`}
               >
                 <input type="radio" name="machineId" value={machine.id} disabled={!selectable} checked={selectedMachine === machine.id} onChange={() => setSelectedMachine(machine.id)} className="sr-only" />
                 <div className="flex items-start justify-between gap-3">
@@ -226,7 +226,7 @@ export function PublicBookingBoard({
         </div>
 
         {machines.length === 0 ? (
-          <div className="mt-5 grid min-h-44 place-items-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 px-5 text-center">
+          <div className="booking-glass mt-5 grid min-h-44 place-items-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 px-5 text-center">
             <div><p className="font-display font-semibold text-slate-700">{t.noMachines}</p><p className="mt-1 text-sm text-slate-500">{t.contactAdmin}</p></div>
           </div>
         ) : null}
@@ -234,7 +234,7 @@ export function PublicBookingBoard({
         {loadMessage ? <p role="alert" className="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{loadMessage}</p> : null}
 
         <div className="sticky bottom-4 z-20 mt-6">
-          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-[0_20px_50px_-24px_rgba(15,23,42,0.5)] backdrop-blur sm:flex-row sm:items-center sm:pl-5">
+          <div className="booking-glass booking-action-bar flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-[0_20px_50px_-24px_rgba(15,23,42,0.5)] backdrop-blur sm:flex-row sm:items-center sm:pl-5">
             <p className="text-sm text-slate-600 sm:flex-1">
               {selectedMachineCode ? (
                 <>{t.selected} <span className="font-display font-semibold text-[#171717]">{selectedMachineCode}</span> · {t.usable}</>

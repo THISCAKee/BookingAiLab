@@ -1,18 +1,11 @@
 import type { Metadata } from "next";
-import { Anuphan, Chakra_Petch } from "next/font/google";
+import { Anuphan } from "next/font/google";
 import { getLocale } from "@/lib/i18n/locale";
 import "./globals.css";
 
 const anuphan = Anuphan({
   subsets: ["thai", "latin"],
   variable: "--font-anuphan",
-  display: "swap",
-});
-
-const chakraPetch = Chakra_Petch({
-  subsets: ["thai", "latin"],
-  weight: ["500", "600", "700"],
-  variable: "--font-chakra-petch",
   display: "swap",
 });
 
@@ -27,7 +20,7 @@ export default async function RootLayout({
   const locale = await getLocale();
   return (
     <html lang={locale}>
-      <body className={`${anuphan.variable} ${chakraPetch.variable}`}>{children}</body>
+      <body className={anuphan.variable}>{children}</body>
     </html>
   );
 }

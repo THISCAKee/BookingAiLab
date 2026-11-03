@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { BrandMark } from "@/components/ui/brand-mark";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -60,7 +59,7 @@ export default async function LoginPage({
               </h2>
               <ol className="login-guide-steps mt-4 grid gap-2">
                 {t.guideSteps.map((step, index) => (
-                  <li key={step} className="login-guide-step flex items-start gap-3 text-sm leading-6">
+                  <li key={step} className="login-guide-step card-tilt flex items-start gap-3 text-sm leading-6">
                     <span className="login-guide-number grid h-8 w-8 shrink-0 place-items-center rounded-full border border-amber-200 bg-amber-50 text-sm font-bold text-amber-700" aria-hidden="true">
                       {index + 1}
                     </span>
@@ -72,9 +71,6 @@ export default async function LoginPage({
           </div>
         </div>
 
-        <Link href="/" className="login-back-link mt-6 block text-center text-sm font-semibold text-slate-500 transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-100">
-          {t.back}
-        </Link>
       </section>
     </main>
   );

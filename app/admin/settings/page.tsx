@@ -11,7 +11,7 @@ export default async function AdminSettingsPage() {
   const settings = await getBookingSettings();
 
   return (
-    <main className="min-h-screen bg-white text-[#171717]">
+    <main className="admin-shell min-h-screen bg-white text-[#171717]">
       <div className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
         <AdminNav />
 
@@ -21,7 +21,7 @@ export default async function AdminSettingsPage() {
           description="แก้กติกาสำหรับการจองใหม่ การจองที่ยืนยันแล้วจะไม่เปลี่ยนแปลงตาม Settings นี้"
         />
 
-        <section className="mt-8 max-w-3xl rounded-2xl border border-slate-200 bg-white p-5 sm:p-7">
+        <section className="admin-glass mt-8 max-w-3xl rounded-2xl border border-slate-200 bg-white p-5 sm:p-7">
           <BookingSettingsForm settings={settings} canEdit />
         </section>
       </div>

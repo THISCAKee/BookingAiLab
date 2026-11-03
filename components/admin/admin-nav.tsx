@@ -6,6 +6,7 @@ import { LogoutButton } from "@/components/auth/logout-button";
 import { BrandMark } from "@/components/ui/brand-mark";
 
 const navigation = [
+  { href: "/admin/dashboard/overview", label: "แดชบอร์ด" },
   { href: "/admin/dashboard", label: "ภาพรวมห้อง" },
   { href: "/admin/bookings", label: "รายการจอง" },
   { href: "/admin/machines", label: "จัดการเครื่อง" },
@@ -16,7 +17,7 @@ export function AdminNav() {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="เมนูผู้ดูแลระบบ">
+    <nav className="admin-nav" aria-label="เมนูผู้ดูแลระบบ">
       <div className="flex items-center justify-between gap-3">
         <Link href="/admin/dashboard" className="shrink-0 text-[#171717] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-100">
           <BrandMark caption="Control room" />

@@ -9,7 +9,7 @@ export default async function AdminMachinesPage() {
   await requireAdminIdentity().catch(() => redirect("/admin"));
   const machines = await listAdminMachines();
   return (
-    <main className="min-h-screen bg-white text-[#171717]">
+    <main className="admin-shell min-h-screen bg-white text-[#171717]">
       <div className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
         <AdminNav />
         <PageHeader

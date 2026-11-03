@@ -71,7 +71,7 @@ export function MachineDashboard({ machines, syncHealth }: { machines: MachineDa
               type="button"
               aria-pressed={active}
               onClick={() => setFilter(item.key)}
-              className={`rounded-2xl border-2 p-4 text-left transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200 sm:p-5 ${active ? "border-[#171717] bg-[#fffbea]" : "border-slate-200 bg-white hover:border-slate-300"}`}
+              className={`admin-filter rounded-2xl border-2 p-4 text-left transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200 sm:p-5 ${active ? "border-[#171717] bg-[#fffbea]" : "border-slate-200 bg-white hover:border-slate-300"}`}
             >
               <p className="flex items-center gap-2 text-xs font-semibold text-slate-600 sm:text-sm">
                 <span className={`h-2 w-2 rounded-full ${item.dot}`} aria-hidden="true" />
@@ -103,7 +103,7 @@ export function MachineDashboard({ machines, syncHealth }: { machines: MachineDa
           {visibleMachines.map((machine) => {
             const tone = connectionTone(machine);
             return (
-              <article key={machine.id} className="flex flex-col rounded-2xl border-2 border-slate-200 bg-white p-5">
+              <article key={machine.id} className="admin-glass card-tilt flex flex-col rounded-2xl border-2 border-slate-200 bg-white p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <span className="grid h-11 w-11 place-items-center rounded-xl bg-slate-100 text-[#171717]" aria-hidden="true">
@@ -145,7 +145,7 @@ export function MachineDashboard({ machines, syncHealth }: { machines: MachineDa
           })}
         </div>
       ) : (
-        <div className="mt-5 grid min-h-56 place-items-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 px-6 text-center">
+        <div className="admin-glass mt-5 grid min-h-56 place-items-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 px-6 text-center">
           <div><p className="font-display font-semibold text-slate-700">ไม่พบเครื่องในสถานะนี้</p><p className="mt-1 text-sm text-slate-500">เลือกตัวกรองอื่นเพื่อดูเครื่องทั้งหมด</p></div>
         </div>
       )}

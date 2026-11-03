@@ -12,7 +12,7 @@ export function MachineAdminCard({ machine }: { machine: Machine }) {
   const [tokenState, tokenAction, rotating] = useActionState(rotateMachineTokenAction, { ok: false });
   const available = machine.status === "available";
   return (
-    <article className="flex flex-col rounded-2xl border-2 border-slate-200 bg-white p-5">
+    <article className="admin-glass card-tilt flex flex-col rounded-2xl border-2 border-slate-200 bg-white p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="font-display text-lg font-semibold leading-tight">{machine.machine_code}</h2>
