@@ -1,17 +1,12 @@
-export function BrandMark({ caption, inverted = false }: { caption?: string; inverted?: boolean }) {
+import Image from "next/image";
+
+export function BrandMark({ caption }: { caption?: string; inverted?: boolean }) {
   return (
-    <span className="inline-flex items-center gap-3">
-      <span className={`grid h-9 w-9 grid-cols-2 gap-0.5 rounded-xl p-2 ${inverted ? "bg-white" : "bg-[#171717]"}`} aria-hidden="true">
-        <span className={`rounded-sm ${inverted ? "bg-[#171717]" : "bg-white"}`} />
-        <span className="rounded-sm bg-[#facc15]" />
-        <span className="rounded-sm bg-[#eab308]" />
-        <span className={`rounded-sm ${inverted ? "bg-[#171717]" : "bg-white"}`} />
-      </span>
-      <span className="leading-tight">
-        <span className="font-display block text-sm font-bold tracking-[0.14em] sm:text-base">
-          BOOKING<span className="text-amber-500">AI</span>LAB
-        </span>
-        {caption ? <span className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">{caption}</span> : null}
+    <span className="inline-flex min-w-0 items-center gap-2 sm:gap-3">
+      <Image src="/msu-library-logo.png" alt="MSU Library" width={1200} height={669} className="h-9 w-auto shrink-0 sm:h-12" />
+      <span className="min-w-0 leading-tight">
+        <span className="font-display block text-[13px] font-bold tracking-[0.01em] text-[#1f2937] sm:text-base">BOOKING AI CORNER</span>
+        {caption ? <span className="mt-0.5 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-400">{caption}</span> : null}
       </span>
     </span>
   );

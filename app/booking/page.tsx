@@ -31,7 +31,7 @@ export default async function BookingPage() {
 
         <PageHeader
           eyebrow={t.eyebrow}
-          title={<>{t.titlePrefix} <span className="text-amber-600">AI Lab</span></>}
+          title={<>{t.titlePrefix} <span className="text-amber-600">AI CORNER</span></>}
           description={t.description}
         />
 

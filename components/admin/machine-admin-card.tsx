@@ -55,7 +55,7 @@ export function MachineAdminCard({ machine }: { machine: Machine }) {
         </form>
         {tokenState.deviceToken ? (
           <div className="mt-3 rounded-xl bg-[#171717] p-3 text-white">
-            <p className="text-[11px] font-semibold text-[#facc15]">แสดงครั้งเดียว — คัดลอกตอนนี้</p>
+            <p className="text-xs font-semibold text-[#facc15]">แสดงครั้งเดียว — คัดลอกตอนนี้</p>
             <code className="mt-2 block break-all text-xs">{tokenState.deviceToken}</code>
           </div>
         ) : null}

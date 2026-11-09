@@ -17,7 +17,7 @@ export function LoginButton({ label, connectingLabel }: { label: string; connect
       disabled={isLoading}
       aria-label={label}
       aria-busy={isLoading}
-      className="login-google-button flex w-full items-center justify-center gap-3 rounded-xl bg-[#facc15] px-5 py-3.5 font-semibold text-[#1f2937] transition hover:bg-[#eab308] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-yellow-200/50 disabled:cursor-wait disabled:opacity-70"
+      className="login-google-button flex w-full items-center justify-center gap-3 rounded-xl bg-[#facc15] px-5 py-3.5 text-sm font-semibold leading-6 text-[#1f2937] transition hover:bg-[#eab308] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-yellow-200/50 disabled:cursor-wait disabled:opacity-70 sm:text-base"
     >
       {isLoading ? (
         <span className="flex items-center gap-3">

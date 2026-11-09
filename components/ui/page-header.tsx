@@ -18,7 +18,7 @@ export function PageHeader({
           <span className="h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden="true" />
           {eyebrow}
         </p>
-        <h1 className="font-display mt-4 text-4xl font-semibold leading-[1.1] tracking-[-0.03em] sm:text-5xl">{title}</h1>
+        <h1 className="font-display mt-4 text-3xl font-semibold leading-tight tracking-[-0.03em] sm:text-4xl">{title}</h1>
         {description ? <p className="mt-3 text-base leading-7 text-slate-600">{description}</p> : null}
       </div>
       {actions}

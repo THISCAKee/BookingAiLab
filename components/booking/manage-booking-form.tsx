@@ -26,7 +26,7 @@ export function ManageBookingForm({ locale = defaultLocale }: { locale?: Locale 
       const next: BookingFormState = {
         ok: true,
         code: "BOOKING_CONFIRMED",
-        message: "ข้อมูลการจองของคุณ",
+        message: t.title,
         booking: {
           bookingId: latest.bookingId,
           bookingNumber: latest.bookingNumber,
@@ -44,7 +44,7 @@ export function ManageBookingForm({ locale = defaultLocale }: { locale?: Locale 
     }).catch(() => {
       if (stored) setStoredBooking(stored);
     });
-  }, []);
+  }, [t.passwordUnavailable, t.title]);
 
   useEffect(() => {
     const refreshBooking = async () => {
@@ -73,7 +73,7 @@ export function ManageBookingForm({ locale = defaultLocale }: { locale?: Locale 
             clearStoredBooking(window.localStorage);
             setStoredBooking(null);
           } else {
-            setCancelMessage(result.message);
+            setCancelMessage(locale === "en" ? getDictionary(locale).result.errors[result.code] ?? "Unable to cancel your booking. Please try again." : result.message);
           }
         })}
         isCancelling={isCancelling}

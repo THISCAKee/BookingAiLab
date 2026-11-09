@@ -26,15 +26,15 @@ export default async function LoginPage({
             <LanguageSwitcher locale={locale} />
           </div>
 
-          <div className="login-columns mt-8">
+          <div className="login-columns mt-5 sm:mt-6 grid grid-cols-1 gap-8 sm:grid-cols-[1fr_1fr] sm:gap-10 lg:gap-12">
             <div className="login-content">
               <header>
-                <h1 className="font-display text-[1.75rem] font-semibold leading-tight tracking-[-0.03em] text-[#1f2937] sm:text-3xl">
+                <h1 className="font-display whitespace-pre-line text-2xl font-semibold leading-snug tracking-[-0.02em] text-[#1f2937] sm:text-[1.75rem]">
                   {t.title}
                 </h1>
-                <p className="mt-3 text-sm leading-6 text-slate-600">
+                {/* <p className="mt-3 text-sm leading-6 text-slate-600">
                   {t.description}
-                </p>
+                </p> */}
               </header>
 
               {error && t.errors[error] ? (
@@ -44,12 +44,12 @@ export default async function LoginPage({
                 </div>
               ) : null}
 
-              <div className="mt-6">
+              <div className="mt-8 sm:mt-10">
                 <LoginButton label={t.button} connectingLabel={t.connecting} />
               </div>
 
-              <p className="login-domain-note mt-4 rounded-xl px-4 py-3 text-xs leading-5">
-                {t.domainNote} <strong className="font-semibold text-[#1f2937]">@msu.ac.th</strong>
+              <p className="login-domain-note mt-4 rounded-xl px-4 py-3 text-sm leading-6">
+                {t.domainNote} <strong className="font-normal text-[#1f2937]">@msu.ac.th</strong>
               </p>
             </div>
 
