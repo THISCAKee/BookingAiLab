@@ -25,8 +25,8 @@ export default async function AdminBookingsPage({ searchParams }: { searchParams
   const rows = (await listAdminBookings()).filter((row) => (selectedStatus === "all" || row.status === selectedStatus) && (!normalizedQuery || [row.bookingNumber, row.machineCode, row.email, row.name].some((value) => value.toLowerCase().includes(normalizedQuery))));
 
   return (
-    <main className="admin-shell min-h-screen bg-white text-[#171717]">
-      <div className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
+    <main className="admin-shell min-h-dvh bg-white text-[#171717]">
+      <div className="mx-auto max-w-6xl px-4 2xl:max-w-7xl py-5 sm:px-6 sm:py-7 lg:px-8">
         <AdminNav />
         <PageHeader
           eyebrow="Booking Operations"
@@ -43,8 +43,31 @@ export default async function AdminBookingsPage({ searchParams }: { searchParams
           <button className="rounded-xl bg-[#facc15] px-6 py-3 text-sm font-semibold text-[#171717] transition hover:bg-[#eab308] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200">ค้นหา</button>
         </form>
 
-        <section className="admin-glass mt-5 overflow-x-auto rounded-2xl border border-slate-200 bg-white">
-          <table className="w-full min-w-[860px] text-left text-sm">
+        <section className="mt-5 space-y-3 md:hidden" aria-label="รายการจอง">
+          {rows.map((row) => {
+            const badge = statusBadges[row.status] ?? { label: row.status, tone: "bg-slate-100 text-slate-600 ring-slate-200" };
+            return (
+              <article key={row.bookingId} className="admin-glass rounded-2xl border border-slate-200 bg-white p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-display font-semibold">{row.bookingNumber} <span className="font-normal text-slate-500">· {row.machineCode}</span></p>
+                    <p className="mt-1 break-words text-sm font-medium">{row.name}</p>
+                    <p className="break-all text-xs text-slate-500">{row.email}</p>
+                  </div>
+                  <span className={`inline-flex shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${badge.tone}`}>{badge.label}</span>
+                </div>
+                <div className="mt-3 flex flex-wrap items-end justify-between gap-3 border-t border-slate-100 pt-3">
+                  <p className="text-xs text-slate-500">ใช้งานได้ 3 ชั่วโมง · เริ่มนับเมื่อ login เข้า TimeLock</p>
+                  {!["completed", "cancelled", "expired"].includes(row.status) ? <AdminCancelBookingButton bookingId={row.bookingId} /> : null}
+                </div>
+              </article>
+            );
+          })}
+          {rows.length === 0 ? <p className="admin-glass rounded-2xl border border-slate-200 bg-white px-5 py-12 text-center text-sm text-slate-500">ไม่พบรายการจอง</p> : null}
+        </section>
+
+        <section className="admin-glass mt-5 hidden overflow-x-auto rounded-2xl border border-slate-200 bg-white md:block">
+          <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
               <tr><th className="px-5 py-3.5">Booking</th><th className="px-5 py-3.5">ผู้จอง</th><th className="px-5 py-3.5">เครื่อง</th><th className="px-5 py-3.5">ระยะเวลา</th><th className="px-5 py-3.5">สถานะ</th><th className="px-5 py-3.5 text-right">จัดการ</th></tr>
             </thead>

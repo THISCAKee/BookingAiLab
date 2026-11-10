@@ -25,18 +25,18 @@ export default async function AdminOverviewPage() {
     { label: "เครื่องออฟไลน์", value: summary.offlineMachines, detail: "ไม่ได้เชื่อมต่อในขณะนี้", icon: "○" },
   ];
   return (
-    <main className="overview-shell min-h-screen text-[#1f2937]">
-      <div className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
+    <main className="overview-shell min-h-dvh text-[#1f2937]">
+      <div className="mx-auto max-w-6xl px-4 2xl:max-w-7xl py-5 sm:px-6 sm:py-7 lg:px-8">
         <AdminNav />
-        <header className="overview-header mt-10 sm:mt-14">
+        <header className="overview-header mt-8 sm:mt-14">
           <p className="text-sm font-semibold text-[#a16207]">พื้นที่ผู้ดูแลระบบ</p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">ภาพรวมหลังบ้าน</h1>
+          <h1 className="mt-2 text-[1.75rem] font-bold tracking-tight sm:text-4xl">ภาพรวมหลังบ้าน</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-[#475569] sm:text-base">ติดตามการจองและสถานะเครื่องคอมพิวเตอร์ในห้องได้ในหน้าเดียว</p>
         </header>
         <section className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="สรุปข้อมูลหลังบ้าน">
           {stats.map((stat) => <article key={stat.label} className="overview-card card-tilt overview-stat p-4 sm:p-5">
-            <div className="flex items-start justify-between gap-2"><p className="text-sm font-semibold text-[#475569]">{stat.label}</p><span aria-hidden="true" className="overview-icon">{stat.icon}</span></div>
-            <p className="mt-4 text-3xl font-bold tabular-nums sm:text-4xl">{stat.value}</p>
+            <div className="flex items-start justify-between gap-2"><p className="min-w-0 text-xs font-semibold text-[#475569] sm:text-sm">{stat.label}</p><span aria-hidden="true" className="overview-icon">{stat.icon}</span></div>
+            <p className="mt-3 text-2xl font-bold tabular-nums sm:mt-4 sm:text-4xl">{stat.value}</p>
             <p className="mt-1 text-xs leading-5 text-[#64748b]">{stat.detail}</p>
           </article>)}
         </section>

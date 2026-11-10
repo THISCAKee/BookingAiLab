@@ -83,7 +83,7 @@ export function BookingSettingsForm({
       </fieldset>
 
       {!canEdit ? null : (
-        <button type="submit" disabled={isPending} className="rounded-xl bg-[#facc15] px-6 py-3 font-semibold text-[#171717] transition hover:bg-[#eab308] focus:outline-none focus:ring-4 focus:ring-amber-200 disabled:cursor-wait disabled:opacity-60">
+        <button type="submit" disabled={isPending} className="w-full rounded-xl bg-[#facc15] px-6 py-3 font-semibold sm:w-auto text-[#171717] transition hover:bg-[#eab308] focus:outline-none focus:ring-4 focus:ring-amber-200 disabled:cursor-wait disabled:opacity-60">
           {isPending ? "กำลังบันทึก..." : "บันทึก Settings"}
         </button>
       )}

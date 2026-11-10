@@ -23,7 +23,7 @@ export default async function AdminLoginPage({
   };
 
   return (
-    <main className="admin-shell flex min-h-screen items-center justify-center bg-white px-4 py-10 text-[#171717] sm:px-8">
+    <main className="admin-shell flex min-h-dvh items-center justify-center bg-white px-4 py-10 text-[#171717] sm:px-8">
       <section className="w-full max-w-[26rem]">
         <div className="flex justify-center">
           <BrandMark caption="Control room" />

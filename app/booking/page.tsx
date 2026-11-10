@@ -25,8 +25,8 @@ export default async function BookingPage() {
       };
 
   return (
-    <main className="booking-shell min-h-screen bg-white text-[#0b1324]">
-      <div className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
+    <main className="booking-shell min-h-dvh bg-white text-[#0b1324]">
+      <div className="mx-auto max-w-6xl px-4 2xl:max-w-7xl py-5 sm:px-6 sm:py-7 lg:px-8">
         <PublicBookingNav locale={locale} />
 
         <PageHeader

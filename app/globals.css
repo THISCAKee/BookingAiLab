@@ -501,6 +501,7 @@ body {
 /* Admin surfaces: translucent layers over a quiet, warm light field. */
 .admin-shell {
   min-height: 100vh;
+  min-height: 100dvh;
   background-color: #f5f6f5;
   background-image:
     radial-gradient(ellipse at 8% 4%, rgba(250, 204, 21, 0.22), transparent 32rem),
@@ -549,6 +550,10 @@ body {
 .admin-shell .admin-glass thead {
   background-color: rgba(241, 245, 249, 0.65);
 }
+
+/* Swipeable mobile admin menu without a visible scrollbar. */
+.admin-nav-scroll { scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.admin-nav-scroll::-webkit-scrollbar { display: none; }
 
 @media (max-width: 639px) {
   .admin-nav { padding: 0.75rem; border-radius: 1.25rem; }
@@ -672,3 +677,8 @@ body {
 .analytics-machine-total { display: flex; align-items: baseline; gap: .6rem; margin-top: 1.5rem; }
 .analytics-machine-total strong { font-size: 2.5rem; line-height: 1; font-variant-numeric: tabular-nums; }
 .analytics-machine-total span { color: #64748b; font-size: .875rem; }
+@media (max-width: 479px) {
+  .analytics-bars { height: 10rem; }
+  .analytics-count, .analytics-date { font-size: .6875rem; }
+  .analytics-machine-total strong { font-size: 2rem; }
+}

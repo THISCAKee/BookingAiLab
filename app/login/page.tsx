@@ -15,7 +15,7 @@ export default async function LoginPage({
 
   return (
     <main
-      className="login-shell relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10 sm:px-8"
+      className="login-shell relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-10 sm:px-8"
       data-testid="login-shell"
       data-theme="light-signal"
     >

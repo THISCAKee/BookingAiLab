@@ -8,7 +8,7 @@ export default async function MyBookingsPage() {
   const locale = await getLocale();
   const t = getDictionary(locale).myBookings;
   return (
-    <main className="booking-shell min-h-screen bg-white text-[#171717]">
+    <main className="booking-shell min-h-dvh bg-white text-[#171717]">
       <div className="mx-auto max-w-4xl px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
         <PublicBookingNav locale={locale} />
         <PageHeader

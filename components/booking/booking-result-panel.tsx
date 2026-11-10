@@ -49,8 +49,8 @@ export function BookingResultPanel({
   return (
     <section className="booking-glass mt-8 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_24px_60px_-40px_rgba(15,23,42,0.45)]">
       <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4 sm:px-7">
-        <span className="grid h-8 w-8 place-items-center rounded-full bg-emerald-500 text-sm font-bold text-white" aria-hidden="true">✓</span>
-        <div>
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-emerald-500 text-sm font-bold text-white" aria-hidden="true">✓</span>
+        <div className="min-w-0">
           <p className="font-display font-semibold text-[#171717]">{t.confirmedTitle}</p>
           <p className="text-xs text-slate-500">{t.bookedOk(booking.machineCode)}</p>
         </div>
@@ -73,11 +73,11 @@ export function BookingResultPanel({
             </div>
             <div className="rounded-xl bg-white px-4 py-4 text-[#171717]">
               <p className="text-xs font-medium text-slate-500">{t.user}</p>
-              <p className="timelock-username-value mt-1 break-all text-3xl font-semibold leading-tight">{booking.timelockUsername}</p>
+              <p className="timelock-username-value mt-1 break-all text-2xl sm:text-3xl font-semibold leading-tight">{booking.timelockUsername}</p>
             </div>
             <div className="rounded-xl bg-white px-4 py-4 text-[#171717]">
               <p className="text-xs font-medium text-slate-500">{t.passwordOnce}</p>
-              <p className="timelock-password-value mt-1 break-all text-3xl font-semibold leading-tight tracking-[0.04em]">{booking.timelockPassword}</p>
+              <p className="timelock-password-value mt-1 break-all text-2xl sm:text-3xl font-semibold leading-tight tracking-[0.04em]">{booking.timelockPassword}</p>
             </div>
           </div>
         </div>

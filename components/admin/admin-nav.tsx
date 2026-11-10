@@ -19,7 +19,7 @@ export function AdminNav() {
   return (
     <nav className="admin-nav" aria-label="เมนูผู้ดูแลระบบ">
       <div className="flex items-center justify-between gap-3">
-        <Link href="/admin/dashboard" className="shrink-0 text-[#171717] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-100">
+        <Link href="/admin/dashboard" className="min-w-0 text-[#171717] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-100">
           <BrandMark caption="Control room" />
         </Link>
 
@@ -42,7 +42,7 @@ export function AdminNav() {
         <LogoutButton redirectTo="/admin" />
       </div>
 
-      <div className="mt-4 flex gap-1 overflow-x-auto rounded-full border border-slate-200 bg-slate-50 p-1 lg:hidden">
+      <div className="admin-nav-scroll mt-4 flex gap-1 overflow-x-auto rounded-full border border-slate-200 bg-slate-50 p-1 lg:hidden">
         {navigation.map((item) => {
           const active = pathname === item.href;
           return (

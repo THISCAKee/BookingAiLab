@@ -14,11 +14,11 @@ export function MachineAdminCard({ machine }: { machine: Machine }) {
   return (
     <article className="admin-glass card-tilt flex flex-col rounded-2xl border-2 border-slate-200 bg-white p-5">
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <h2 className="font-display text-lg font-semibold leading-tight">{machine.machine_code}</h2>
           <p className="text-xs text-slate-500">{machine.machine_name}</p>
         </div>
-        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${available ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-slate-100 text-slate-600 ring-slate-200"}`}>
+        <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${available ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-slate-100 text-slate-600 ring-slate-200"}`}>
           <span className={`h-1.5 w-1.5 rounded-full ${available ? "bg-emerald-500" : "bg-slate-400"}`} aria-hidden="true" />
           {available ? "พร้อมให้จอง" : "ปิดรับจอง"}
         </span>

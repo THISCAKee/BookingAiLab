@@ -9,15 +9,15 @@ export default async function AdminMachinesPage() {
   await requireAdminIdentity().catch(() => redirect("/admin"));
   const machines = await listAdminMachines();
   return (
-    <main className="admin-shell min-h-screen bg-white text-[#171717]">
-      <div className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
+    <main className="admin-shell min-h-dvh bg-white text-[#171717]">
+      <div className="mx-auto max-w-6xl px-4 2xl:max-w-7xl py-5 sm:px-6 sm:py-7 lg:px-8">
         <AdminNav />
         <PageHeader
           eyebrow="Machine Provisioning"
           title="จัดการเครื่องคอมพิวเตอร์"
           description="แก้สถานะและสร้าง Device Token สำหรับเชื่อม TimeLockApp แต่ละเครื่อง Token ใหม่จะแสดงเพียงครั้งเดียว"
         />
-        <section className="mt-8 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+        <section className="mt-8 grid gap-3 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
           {machines.map((machine) => <MachineAdminCard key={machine.id} machine={machine} />)}
         </section>
       </div>

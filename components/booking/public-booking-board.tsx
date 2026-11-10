@@ -113,7 +113,7 @@ export function PublicBookingBoard({
           aria-modal="true"
           aria-labelledby="booking-loading-title"
         >
-          <div className="booking-glass w-full max-w-sm rounded-3xl border border-amber-200 bg-white p-7 text-center shadow-[0_24px_70px_-30px_rgba(23,23,23,0.65)]">
+          <div className="booking-glass w-full max-w-sm rounded-3xl border border-amber-200 bg-white p-6 sm:p-7 text-center shadow-[0_24px_70px_-30px_rgba(23,23,23,0.65)]">
             <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-amber-100" aria-hidden="true">
               <span className="booking-loading-spinner" />
             </div>
@@ -163,7 +163,7 @@ export function PublicBookingBoard({
           </p>
         ) : null}
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label={t.machinesLabel}>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4" aria-label={t.machinesLabel}>
           {machines.map((machine) => {
             const selectable = initialOptions.viewerCanBook && machine.bookable;
             const tone = statusTones[machine.operationalStatus];
@@ -181,12 +181,12 @@ export function PublicBookingBoard({
               >
                 <input type="radio" name="machineId" value={machine.id} disabled={!selectable} checked={selectedMachine === machine.id} onChange={() => setSelectedMachine(machine.id)} className="sr-only" />
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className={`grid h-11 w-11 place-items-center rounded-xl ${selectable ? "bg-slate-100 text-[#171717] group-has-[:checked]:bg-[#171717] group-has-[:checked]:text-[#facc15]" : "bg-slate-200/70 text-slate-400"}`}>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${selectable ? "bg-slate-100 text-[#171717] group-has-[:checked]:bg-[#171717] group-has-[:checked]:text-[#facc15]" : "bg-slate-200/70 text-slate-400"}`}>
                       <MonitorIcon className="h-5 w-5" />
                     </span>
-                    <div>
-                      <p className="font-display text-lg font-semibold leading-tight">{machine.machineCode}</p>
+                    <div className="min-w-0">
+                      <p className="font-display break-words text-lg font-semibold leading-tight">{machine.machineCode}</p>
                       <p className="text-xs text-slate-500">{machine.machineName}</p>
                     </div>
                   </div>
@@ -213,7 +213,7 @@ export function PublicBookingBoard({
                     <p className="text-slate-600">{t.noSlotToday}</p>
                   )}
                   {machine.currentEndAt !== null && machine.currentRemainingMinutes !== null ? (
-                    <div className="flex items-center justify-between gap-2 rounded-xl bg-slate-100 px-3 py-2 text-xs text-slate-700">
+                    <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 rounded-xl bg-slate-100 px-3 py-2 text-xs text-slate-700">
                       <span className="font-semibold">{t.remaining(Math.floor(machine.currentRemainingMinutes / 60), machine.currentRemainingMinutes % 60)}</span>
                       <span>{t.endsAt(timeOnly.format(new Date(machine.currentEndAt)))}</span>
                     </div>
@@ -233,7 +233,7 @@ export function PublicBookingBoard({
 
         {loadMessage ? <p role="alert" className="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{loadMessage}</p> : null}
 
-        <div className="sticky bottom-4 z-20 mt-6">
+        <div className="sticky bottom-[max(1rem,env(safe-area-inset-bottom))] z-20 mt-6">
           <div className="booking-glass booking-action-bar flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-[0_20px_50px_-24px_rgba(15,23,42,0.5)] backdrop-blur sm:flex-row sm:items-center sm:pl-5">
             <p className="text-sm text-slate-600 sm:flex-1">
               {selectedMachineCode ? (

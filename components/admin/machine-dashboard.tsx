@@ -77,7 +77,7 @@ export function MachineDashboard({ machines, syncHealth }: { machines: MachineDa
                 <span className={`h-2 w-2 rounded-full ${item.dot}`} aria-hidden="true" />
                 {item.label}
               </p>
-              <p className="font-display mt-2 text-3xl font-semibold tabular-nums text-[#171717]">{counts[item.countKey]}</p>
+              <p className="font-display mt-2 text-2xl font-semibold tabular-nums sm:text-3xl text-[#171717]">{counts[item.countKey]}</p>
             </button>
           );
         })}
@@ -99,17 +99,17 @@ export function MachineDashboard({ machines, syncHealth }: { machines: MachineDa
       </div>
 
       {visibleMachines.length > 0 ? (
-        <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
           {visibleMachines.map((machine) => {
             const tone = connectionTone(machine);
             return (
               <article key={machine.id} className="admin-glass card-tilt flex flex-col rounded-2xl border-2 border-slate-200 bg-white p-5">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className="grid h-11 w-11 place-items-center rounded-xl bg-slate-100 text-[#171717]" aria-hidden="true">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-slate-100 text-[#171717]" aria-hidden="true">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20h8M12 16v4" /></svg>
                     </span>
-                    <div>
+                    <div className="min-w-0">
                       <h3 className="font-display text-lg font-semibold leading-tight">{machine.machineCode}</h3>
                       <p className="text-xs text-slate-500">{machine.machineName} · {machine.location ?? "ยังไม่ระบุตำแหน่ง"}</p>
                     </div>

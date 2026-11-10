@@ -8,7 +8,7 @@ export default async function UnauthorizedPage() {
   const locale = await getLocale();
   const t = getDictionary(locale).unauthorized;
   return (
-    <main className="app-shell flex min-h-screen items-center justify-center bg-white px-4 py-10 text-[#171717]">
+    <main className="app-shell flex min-h-dvh items-center justify-center bg-white px-4 py-10 text-[#171717]">
       <section className="w-full max-w-md">
         <div className="flex items-center justify-between gap-3">
           <BrandMark />
