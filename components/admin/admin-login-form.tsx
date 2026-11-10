@@ -1,6 +1,8 @@
+
+import { appPath } from "@/lib/app-path";
 export function AdminLoginForm() {
   return (
-    <form action="/api/admin/login" method="post" className="mt-6 space-y-4">
+    <form action={appPath("/api/admin/login")} method="post" className="mt-6 space-y-4">
       <div>
         <label htmlFor="admin-username" className="mb-2 block text-sm font-semibold text-slate-700">Username</label>
         <input id="admin-username" name="username" type="text" defaultValue="admin" autoComplete="username" required className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-[#171717] focus:ring-4 focus:ring-amber-100" />

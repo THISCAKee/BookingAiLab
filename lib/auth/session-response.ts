@@ -1,10 +1,12 @@
+
+import { appPath } from "@/lib/app-path";
 import { NextResponse } from "next/server";
 
 export function createAuthenticatedSessionResponse(
   requestUrl: URL,
   session: string,
 ) {
-  const response = NextResponse.redirect(new URL("/booking", requestUrl.origin));
+  const response = NextResponse.redirect(new URL(appPath("/booking"), requestUrl.origin));
   response.cookies.set("booking_session", session, {
     httpOnly: true,
     secure: requestUrl.protocol === "https:",

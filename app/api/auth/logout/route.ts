@@ -1,10 +1,12 @@
+
+import { appPath } from "@/lib/app-path";
 import { NextResponse } from "next/server";
 
 function logoutResponse(request: Request) {
   const requestUrl = new URL(request.url);
   const redirectTo = requestUrl.searchParams.get("redirectTo") || "/login";
-  const target = redirectTo.startsWith("/") ? redirectTo : "/login";
-  const response = NextResponse.redirect(new URL(target, request.url));
+  const target = redirectTo.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : "/login";
+  const response = NextResponse.redirect(new URL(appPath(target), request.url));
   response.cookies.delete("booking_session");
   response.cookies.delete("admin_session");
   return response;

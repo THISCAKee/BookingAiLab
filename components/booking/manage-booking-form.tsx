@@ -1,5 +1,7 @@
 "use client";
 
+import { appPath } from "@/lib/app-path";
+
 import { useEffect, useState, useTransition } from "react";
 import { cancelMyBookingAction, loadMyBookingsAction } from "@/app/my-bookings/actions";
 import type { BookingFormState } from "@/app/booking/actions";
@@ -81,7 +83,7 @@ export function ManageBookingForm({ locale = defaultLocale }: { locale?: Locale 
       /> : <section className="booking-glass grid place-items-center rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50 px-6 py-14 text-center">
         <p className="font-display text-lg font-semibold text-[#171717]">{t.emptyTitle}</p>
         <p className="mt-1 text-sm text-slate-500">{t.emptyBody}</p>
-        <a href="/booking" className="mt-5 rounded-xl bg-[#facc15] px-5 py-3 text-sm font-semibold text-[#171717] transition hover:bg-[#eab308] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200">{t.goToBooking}</a>
+        <a href={appPath("/booking")} className="mt-5 rounded-xl bg-[#facc15] px-5 py-3 text-sm font-semibold text-[#171717] transition hover:bg-[#eab308] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200">{t.goToBooking}</a>
       </section>}
     </div>
   );

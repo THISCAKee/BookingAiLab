@@ -1,3 +1,5 @@
+
+import { appPath } from "@/lib/app-path";
 import { NextResponse } from "next/server";
 import {
   adminCredentialsFromEnvironment,
@@ -23,7 +25,7 @@ export async function POST(request: Request) {
   const session = await createAdminSessionCookie(
     createAdminIdentity({ email: configured.email, name: configured.name }),
   );
-  const response = NextResponse.redirect(new URL("/admin/dashboard", request.url), 303);
+  const response = NextResponse.redirect(new URL(appPath("/admin/dashboard"), request.url), 303);
   response.cookies.set(ADMIN_SESSION_COOKIE, session, {
     httpOnly: true,
     secure: new URL(request.url).protocol === "https:",
@@ -34,5 +36,5 @@ export async function POST(request: Request) {
 }
 
 function redirectWithError(request: Request, error: string) {
-  return NextResponse.redirect(new URL(`/admin?error=${error}`, request.url), 303);
+  return NextResponse.redirect(new URL(appPath(`/admin?error=${error}`), request.url), 303);
 }

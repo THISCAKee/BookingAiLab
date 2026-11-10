@@ -1,5 +1,7 @@
 "use client";
 
+import { appPath } from "@/lib/app-path";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -12,7 +14,7 @@ export function LogoutButton({ redirectTo = "/login" }: { redirectTo?: string })
     setIsPending(true);
     setMessage(null);
 
-    window.location.assign(`/api/auth/logout?redirectTo=${encodeURIComponent(redirectTo)}`);
+    window.location.assign(appPath(`/api/auth/logout?redirectTo=${encodeURIComponent(redirectTo)}`));
   }
 
   return (

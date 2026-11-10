@@ -1,3 +1,5 @@
+
+import { appPath } from "@/lib/app-path";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { validateGoogleClaims } from "@/lib/auth/google-claims";
@@ -8,7 +10,7 @@ import { exchangeGoogleCode, verifyGoogleIdToken } from "@/lib/auth/google-oauth
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
-  const loginUrl = new URL("/login", requestUrl.origin);
+  const loginUrl = new URL(appPath("/login"), requestUrl.origin);
   const code = requestUrl.searchParams.get("code");
   const state = requestUrl.searchParams.get("state");
   const cookieStore = await cookies();

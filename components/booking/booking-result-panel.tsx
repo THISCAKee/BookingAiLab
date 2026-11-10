@@ -1,3 +1,5 @@
+
+import { appPath } from "@/lib/app-path";
 import type { BookingFormState } from "@/app/booking/actions";
 import { defaultLocale, getDictionary, type Locale } from "@/lib/i18n/dictionaries";
 
@@ -91,7 +93,7 @@ export function BookingResultPanel({
         </p>
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <a href={actionHref} className="inline-flex w-full justify-center rounded-xl bg-[#facc15] px-5 py-3 font-semibold text-[#171717] transition hover:bg-[#eab308] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200 sm:w-auto">{actionLabel ?? t.viewBooking}</a>
+          <a href={appPath(actionHref)} className="inline-flex w-full justify-center rounded-xl bg-[#facc15] px-5 py-3 font-semibold text-[#171717] transition hover:bg-[#eab308] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200 sm:w-auto">{actionLabel ?? t.viewBooking}</a>
           {canCancel ? <button type="button" onClick={onCancel} disabled={isCancelling} className="w-full rounded-xl border border-slate-200 bg-white px-5 py-3 font-semibold text-rose-600 transition hover:border-rose-200 hover:bg-rose-50 disabled:cursor-wait disabled:opacity-60 sm:w-auto">{isCancelling ? t.cancelling : t.cancel}</button> : null}
         </div>
         {cancelMessage ? <p role="alert" className="mt-3 text-sm font-semibold text-rose-700">{cancelMessage}</p> : null}

@@ -1,5 +1,7 @@
 "use client";
 
+import { appPath } from "@/lib/app-path";
+
 import { useState } from "react";
 
 export function LoginButton({ label, connectingLabel }: { label: string; connectingLabel: string }) {
@@ -7,7 +9,7 @@ export function LoginButton({ label, connectingLabel }: { label: string; connect
 
   async function handleLogin() {
     setIsLoading(true);
-    window.location.assign("/api/auth/google");
+    window.location.assign(appPath("/api/auth/google"));
   }
 
   return (
