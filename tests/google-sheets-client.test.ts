@@ -29,6 +29,25 @@ describe("Google Sheets client", () => {
     await expect(client.appendSheetRow("Bookings", ["row"])).rejects.toThrow("GOOGLE_SHEET_WRITE_FAILED");
   });
 
+  it("shares recent reads only when a max age is requested and drops them after a write", async () => {
+    const fetchImpl = vi.fn().mockImplementation(
+      async () => new Response(JSON.stringify({ values: [["header"]] }), { status: 200 }),
+    );
+    const client = createGoogleSheetsClient({ spreadsheetId: "shared-read", accessToken: async () => "token", fetchImpl });
+    const other = createGoogleSheetsClient({ spreadsheetId: "shared-read", accessToken: async () => "token", fetchImpl });
+
+    await client.readSheet("Machines", { maxAgeMs: 10_000 });
+    await other.readSheet("Machines", { maxAgeMs: 10_000 });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+
+    await other.readSheet("Machines");
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+
+    await client.updateSheetRow("Machines", 2, ["row"]);
+    await other.readSheet("Machines", { maxAgeMs: 10_000 });
+    expect(fetchImpl).toHaveBeenCalledTimes(4);
+  });
+
   it("shares one access token across concurrent sheet reads", async () => {
     const fetchImpl = vi.fn().mockImplementation(
       async () => new Response(JSON.stringify({ values: [["header"]] }), { status: 200 }),

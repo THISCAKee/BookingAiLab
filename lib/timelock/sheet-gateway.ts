@@ -1,8 +1,8 @@
 import { createHash, randomUUID } from "node:crypto";
 import { getGoogleRuntimeConfig } from "@/lib/google/config";
-import { createGoogleSheetsClient } from "@/lib/google/sheets-client";
+import { clearSheetReadCache, createGoogleSheetsClient, SHARED_READ_MAX_AGE_MS } from "@/lib/google/sheets-client";
 import { parseBookings, parseMachines } from "@/lib/google/sheet-schema";
-import type { SheetTab } from "@/lib/google/sheets-client";
+import type { SheetReadOptions, SheetTab } from "@/lib/google/sheets-client";
 import { buildOfflineAccount } from "@/lib/timelock/offline-cache";
 import { evaluateBookingExtension } from "@/lib/booking/extension-policy";
 import { verifyPassword, type PasswordVerifier } from "@/lib/timelock/passwords";
@@ -15,7 +15,7 @@ export type SheetDeviceContext = { id: string; machineCode: string };
 function client() { return createGoogleSheetsClient({ spreadsheetId: getGoogleRuntimeConfig().spreadsheetId }); }
 
 export type TimelockGatewaySheets = {
-  readSheet(tab: SheetTab): Promise<string[][]>;
+  readSheet(tab: SheetTab, options?: SheetReadOptions): Promise<string[][]>;
   appendSheetRow(tab: SheetTab, row: string[]): Promise<void>;
   updateSheetRow(tab: SheetTab, rowNumber: number, row: string[]): Promise<void>;
 };
@@ -44,7 +44,7 @@ async function users(sheetsClient: TimelockGatewaySheets) {
 }
 
 export async function authenticateTimelockDevice(device: DeviceRequest): Promise<SheetDeviceContext> {
-  const machines = parseMachines(await client().readSheet("Machines"));
+  const machines = parseMachines(await client().readSheet("Machines", { maxAgeMs: SHARED_READ_MAX_AGE_MS }));
   const tokenHash = createHash("sha256").update(device.deviceToken).digest("hex");
   const machine = machines.find((row) => row.machineCode === device.machineCode && row.deviceTokenHash === tokenHash);
   if (!machine) throw new Error("MACHINE_TOKEN_INVALID");
@@ -110,10 +110,11 @@ function bangkokDateValue(date: Date) {
 
 export async function syncTimelockDevice(device: SheetDeviceContext, options: GatewayDependencies = {}) {
   const deps = dependencies(options);
-  const [accounts, bookingRows] = await Promise.all([
-    users(deps.sheets),
-    deps.sheets.readSheet("Bookings"),
+  const [userRows, bookingRows] = await Promise.all([
+    deps.sheets.readSheet("Users", { maxAgeMs: SHARED_READ_MAX_AGE_MS }),
+    deps.sheets.readSheet("Bookings", { maxAgeMs: SHARED_READ_MAX_AGE_MS }),
   ]);
+  const accounts = parseTimelockUsers(userRows);
   const bookings = parseBookings(bookingRows);
   const now = deps.now();
   return accounts.flatMap((account) => {
@@ -260,6 +261,7 @@ export async function confirmTimelockExtension(
     }),
     cache: "no-store",
   });
+  clearSheetReadCache();
   if (!response.ok) throw new Error("EXTENSION_CONFIRM_FAILED");
   const result = (await response.json()) as { ok?: boolean; data?: unknown; code?: string };
   if (!result.ok || result.data === undefined) throw new Error(result.code || "EXTENSION_CONFIRM_FAILED");

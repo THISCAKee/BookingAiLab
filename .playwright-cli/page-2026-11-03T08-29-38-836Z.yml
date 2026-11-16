@@ -1,0 +1,31 @@
+- generic [active] [ref=f3e1]:
+  - main [ref=f3e2]:
+    - generic [ref=f3e5]:
+      - generic [ref=f3e6]:
+        - generic [ref=f3e7]: BOOKINGAILAB
+        - group "Change language" [ref=f3e15]:
+          - button "TH" [ref=f3e16]
+          - button "EN" [pressed] [ref=f3e17]
+      - generic [ref=f3e18]:
+        - generic [ref=f3e19]:
+          - generic [ref=f3e20]:
+            - heading "Sign in with your university account" [level=1] [ref=f3e21]
+            - paragraph [ref=f3e22]: Sign in to book a computer and manage your bookings.
+          - button "Sign in with Google" [ref=f3e24]
+          - paragraph [ref=f3e30]:
+            - text: Use your Mahasarakham University Google account ending in
+            - strong [ref=f3e31]: "@msu.ac.th"
+        - region [ref=f3e32]:
+          - heading "How to get started" [level=2] [ref=f3e33]
+          - list [ref=f3e34]:
+            - listitem [ref=f3e35]:
+              - generic [aria-hidden] [ref=f3e36]: "1"
+              - generic [ref=f3e37]: Sign in with Google
+            - listitem [ref=f3e38]:
+              - generic [aria-hidden] [ref=f3e39]: "2"
+              - generic [ref=f3e40]: Choose a machine and confirm your booking
+            - listitem [ref=f3e41]:
+              - generic [aria-hidden] [ref=f3e42]: "3"
+              - generic [ref=f3e43]: Use your assigned User and Password to sign in to TimeLock
+  - button "Open Next.js Dev Tools" [ref=f3e49] [cursor=pointer]
+  - alert [ref=f3e53]

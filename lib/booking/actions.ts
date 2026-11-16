@@ -13,7 +13,7 @@ import { cancelSheetBookingByOwner, createSheetBooking } from "@/lib/booking/she
 import { getGoogleRuntimeConfig } from "@/lib/google/config";
 import { parseBookings, parseMachines } from "@/lib/google/sheet-schema";
 import type { SheetBooking, SheetMachine } from "@/lib/google/sheet-types";
-import { createGoogleSheetsClient } from "@/lib/google/sheets-client";
+import { createGoogleSheetsClient, SHARED_READ_MAX_AGE_MS } from "@/lib/google/sheets-client";
 import { parseTimelockEvents } from "@/lib/timelock/sheet-records";
 import { parseTimelockUsers } from "@/lib/timelock/sheet-records";
 import { decryptTimelockPassword } from "@/lib/timelock/password-vault";
@@ -48,9 +48,9 @@ async function readBookingData() {
 async function readPublicBookingData() {
   const client = sheets();
   const [machineRows, bookingRows, eventRows] = await Promise.all([
-    client.readSheet("Machines"),
-    client.readSheet("Bookings"),
-    client.readSheet("Events"),
+    client.readSheet("Machines", { maxAgeMs: SHARED_READ_MAX_AGE_MS }),
+    client.readSheet("Bookings", { maxAgeMs: SHARED_READ_MAX_AGE_MS }),
+    client.readSheet("Events", { maxAgeMs: SHARED_READ_MAX_AGE_MS }),
   ]);
   const startedBookingIds = new Set(
     parseTimelockEvents(eventRows)
@@ -154,9 +154,9 @@ export async function getViewerBookings(): Promise<BookingActionResult<ViewerBoo
     const identity = await requireGoogleIdentity();
     const client = sheets();
     const [machineRows, bookingRows, userRows] = await Promise.all([
-      client.readSheet("Machines"),
-      client.readSheet("Bookings"),
-      client.readSheet("Users"),
+      client.readSheet("Machines", { maxAgeMs: SHARED_READ_MAX_AGE_MS }),
+      client.readSheet("Bookings", { maxAgeMs: SHARED_READ_MAX_AGE_MS }),
+      client.readSheet("Users", { maxAgeMs: SHARED_READ_MAX_AGE_MS }),
     ]);
     const machines = parseMachines(machineRows);
     const bookings = parseBookings(bookingRows);

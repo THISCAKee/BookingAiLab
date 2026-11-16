@@ -2,7 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { getGoogleRuntimeConfig } from "@/lib/google/config";
 import { parseBookings, parseMachines, parseSettings } from "@/lib/google/sheet-schema";
 import type { BookingStatus, MachineStatus, SheetSettings } from "@/lib/google/sheet-types";
-import { createGoogleSheetsClient } from "@/lib/google/sheets-client";
+import { createGoogleSheetsClient, SHARED_READ_MAX_AGE_MS } from "@/lib/google/sheets-client";
 
 function client() {
   return createGoogleSheetsClient({ spreadsheetId: getGoogleRuntimeConfig().spreadsheetId });
@@ -39,11 +39,11 @@ export function mergeSettingsRows(
 }
 
 export async function listAdminMachines() {
-  return mapAdminMachineRows(await client().readSheet("Machines"));
+  return mapAdminMachineRows(await client().readSheet("Machines", { maxAgeMs: SHARED_READ_MAX_AGE_MS }));
 }
 
 export async function listAdminBookings() {
-  return parseBookings(await client().readSheet("Bookings")).sort((a, b) => b.startAt.localeCompare(a.startAt));
+  return parseBookings(await client().readSheet("Bookings", { maxAgeMs: SHARED_READ_MAX_AGE_MS })).sort((a, b) => b.startAt.localeCompare(a.startAt));
 }
 
 export async function getAdminBookingSettings(): Promise<SheetSettings> {

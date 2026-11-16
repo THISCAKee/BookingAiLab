@@ -1,5 +1,6 @@
 import { randomInt } from "node:crypto";
 import type { GoogleIdentity } from "@/lib/auth/google-claims";
+import { clearSheetReadCache } from "@/lib/google/sheets-client";
 import { createPasswordVerifier } from "@/lib/timelock/passwords";
 import { encryptTimelockPassword } from "@/lib/timelock/password-vault";
 
@@ -76,6 +77,7 @@ export async function createSheetBooking(
       throw error;
     } finally {
       clearTimeout(timeoutId);
+      clearSheetReadCache();
     }
     if (!response.ok) throw new Error("BOOKING_ATOMIC_FAILED");
     const result = (await response.json()) as { ok?: boolean; data?: unknown; code?: string };
@@ -119,6 +121,7 @@ export async function cancelSheetBookingByOwner(
     }),
     cache: "no-store",
   });
+  clearSheetReadCache();
   if (!response.ok) throw new Error("BOOKING_ATOMIC_FAILED");
   const result = (await response.json()) as { ok?: boolean; code?: string };
   if (!result.ok) throw new Error(result.code || "BOOKING_ATOMIC_FAILED");

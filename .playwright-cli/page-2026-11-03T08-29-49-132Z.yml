@@ -1,0 +1,31 @@
+- generic [ref=f3e1]:
+  - main [ref=f3e2]:
+    - generic [ref=f3e5]:
+      - generic [ref=f3e6]:
+        - generic [ref=f3e7]: BOOKINGAILAB
+        - group "เปลี่ยนภาษา" [ref=f3e54]:
+          - button "TH" [active] [pressed] [ref=f3e16]
+          - button "EN" [ref=f3e17]
+      - generic [ref=f3e18]:
+        - generic [ref=f3e19]:
+          - generic [ref=f3e20]:
+            - heading "เข้าสู่ระบบด้วยบัญชีมหาวิทยาลัย" [level=1] [ref=f3e55]
+            - paragraph [ref=f3e22]: เข้าใช้เพื่อจองเครื่องคอมพิวเตอร์และจัดการรายการจองของคุณ
+          - button "เข้าสู่ระบบด้วยอีเมล @msu.ac.th" [ref=f3e56]
+          - paragraph [ref=f3e30]:
+            - text: ใช้บัญชี Google ของมหาวิทยาลัยมหาสารคามที่ลงท้ายด้วย
+            - strong [ref=f3e31]: "@msu.ac.th"
+        - region [ref=f3e57]:
+          - heading "วิธีเริ่มใช้งาน" [level=2] [ref=f3e58]
+          - list [ref=f3e34]:
+            - listitem [ref=f3e59]:
+              - generic [aria-hidden] [ref=f3e60]: "1"
+              - generic [ref=f3e61]: เข้าสู่ระบบด้วยอีเมล @msu.ac.th
+            - listitem [ref=f3e62]:
+              - generic [aria-hidden] [ref=f3e63]: "2"
+              - generic [ref=f3e64]: เลือกเครื่องและยืนยันการจอง
+            - listitem [ref=f3e65]:
+              - generic [aria-hidden] [ref=f3e66]: "3"
+              - generic [ref=f3e67]: ใช้ User และ Password ที่ได้รับเพื่อเข้าใช้งานเครื่อง
+  - button "Open Next.js Dev Tools" [ref=f3e49] [cursor=pointer]
+  - alert [ref=f3e53]
