@@ -8,7 +8,15 @@ describe("admin Sheet repository helpers", () => {
       MACHINE_HEADERS,
       ["m-1", "PC-001", "Workstation 1", "AI Lab", "available", "hash", "", "2026-08-21T00:00:00.000Z"],
     ];
-    expect(mapAdminMachineRows(rows)).toEqual([{ id: "m-1", machine_code: "PC-001", machine_name: "Workstation 1", location: "AI Lab", status: "available", hasToken: true, lastSeenAt: null }]);
+    expect(mapAdminMachineRows(rows)).toEqual([{ id: "m-1", machine_code: "PC-001", machine_name: "Workstation 1", location: "AI Lab", status: "available", hasToken: true, lastSeenAt: null, sessionStatus: null, sessionUsername: null }]);
+  });
+
+  it("reads the optional heartbeat session columns when present", () => {
+    const rows = [
+      [...MACHINE_HEADERS, "sessionStatus", "sessionUsername"],
+      ["m-1", "PC-001", "Workstation 1", "AI Lab", "available", "hash", "", "2026-08-21T00:00:00.000Z", "logged_out", ""],
+    ];
+    expect(mapAdminMachineRows(rows)[0]).toMatchObject({ sessionStatus: "logged_out", sessionUsername: null });
   });
 
   it("updates settings values while preserving stable headers", () => {

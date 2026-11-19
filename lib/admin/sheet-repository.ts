@@ -3,12 +3,27 @@ import { getGoogleRuntimeConfig } from "@/lib/google/config";
 import { parseBookings, parseMachines, parseSettings } from "@/lib/google/sheet-schema";
 import type { BookingStatus, MachineStatus, SheetSettings } from "@/lib/google/sheet-types";
 import { createGoogleSheetsClient, SHARED_READ_MAX_AGE_MS } from "@/lib/google/sheets-client";
+import type { MachineSessionStatus } from "@/lib/machines/presence";
 
 function client() {
   return createGoogleSheetsClient({ spreadsheetId: getGoogleRuntimeConfig().spreadsheetId });
 }
 
+// Optional Machines columns written by heartbeats; sheets created before they existed simply omit them.
+function heartbeatSession(row: readonly string[] | undefined, headers: readonly string[]) {
+  const read = (name: string) => {
+    const index = headers.indexOf(name);
+    return index < 0 ? "" : String(row?.[index] ?? "").trim();
+  };
+  const status = read("sessionStatus");
+  return {
+    sessionStatus: (["logged_in", "logged_out", "idle"].includes(status) ? status : null) as MachineSessionStatus | null,
+    sessionUsername: read("sessionUsername").toLowerCase() || null,
+  };
+}
+
 export function mapAdminMachineRows(rows: readonly (readonly string[])[]) {
+  const headers = (rows[0] ?? []).map((header) => String(header).trim());
   return parseMachines(rows).map((machine) => ({
     id: machine.machineId,
     machine_code: machine.machineCode,
@@ -17,6 +32,7 @@ export function mapAdminMachineRows(rows: readonly (readonly string[])[]) {
     status: machine.status,
     hasToken: Boolean(machine.deviceTokenHash),
     lastSeenAt: machine.lastSeenAt,
+    ...heartbeatSession(rows[machine.sourceRow - 1], headers),
   }));
 }
 

@@ -11,7 +11,7 @@ const TABS = {
 
 const SHEET_HEADERS = {
   Settings: ['Key', 'Value', 'UpdatedAt'],
-  Machines: ['machineId', 'machineCode', 'machineName', 'location', 'status', 'deviceTokenHash', 'lastSeenAt', 'updatedAt'],
+  Machines: ['machineId', 'machineCode', 'machineName', 'location', 'status', 'deviceTokenHash', 'lastSeenAt', 'updatedAt', 'sessionStatus', 'sessionUsername'],
   Bookings: ['bookingId', 'bookingNumber', 'email', 'name', 'hd', 'emailPrefix', 'machineId', 'machineCode', 'startAt', 'endAt', 'status', 'createdAt', 'updatedAt', 'idempotencyKey', 'extensionCount'],
   Users: ['userId', 'email', 'name', 'emailPrefix', 'username', 'role', 'machineCode', 'passwordAlgorithm', 'passwordIterations', 'passwordSalt', 'passwordHash', 'allowedMinutes', 'isActive', 'sourceBookingId', 'updatedAt', 'passwordCiphertext'],
   Identities: ['identityId', 'email', 'name', 'hd', 'emailPrefix', 'lastLoginAt', 'updatedAt'],

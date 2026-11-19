@@ -12,6 +12,14 @@ export function clearSheetReadCache() {
   sharedReads.clear();
 }
 
+// Last outcome of a real Sheets read in this server instance, surfaced on the admin dashboard.
+export type SheetReadHealth = { lastSuccessAt: string | null; lastError: string | null };
+const readHealth: SheetReadHealth = { lastSuccessAt: null, lastError: null };
+
+export function getSheetReadHealth(): SheetReadHealth {
+  return { ...readHealth };
+}
+
 type GoogleSheetsClientOptions = {
   spreadsheetId: string;
   accessToken?: () => Promise<string>;
@@ -52,9 +60,12 @@ export function createGoogleSheetsClient(options: GoogleSheetsClientOptions) {
     const response = await request(`/values/${range}`);
     if (!response.ok) {
       console.error(`Google Sheets read ${tab} failed: ${response.status} ${await response.text().catch(() => "")}`);
+      readHealth.lastError = `GOOGLE_SHEET_READ_FAILED:${tab}:${response.status}`;
       throw new Error("GOOGLE_SHEET_READ_FAILED");
     }
     const data = (await response.json()) as { values?: unknown[][] };
+    readHealth.lastSuccessAt = new Date().toISOString();
+    readHealth.lastError = null;
     return (data.values ?? []).map((row) => row.map((value) => String(value ?? "")));
   }
 

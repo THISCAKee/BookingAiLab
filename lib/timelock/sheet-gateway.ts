@@ -63,6 +63,7 @@ export async function recordMachineHeartbeat(input: NormalizedHeartbeat, deviceT
   const index = new Map(headers.map((header, position) => [header, position]));
   const set = (header: string, value: string) => { const position = index.get(header); if (position !== undefined) row[position] = value; };
   set("lastSeenAt", input.reportedAt); set("updatedAt", new Date().toISOString());
+  set("sessionStatus", input.sessionStatus); set("sessionUsername", input.username ?? "");
   await sheets.updateSheetRow("Machines", machine.sourceRow, row);
   return { machineId: machine.machineId, machineCode: machine.machineCode, receivedAt: new Date().toISOString() };
 }

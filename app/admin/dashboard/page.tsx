@@ -8,10 +8,8 @@ import { getTimelockSyncHealth, listMachineDashboard } from "@/lib/machines/quer
 export default async function AdminDashboardPage() {
   await requireAdminIdentity().catch(() => redirect("/admin"));
 
-  const [machines, syncHealth] = await Promise.all([
-    listMachineDashboard(),
-    getTimelockSyncHealth(),
-  ]);
+  const machines = await listMachineDashboard();
+  const syncHealth = await getTimelockSyncHealth();
 
   return (
     <main className="admin-shell min-h-dvh bg-white text-[#171717]">
