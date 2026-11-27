@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bookingInUse, bookingMachineOffline, resolveSessionStatus } from "@/lib/machines/queries";
+import { bookingInUse, bookingMachineOffline, bookingOverdue, resolveSessionStatus } from "@/lib/machines/queries";
 
 const now = new Date("2026-11-18T12:00:00.000Z");
 const fresh = "2026-11-18T11:59:50.000Z";
@@ -22,10 +22,17 @@ describe("machine dashboard session status", () => {
     expect(resolveSessionStatus({ lastSeenAt: fresh, sessionStatus: null }, activeBooking, now)).toBe("logged_in");
   });
 
-  it("flags an in-use booking whose machine stopped sending heartbeats", () => {
+  it("flags an open booking whose machine stopped sending heartbeats, even after its end time", () => {
     expect(bookingMachineOffline(activeBooking, { lastSeenAt: stale }, now)).toBe(true);
     expect(bookingMachineOffline(activeBooking, undefined, now)).toBe(true);
+    expect(bookingMachineOffline({ ...activeBooking, endAt: "2026-11-18T11:00:00.000Z" }, { lastSeenAt: stale }, now)).toBe(true);
     expect(bookingMachineOffline(activeBooking, { lastSeenAt: fresh }, now)).toBe(false);
     expect(bookingMachineOffline({ ...activeBooking, status: "confirmed" }, { lastSeenAt: stale }, now)).toBe(false);
+  });
+
+  it("marks an active booking past its end time as overdue", () => {
+    expect(bookingOverdue({ ...activeBooking, endAt: "2026-11-18T11:00:00.000Z" }, now)).toBe(true);
+    expect(bookingOverdue(activeBooking, now)).toBe(false);
+    expect(bookingOverdue({ ...activeBooking, status: "completed", endAt: "2026-11-18T11:00:00.000Z" }, now)).toBe(false);
   });
 });

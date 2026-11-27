@@ -21,9 +21,14 @@ export function bookingInUse(booking: DashboardBooking, now: Date) {
   return booking.status === "active" && (Number.isNaN(end) || end > now.getTime());
 }
 
-// An in-use booking whose machine stopped sending heartbeats: the session was never closed, so admins should check it.
+// Still "active" in the sheet although its end time has passed: the logout call never closed it.
+export function bookingOverdue(booking: DashboardBooking, now: Date) {
+  return booking.status === "active" && !bookingInUse(booking, now);
+}
+
+// An open booking whose machine stopped sending heartbeats, so admins should check it.
 export function bookingMachineOffline(booking: DashboardBooking, machine: { lastSeenAt: string | null } | undefined, now: Date) {
-  return bookingInUse(booking, now) && deriveMachineConnectionStatus(machine?.lastSeenAt, now) === "stale";
+  return booking.status === "active" && deriveMachineConnectionStatus(machine?.lastSeenAt, now) === "stale";
 }
 
 // A fresh heartbeat from TimeLockApp is the real-time source of truth; bookings are the fallback
