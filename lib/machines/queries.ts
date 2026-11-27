@@ -21,6 +21,11 @@ export function bookingInUse(booking: DashboardBooking, now: Date) {
   return booking.status === "active" && (Number.isNaN(end) || end > now.getTime());
 }
 
+// An in-use booking whose machine stopped sending heartbeats: the session was never closed, so admins should check it.
+export function bookingMachineOffline(booking: DashboardBooking, machine: { lastSeenAt: string | null } | undefined, now: Date) {
+  return bookingInUse(booking, now) && deriveMachineConnectionStatus(machine?.lastSeenAt, now) === "stale";
+}
+
 // A fresh heartbeat from TimeLockApp is the real-time source of truth; bookings are the fallback
 // for sheets without the heartbeat session columns or when the machine has gone quiet.
 export function resolveSessionStatus(

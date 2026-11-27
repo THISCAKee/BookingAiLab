@@ -3,7 +3,8 @@ import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminCancelBookingButton } from "@/components/admin/admin-cancel-booking-button";
 import { PageHeader } from "@/components/ui/page-header";
 import { requireAdminIdentity } from "@/lib/auth/identity";
-import { listAdminBookings } from "@/lib/admin/sheet-repository";
+import { listAdminBookings, listAdminMachines } from "@/lib/admin/sheet-repository";
+import { bookingMachineOffline } from "@/lib/machines/queries";
 
 const allowedStatuses = ["all", "confirmed", "app_pending", "app_received", "active", "completed", "cancelled", "expired"];
 
@@ -17,12 +18,19 @@ const statusBadges: Record<string, { label: string; tone: string }> = {
   expired: { label: "หมดอายุ", tone: "bg-slate-100 text-slate-600 ring-slate-200" },
 };
 
+function MachineOfflineBadge() {
+  return <span className="inline-flex shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 ring-1 ring-inset ring-slate-200" title="รายการจองยังไม่ถูกปิด แต่เครื่องไม่ได้ส่งสัญญาณมาเกิน 45 วินาที">เครื่อง Offline</span>;
+}
+
 export default async function AdminBookingsPage({ searchParams }: { searchParams: Promise<{ q?: string; status?: string }> }) {
   const { q = "", status = "all" } = await searchParams;
   const selectedStatus = allowedStatuses.includes(status) ? status : "all";
   await requireAdminIdentity().catch(() => redirect("/admin"));
   const normalizedQuery = q.trim().toLowerCase();
-  const rows = (await listAdminBookings()).filter((row) => (selectedStatus === "all" || row.status === selectedStatus) && (!normalizedQuery || [row.bookingNumber, row.machineCode, row.email, row.name].some((value) => value.toLowerCase().includes(normalizedQuery))));
+  const [bookings, machines] = await Promise.all([listAdminBookings(), listAdminMachines()]);
+  const now = new Date();
+  const machinesById = new Map(machines.map((machine) => [machine.id, machine]));
+  const rows = bookings.filter((row) => (selectedStatus === "all" || row.status === selectedStatus) && (!normalizedQuery || [row.bookingNumber, row.machineCode, row.email, row.name].some((value) => value.toLowerCase().includes(normalizedQuery))));
 
   return (
     <main className="admin-shell min-h-dvh bg-white text-[#171717]">
@@ -54,7 +62,10 @@ export default async function AdminBookingsPage({ searchParams }: { searchParams
                     <p className="mt-1 break-words text-sm font-medium">{row.name}</p>
                     <p className="break-all text-xs text-slate-500">{row.email}</p>
                   </div>
-                  <span className={`inline-flex shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${badge.tone}`}>{badge.label}</span>
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <span className={`inline-flex shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${badge.tone}`}>{badge.label}</span>
+                    {bookingMachineOffline(row, machinesById.get(row.machineId), now) ? <MachineOfflineBadge /> : null}
+                  </div>
                 </div>
                 <div className="mt-3 flex flex-wrap items-end justify-between gap-3 border-t border-slate-100 pt-3">
                   <p className="text-xs text-slate-500">ใช้งานได้ 3 ชั่วโมง · เริ่มนับเมื่อ login เข้า TimeLock</p>
@@ -80,7 +91,7 @@ export default async function AdminBookingsPage({ searchParams }: { searchParams
                     <td className="px-5 py-4"><p className="font-medium">{row.name}</p><p className="text-xs text-slate-500">{row.email}</p></td>
                     <td className="px-5 py-4 font-display font-semibold">{row.machineCode}</td>
                     <td className="px-5 py-4"><p className="font-medium">ใช้งานได้ 3 ชั่วโมง</p><p className="text-xs text-slate-500">เริ่มนับเมื่อ login เข้า TimeLock</p></td>
-                    <td className="px-5 py-4"><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${badge.tone}`}>{badge.label}</span></td>
+                    <td className="px-5 py-4"><div className="flex flex-wrap gap-1.5"><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${badge.tone}`}>{badge.label}</span>{bookingMachineOffline(row, machinesById.get(row.machineId), now) ? <MachineOfflineBadge /> : null}</div></td>
                     <td className="px-5 py-4 text-right">{!["completed", "cancelled", "expired"].includes(row.status) ? <AdminCancelBookingButton bookingId={row.bookingId} /> : <span className="text-slate-400">—</span>}</td>
                   </tr>
                 );

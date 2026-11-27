@@ -62,10 +62,12 @@ export async function recordMachineHeartbeat(input: NormalizedHeartbeat, deviceT
   const row = [...(rows[machine.sourceRow - 1] ?? [])];
   const index = new Map(headers.map((header, position) => [header, position]));
   const set = (header: string, value: string) => { const position = index.get(header); if (position !== undefined) row[position] = value; };
-  set("lastSeenAt", input.reportedAt); set("updatedAt", new Date().toISOString());
+  // lastSeenAt uses the server clock: a client clock running behind would otherwise mark a live machine offline.
+  const receivedAt = new Date().toISOString();
+  set("lastSeenAt", receivedAt); set("reportedAt", input.reportedAt); set("updatedAt", receivedAt);
   set("sessionStatus", input.sessionStatus); set("sessionUsername", input.username ?? "");
   await sheets.updateSheetRow("Machines", machine.sourceRow, row);
-  return { machineId: machine.machineId, machineCode: machine.machineCode, receivedAt: new Date().toISOString() };
+  return { machineId: machine.machineId, machineCode: machine.machineCode, receivedAt };
 }
 
 function verifier(row: TimelockSheetUser): PasswordVerifier {
